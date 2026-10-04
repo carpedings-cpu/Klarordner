@@ -3,6 +3,9 @@ import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+
+// Die Testdatei ist älter als ein Jahr, der Aktualitätshinweis wird mit „Später“ geschlossen.
+const spaeter = async (s) => { const d = s.locator('dialog[open]'); await d.waitFor({ timeout: 3000 }).catch(() => {}); if (await d.isVisible()) await s.click('dialog[open] #dialogKnoepfe button:last-child'); };
 const hier = path.dirname(new URL(import.meta.url).pathname);
 const url = 'file://' + path.join(hier, '../dist/klarordner.html');
 const erg = path.join(hier, 'ergebnisse');
@@ -29,6 +32,7 @@ const seite = async (locale) => {
 // 1. Testdaten, Oberfläche auf Englisch, Ausdruck trotzdem auf Deutsch
 let p = await seite('en-GB');
 await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
+await spaeter(p);
 await p.waitForSelector('.kacheln');
 await p.click('#btnDrucken');
 const boxen = await p.locator('.druckliste input').evaluateAll(l => l.map(i => `${i.value}:${i.checked ? 'an' : 'aus'}${i.disabled ? ':gesperrt' : ''}`));

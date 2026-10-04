@@ -2,6 +2,9 @@
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 import { spawn } from 'child_process';
 import path from 'path';
+
+// Die Testdatei ist älter als ein Jahr, der Aktualitätshinweis wird mit „Später“ geschlossen.
+const spaeter = async (s) => { const d = s.locator('dialog[open]'); await d.waitFor({ timeout: 3000 }).catch(() => {}); if (await d.isVisible()) await s.click('dialog[open] #dialogKnoepfe button:last-child'); };
 const hier = path.dirname(new URL(import.meta.url).pathname);
 const server = spawn('python3', ['-m', 'http.server', '8123', '--bind', '127.0.0.1'], { cwd: path.join(hier, '../docs'), stdio: 'ignore' });
 await new Promise(r => setTimeout(r, 800));
@@ -38,6 +41,7 @@ try {
   await q.goto('http://localhost:8123/');
   console.log('iPad-Hinweis:', await q.textContent('#hinweisBrowser'));
   await q.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
+  await spaeter(q);
   await q.waitForSelector('.kacheln');
   await q.click('.kachel:has-text("Persönliche Nachricht")');
   await q.fill('textarea', 'Gespeichert über Teilen');

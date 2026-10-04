@@ -2,6 +2,9 @@
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 import fs from 'fs';
 import path from 'path';
+
+// Die Testdatei ist älter als ein Jahr, der Aktualitätshinweis wird mit „Später“ geschlossen.
+const spaeter = async (s) => { const d = s.locator('dialog[open]'); await d.waitFor({ timeout: 3000 }).catch(() => {}); if (await d.isVisible()) await s.click('dialog[open] #dialogKnoepfe button:last-child'); };
 const hier = path.dirname(new URL(import.meta.url).pathname);
 const url = 'file://' + path.join(hier, '../dist/klarordner.html');
 const en = JSON.parse(fs.readFileSync(path.join(hier, '../app/sprachen/en.json'), 'utf8'));
@@ -26,6 +29,7 @@ await p.click('.sprachliste button:has-text("English")');
 
 // Alte Datei (Version 1, deutsche Werte) auf Englisch öffnen
 await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
+await spaeter(p);
 await p.waitForSelector('.kacheln');
 console.log('Stand:', await p.textContent('.stand'));
 await p.click('#navliste li:nth-child(1) button');

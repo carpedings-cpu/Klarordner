@@ -21,6 +21,7 @@ TECHNISCH = re.compile(r"""
   | ^[A-Z0-9_\-]+$                      # Konstanten und Verfahren wie AES-GCM
   | ^(application|image|data|text)/      # Medientypen
   | ^https?:
+  | ^stroke:
   | ^\s+[a-z]+$                        # angehängte Klassen wie " primaer"
   | ^[\s·]+$
   | ^[a-z]+(\s[a-z]+)*\s$|^[a-z]+\.$|^[a-z0-9\-]+/[a-z0-9\-./]+$

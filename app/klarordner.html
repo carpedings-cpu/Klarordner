@@ -173,6 +173,22 @@ p { margin: 0; }
 .kachel:active { transform: scale(.98); }
 .kachel .name { display: block; font-size: 1.1rem; font-weight: 700; line-height: 1.2; }
 .kachel .unter { display: block; font-size: .85rem; color: var(--leise); line-height: 1.3; margin-top: .2rem; }
+.ring { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 4.1rem; height: 4.1rem; flex: none; }
+.ring > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring > svg circle { fill: none; stroke-width: 5; }
+.ring > svg .spur { stroke: #e5e5ea; }
+.ring > svg .wert { stroke-linecap: round; transition: stroke-dasharray .4s ease; }
+.ring .ico.mittel { width: 2.9rem; height: 2.9rem; }
+.seitenkopf > .ring { width: 5.2rem; height: 5.2rem; }
+.ringzahl { font-size: 1.15rem; font-weight: 800; color: var(--blau); font-variant-numeric: tabular-nums; }
+.fortschritt-text { font-size: 1.1rem; color: var(--leise); margin-top: .3rem; }
+.kachel .stufe { display: inline-block; margin-top: .55rem; font-size: .8rem; font-weight: 700; padding: .15em .7em; border-radius: 999px; }
+.kachel .stufe.voll { background: #e3f6e8; color: #1b6e33; }
+.kachel .stufe.teil { background: #fff3d6; color: #8a5a00; }
+.kachel .stufe.leer { background: var(--grund); color: var(--leise); }
+.formkarte.aktuell { background: var(--gelb-hell); box-shadow: inset 0 0 0 2px var(--gelb-rand), var(--schatten); margin-bottom: 1.25rem; }
+.formkarte.aktuell .knopfreihe { margin-top: 1rem; }
+@media (prefers-reduced-motion: reduce) { .ring > svg .wert { transition: none; } }
 
 .formkarte { background: var(--karte); border-radius: var(--rund); box-shadow: var(--schatten); padding: 1.4rem; }
 .feld label { display: block; font-weight: 600; margin-bottom: .4rem; }
@@ -614,6 +630,7 @@ const zustand = {
   geraetOk: !!window.indexedDB,
   speichertGerade: false,
   downloadHinweisGezeigt: false,
+  aktualitaetGefragt: false,
   teilenHinweisGezeigt: false
 };
 
@@ -848,9 +865,13 @@ async function laden(datei, handle) {
   Object.assign(zustand, { daten, handle, dateiname: datei.name, geaendert: false, gesichertAm: new Date().toISOString(), ansicht: "uebersicht" });
   await imGeraetSpeichern();
   alles();
+  zustand.aktualitaetGefragt = false;
+  aktualitaetPruefen();
 }
 
-async function sichern() {
+// kopie: neue Datei mit Datum im Namen, die bisherige Sicherung bleibt unberührt (für den USB-Stick).
+async function sichern(kopie = false) {
+  if (kopie !== true) kopie = false;
   if (!zustand.daten) return false;
   if (tresorTimer) await tresorSichern();
   // Jede Sicherung bekommt einen neuen IV, auch ohne Änderung seit der letzten.
@@ -859,8 +880,14 @@ async function sichern() {
     await tresorVerschluesseln(zustand.daten);
   }
   let weg = "datei";
+  const heute = new Date().toISOString().slice(0, 10);
+  const name = kopie ? `${t("Meine Notfalldaten")} ${heute}.notfall.json` : (zustand.dateiname || standardName());
   try {
-    if (hatFsa) {
+    if (hatFsa && kopie) {
+      const handle = await speicherortWaehlen(name);
+      if (!handle) return false;
+      await inHandleSchreiben(handle, alsText());
+    } else if (hatFsa) {
       if (!zustand.handle) {
         const handle = await speicherortWaehlen(zustand.dateiname || standardName());
         if (!handle) return false;
@@ -874,7 +901,6 @@ async function sichern() {
       await inHandleSchreiben(zustand.handle, alsText());
       zustand.dateiname = zustand.handle.name;
     } else {
-      const name = zustand.dateiname || standardName();
       weg = kannTeilen && (await teilen(alsText(), name)) ? "teilen" : "download";
       if (weg === "download") herunterladen(alsText(), name);
     }
@@ -888,10 +914,13 @@ async function sichern() {
   zustand.gesichertAm = new Date().toISOString();
   await imGeraetSpeichern();
   if (zustand.ansicht === "uebersicht") inhaltZeigen();
-  if (weg === "download" && !zustand.downloadHinweisGezeigt) {
+  if (weg === "download" && kopie) {
+    await melden("Sicherungskopie gespeichert",
+      t("Die Kopie liegt als „{name}“ in Ihrem Download-Ordner. Kopieren Sie sie zum Beispiel auf einen USB-Stick und bewahren Sie ihn sicher auf.", { name }));
+  } else if (weg === "download" && !zustand.downloadHinweisGezeigt) {
     zustand.downloadHinweisGezeigt = true;
     await melden("Datei liegt im Download-Ordner",
-      t("Ihr Ordner wurde als „{name}“ in Ihren Download-Ordner gespeichert.", { name: zustand.dateiname }),
+      t("Ihr Ordner wurde als „{name}“ in Ihren Download-Ordner gespeichert.", { name }),
       "Bitte verschieben Sie diese Datei jetzt an den Ort Ihrer bisherigen Datei und ersetzen Sie die alte Datei damit. Sonst öffnen Sie beim nächsten Mal versehentlich den alten Stand.",
       "Steht im Dateinamen eine Zahl in Klammern, zum Beispiel „(1)“, hat der Browser die Datei umbenannt. Löschen Sie dann die alte Datei und entfernen Sie die Zahl aus dem neuen Namen.");
   }
@@ -1237,6 +1266,49 @@ function blaettern(nr) {
       : el("button", { type: "button", class: "btn primaer", onclick: () => wechseln("uebersicht"), text: t("Zur Übersicht ›") }));
 }
 
+// Je Bereich die wichtigsten Angaben. Ausgefüllt heißt: alle davon vorhanden, nicht jedes Feld.
+const voll = v => typeof v === "string" ? v.trim() !== "" : !!v;
+const PRUEFUNG = {
+  persoenlich: d => ["vorname", "nachname", "geburtsdatum", "strasse", "ort", "familienstand", "ablagePersonalausweis"].map(f => voll(d.persoenlich[f])),
+  kontakte: d => [d.kontakte.length > 0, d.kontakte.some(k => voll(k.telefon) || voll(k.mobil))],
+  gesundheit: d => [voll(d.gesundheit.hausarzt.name), voll(d.gesundheit.krankenkasse.name), voll(d.gesundheit.organspende)],
+  vollmachten: d => ["vorsorgevollmacht", "betreuungsverfuegung", "patientenverfuegung", "bankvollmacht"].map(v => voll(d.vollmachten[v].vorhanden)),
+  finanzen: d => [d.finanzen.konten.length > 0],
+  versicherungen: d => [d.versicherungen.length > 0],
+  vertraege: d => [d.vertraege.length > 0],
+  wohnen: d => [voll(d.wohnen.wohnform), voll(d.wohnen.schluessel)],
+  digital: d => [d.digital.konten.length > 0 || voll(d.digital.passwortManager)],
+  zugang: d => tresor.inhalt ? [true, tresor.inhalt.eintraege.length > 0] : [!!d.zugang],
+  sterbefall: d => [voll(d.sterbefall.bestattungsart), d.sterbefall.informieren.length > 0,
+    voll(d.sterbefall.bestatter) || voll(d.sterbefall.grabstelle) || voll(d.sterbefall.wuensche)],
+  nachricht: d => [voll(d.nachricht.text)]
+};
+
+function fortschritt(id) {
+  const werte = PRUEFUNG[id](zustand.daten);
+  const anteil = werte.filter(Boolean).length / werte.length;
+  return { anteil, stufe: anteil === 1 ? "voll" : anteil > 0 ? "teil" : "leer" };
+}
+
+const STUFENTEXT = { voll: "Ausgefüllt", teil: "Teilweise", leer: "Noch leer" };
+
+function ring(anteil, farbe, inhalt) {
+  const umfang = 2 * Math.PI * 26;
+  const box = el("span", { class: "ring", "aria-hidden": "true" });
+  box.innerHTML = `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="26" class="spur"/><circle cx="30" cy="30" r="26" class="wert" style="stroke:${farbe};stroke-dasharray:${(anteil * umfang).toFixed(1)} ${umfang.toFixed(1)}"/></svg>`;
+  if (inhalt) box.append(inhalt);
+  return box;
+}
+
+function aktualitaetsKarte() {
+  if (!veraltet()) return null;
+  return el("section", { class: "formkarte aktuell" },
+    el("h3", { text: t("Zeit für einen Blick in Ihren Ordner") }),
+    el("p", { class: "kartenhilfe", text: t("Seit der letzten Änderung ist mehr als ein Jahr vergangen. Stimmen Telefonnummern, Ärzte, Medikamente und Konten noch?") }),
+    el("div", { class: "knopfreihe" },
+      el("button", { type: "button", class: "btn primaer", text: t("Alles ist noch aktuell"), onclick: alsAktuellMarkieren })));
+}
+
 function sicherungsKarte() {
   const tage = zustand.gesichertAm ? Math.floor((Date.now() - new Date(zustand.gesichertAm)) / 864e5) : null;
   // Erinnern erst, wenn eine vorhandene Sicherung veraltet ist. Beim ersten Ausfüllen wird nicht gedrängelt.
@@ -1250,23 +1322,36 @@ function sicherungsKarte() {
     el("p", { class: "sicherungsstand" }, el("strong", { text: stand }),
       zustand.gesichertAm && zustand.geaendert ? " · " + t("seitdem geändert") : null),
     el("div", { class: "knopfreihe" },
-      el("button", { type: "button", class: "btn primaer", onclick: sichern, text: t("Als Datei sichern") }),
+      el("button", { type: "button", class: "btn primaer", onclick: () => sichern(), text: t("Als Datei sichern") }),
+      el("button", { type: "button", class: "btn", onclick: () => sichern(true), text: t("Sicherungskopie mit Datum") }),
       zustand.geraetOk ? el("button", { type: "button", class: "btn flach loeschen", onclick: vomGeraetLoeschen, text: t("Von diesem Gerät löschen") }) : null));
 }
 
 function uebersicht() {
   return [
-    el("div", { class: "seitenkopf" },
-      el("div", {},
-        el("h2", { tabindex: "-1", text: t("Mein Ordner") }),
-        el("p", { class: "stand" }, t("Zuletzt geändert:") + " ", el("strong", { text: datumText(zustand.daten.lastModified) })))),
+    (() => {
+      const stand = BEREICHE.map(b => fortschritt(b.id));
+      const fertig = stand.filter(s => s.stufe === "voll").length;
+      const gesamt = stand.reduce((s, x) => s + x.anteil, 0) / stand.length;
+      return el("div", { class: "seitenkopf" },
+        ring(gesamt, "#0a64c8", el("span", { class: "ringzahl", text: `${fertig}/${BEREICHE.length}` })),
+        el("div", {},
+          el("h2", { tabindex: "-1", text: t("Mein Ordner") }),
+          el("p", { class: "fortschritt-text", text: t("{n} von {gesamt} Bereichen ausgefüllt", { n: fertig, gesamt: BEREICHE.length }) }),
+          el("p", { class: "stand" }, t("Zuletzt geändert:") + " ", el("strong", { text: datumText(zustand.daten.lastModified) }))));
+    })(),
+    aktualitaetsKarte(),
     el("ul", { class: "kacheln" },
-      ...BEREICHE.map(b => el("li", {},
-        el("button", { type: "button", class: "kachel", onclick: () => wechseln(b.id) },
-          symbol(b.symbol, "mittel", b.farbe),
-          el("span", {},
-            el("span", { class: "name", text: t(b.titel) }),
-            el("span", { class: "unter", text: t(b.text) })))))),
+      ...BEREICHE.map(b => {
+        const f = fortschritt(b.id);
+        return el("li", {},
+          el("button", { type: "button", class: "kachel", onclick: () => wechseln(b.id) },
+            ring(f.anteil, b.farbe, symbol(b.symbol, "mittel", b.farbe)),
+            el("span", {},
+              el("span", { class: "name", text: t(b.titel) }),
+              el("span", { class: "unter", text: t(b.text) }),
+              el("span", { class: "stufe " + f.stufe, text: t(STUFENTEXT[f.stufe]) }))));
+      })),
     sicherungsKarte(),
     el("p", { class: "kleingedruckt", text: t("Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form. Die Inhalte beziehen sich auf deutsches Recht.") })
   ];
@@ -1837,6 +1922,28 @@ function startseiteFuellen() {
     : el("p", {}, el("strong", { text: t("Tipp:") + " " }), t("In diesem Browser landet jede gespeicherte Fassung im Download-Ordner. Bequemer geht es mit Google Chrome oder Microsoft Edge.")));
 }
 
+/* ---------- Aktualität ---------- */
+
+const veraltet = () => !!(zustand.daten && zustand.daten.lastModified && Date.now() - new Date(zustand.daten.lastModified) > 365 * 864e5);
+
+function alsAktuellMarkieren() {
+  geaendert();
+  if (zustand.ansicht === "uebersicht") inhaltZeigen();
+}
+
+async function aktualitaetPruefen() {
+  if (zustand.aktualitaetGefragt || !veraltet()) return;
+  zustand.aktualitaetGefragt = true;
+  const antwort = await fragen("Zeit für einen Blick in Ihren Ordner",
+    [t("Ihr Ordner wurde zuletzt am {datum} geändert, vor mehr als einem Jahr.", { datum: datumText(zustand.daten.lastModified) }),
+     "Bitte prüfen Sie, ob noch alles stimmt: Telefonnummern, Ärzte, Medikamente, Konten und Verträge. Dauert meist nur ein paar Minuten."],
+    [{ text: "Jetzt durchsehen", wert: "durchsehen", primaer: true },
+     { text: "Alles ist noch aktuell", wert: "aktuell" },
+     { text: "Später", wert: "spaeter" }]);
+  if (antwort === "aktuell") alsAktuellMarkieren();
+  if (antwort === "durchsehen") wechseln(BEREICHE[0].id);
+}
+
 /* ---------- Druck ---------- */
 
 const cssText = s => JSON.stringify(String(s).replace(/[\r\n]+/g, " "));
@@ -2083,6 +2190,7 @@ async function starten() {
     }
   }
   alles();
+  aktualitaetPruefen();
 }
 
 starten();

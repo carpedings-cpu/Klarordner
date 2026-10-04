@@ -2,6 +2,9 @@
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 import fs from 'fs';
 import path from 'path';
+
+// Die Testdatei ist älter als ein Jahr, der Aktualitätshinweis wird mit „Später“ geschlossen.
+const spaeter = async (s) => { const d = s.locator('dialog[open]'); await d.waitFor({ timeout: 3000 }).catch(() => {}); if (await d.isVisible()) await s.click('dialog[open] #dialogKnoepfe button:last-child'); };
 const hier = path.dirname(new URL(import.meta.url).pathname);
 const url = 'file://' + path.join(hier, '../dist/klarordner.html');
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
@@ -35,10 +38,12 @@ await p.click('#btnOeffnen');
 console.log('Rückfrage:', await p.textContent('#dialogTitel'));
 await p.click('dialog button:has-text("Ersetzen")');
 await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
+await spaeter(p);
 await p.waitForFunction(() => (document.querySelector('.stand') || {}).textContent?.includes('14.06.2025'));
 await p.waitForTimeout(300);
 await p.reload();
 await p.waitForSelector('.kacheln');
+await spaeter(p);
 await p.click('.kachel:has-text("Persönliche Daten")');
 console.log('Nach Öffnen und Neustart:', await p.inputValue('#inhalt input >> nth=1'));
 // Löschen vom Gerät

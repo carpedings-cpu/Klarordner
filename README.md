@@ -42,6 +42,7 @@ node test/test-geraet.mjs      # Speichern im Gerät, Sicherung als Datei, Lösc
 node test/test-tresor.mjs      # Verschlüsselung der Zugangsdaten, Sperre, Passwortwechsel
 node test/test-sprache.mjs     # Spracherkennung, Sprachwahl, Umwandlung alter Dateien, deutsche Reste
 node test/test-druck.mjs       # Druckauswahl, PDF mit Kopf- und Fußzeilen, Formular, Zugangsdaten
+node test/test-schritt5.mjs    # Aktualitätshinweis, Fortschritt, Sicherungskopie mit Datum
 ```
 
 ## Veröffentlichen

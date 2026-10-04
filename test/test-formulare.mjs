@@ -1,6 +1,9 @@
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 import fs from 'fs';
 import path from 'path';
+
+// Die Testdatei ist älter als ein Jahr, der Aktualitätshinweis wird mit „Später“ geschlossen.
+const spaeter = async (s) => { const d = s.locator('dialog[open]'); await d.waitFor({ timeout: 3000 }).catch(() => {}); if (await d.isVisible()) await s.click('dialog[open] #dialogKnoepfe button:last-child'); };
 const hier = path.dirname(new URL(import.meta.url).pathname);
 const url = 'file://' + path.join(hier, '../dist/klarordner.html');
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
@@ -13,6 +16,7 @@ p.on('console', m => { if (m.type() === 'error') fehler.push(m.text()); });
 p.on('request', r => { if (!/^(file|data|blob):/.test(r.url())) netz.push(r.url()); });
 await p.goto(url);
 await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
+await spaeter(p);
 await p.waitForSelector('.kacheln');
 const ids = ['persoenlich','kontakte','gesundheit','vollmachten','finanzen','versicherungen','vertraege','wohnen','digital','zugang','sterbefall','nachricht'];
 for (const [i, id] of ids.entries()) {
