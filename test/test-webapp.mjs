@@ -8,7 +8,7 @@ await new Promise(r => setTimeout(r, 800));
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const fehler = [], fremd = [];
 try {
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ locale: 'de-DE' });
   const p = await ctx.newPage();
   p.on('pageerror', e => fehler.push(e.message));
   p.on('console', m => { if (m.type() === 'error') fehler.push(m.text()); });
@@ -25,7 +25,7 @@ try {
   await ctx.setOffline(false);
 
   // iPad-Weg: kein Dateizugriff, Touch, Teilen-Menü
-  const ipad = await browser.newContext({ viewport: { width: 820, height: 1180 }, hasTouch: true });
+  const ipad = await browser.newContext({ locale: 'de-DE',  viewport: { width: 820, height: 1180 }, hasTouch: true });
   const q = await ipad.newPage();
   q.on('pageerror', e => fehler.push(e.message));
   await q.addInitScript(() => {

@@ -9,9 +9,21 @@ Persönlicher Notfall- und Vorsorgeordner, der komplett im Browser läuft. Kein 
 | `app/klarordner.html` | Die App. Eine Datei mit HTML, CSS und JavaScript, läuft auch direkt per Doppelklick. |
 | `app/sw.js` | Service Worker, legt die App für den Offline-Betrieb im Gerät ab. Nutzerdaten laufen nie hindurch. |
 | `app/manifest.webmanifest`, `app/icons/` | Angaben und Symbole für die Installation auf dem Home-Bildschirm. |
+| `app/sprachen/xx.json` | Übersetzungen. Schlüssel ist der deutsche Text, Wert die Übersetzung. `_texte.json` listet alle Anzeigetexte und wird erzeugt. |
 | `docs/` | Erzeugt, wird über GitHub Pages veröffentlicht. Nicht von Hand ändern. |
 | `test/` | Browsertests und erfundene Testdaten. Wird nicht ausgeliefert. |
 | `werkzeuge/` | Bauskript und Erzeugung der Symbole. |
+
+## Sprachen
+
+Die Oberfläche gibt es in 14 Sprachen. Inhalte und Rechtshinweise beziehen sich immer auf deutsches Recht, amtliche Begriffe stehen in den Übersetzungen zusätzlich auf Deutsch in Klammern. Auswahlfelder speichern neutrale Schlüssel (`OPTIONEN` in der App), die Datei ist damit sprachunabhängig.
+
+```
+python3 werkzeuge/texte.py      # Stand aller Übersetzungen
+python3 werkzeuge/texte.py tr   # fehlende und veraltete Texte einer Sprache
+```
+
+Wird ein deutscher Text in der App geändert, gilt er als neuer Text und muss in allen Sprachen neu übersetzt werden.
 
 ## Bauen
 
@@ -19,7 +31,7 @@ Persönlicher Notfall- und Vorsorgeordner, der komplett im Browser läuft. Kein 
 python3 werkzeuge/bauen.py
 ```
 
-Erzeugt `docs/` für die Web-App mit neuer Cache-Version und `dist/klarordner.html` als Download-Fassung.
+Setzt die Übersetzungen ein und erzeugt `docs/` für die Web-App mit neuer Cache-Version sowie `dist/klarordner.html` als Download-Fassung. Die Tests laufen gegen diese gebaute Fassung.
 
 ## Testen
 
@@ -28,6 +40,7 @@ node test/test-formulare.mjs   # alle Bereiche, Einträge, Speichern
 node test/test-webapp.mjs      # Installation, Offline-Betrieb, Speichern über Teilen
 node test/test-geraet.mjs      # Speichern im Gerät, Sicherung als Datei, Löschen
 node test/test-tresor.mjs      # Verschlüsselung der Zugangsdaten, Sperre, Passwortwechsel
+node test/test-sprache.mjs     # Spracherkennung, Sprachwahl, Umwandlung alter Dateien, deutsche Reste
 ```
 
 ## Veröffentlichen

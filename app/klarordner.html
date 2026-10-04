@@ -250,6 +250,10 @@ p { margin: 0; }
 .formkarte.offen h3 { display: flex; align-items: center; gap: .5rem; }
 .formkarte.offen .knopfreihe { margin-top: 1rem; }
 
+.sprachknopf svg { width: 1.2em; height: 1.2em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+dialog { max-height: 90vh; overflow-y: auto; }
+dialog .sprachliste { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+
 .blaettern { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem; margin-top: 2rem; }
 
 dialog {
@@ -281,9 +285,10 @@ dialog .knopfreihe .btn { width: 100%; }
   <div class="marke"><img class="logo" id="logoKlein" alt="">Klarordner</div>
   <div class="dateistatus" id="dateistatus" aria-live="polite"></div>
   <div class="aktionen">
-    <button type="button" class="btn" id="btnSpeichern" hidden>Als Datei sichern</button>
-    <button type="button" class="btn" id="btnOeffnen" hidden>Öffnen</button>
-    <button type="button" class="btn" id="btnSchrift" aria-pressed="false">Schrift größer</button>
+    <button type="button" class="btn" id="btnSpeichern" data-t="Als Datei sichern" hidden>Als Datei sichern</button>
+    <button type="button" class="btn" id="btnOeffnen" data-t="Öffnen" hidden>Öffnen</button>
+    <button type="button" class="btn" id="btnSchrift" data-t="Schrift größer" aria-pressed="false">Schrift größer</button>
+    <button type="button" class="btn sprachknopf" id="btnSprache"></button>
   </div>
 </header>
 
@@ -292,24 +297,24 @@ dialog .knopfreihe .btn { width: 100%; }
     <div class="blasen" aria-hidden="true"><span class="blase"></span><span class="blase"></span><span class="blase"></span><span class="blase"></span><span class="blase"></span><span class="blase"></span></div>
     <div class="logo-gross" aria-hidden="true">K</div>
     <h1>Klarordner</h1>
-    <p class="unterzeile">Alles Wichtige für den Notfall.<br>An einem Ort.</p>
+    <p class="unterzeile"><span data-t="Alles Wichtige für den Notfall.">Alles Wichtige für den Notfall.</span><br><span data-t="An einem Ort.">An einem Ort.</span></p>
     <div class="knopfreihe">
-      <button type="button" class="btn primaer riesig" id="btnNeu">Neuen Ordner anlegen</button>
-      <button type="button" class="btn riesig" id="btnStartOeffnen">Datei öffnen</button>
+      <button type="button" class="btn primaer riesig" id="btnNeu" data-t="Neuen Ordner anlegen">Neuen Ordner anlegen</button>
+      <button type="button" class="btn riesig" id="btnStartOeffnen" data-t="Datei öffnen">Datei öffnen</button>
     </div>
   </section>
 
   <ul class="vorteile" id="vorteile"></ul>
 
   <div class="hinweis gelb" id="hinweisBrowser" hidden>
-    <p><strong>Tipp:</strong> In diesem Browser landet jede gespeicherte Fassung im Download-Ordner. Bequemer geht es mit Google Chrome oder Microsoft Edge.</p>
+
   </div>
 
-  <p class="kleingedruckt">Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form, etwa handschriftlich oder notariell. Die Inhalte beziehen sich auf deutsches Recht.</p>
+  <p class="kleingedruckt" data-t="Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form, etwa handschriftlich oder notariell. Die Inhalte beziehen sich auf deutsches Recht."></p>
 </main>
 
 <div id="arbeitsbereich" class="rahmen" hidden>
-  <nav class="navigation" aria-label="Bereiche">
+  <nav class="navigation" id="navigation" aria-label="Bereiche">
     <ul class="navgruppe" id="navStart"></ul>
     <ul class="navgruppe" id="navliste"></ul>
   </nav>
@@ -327,9 +332,58 @@ dialog .knopfreihe .btn { width: 100%; }
 <script>
 "use strict";
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const FORMAT = "klarordner";
-const STANDARDNAME = "Meine Notfalldaten.notfall.json";
+const standardName = () => t("Meine Notfalldaten") + ".notfall.json";
+
+const SPRACHEN = {
+  de: "Deutsch", en: "English", tr: "Türkçe", ru: "Русский", uk: "Українська", pl: "Polski",
+  ro: "Română", it: "Italiano", el: "Ελληνικά", hr: "Hrvatski", bg: "Български", cs: "Čeština",
+  es: "Español", fr: "Français"
+};
+// Wird beim Bauen mit den Dateien aus app/sprachen/ gefüllt.
+const UEBERSETZUNG = /*UEBERSETZUNGEN*/{};
+let sprache = "de";
+
+// Der deutsche Text ist zugleich der Schlüssel. Fehlt eine Übersetzung, bleibt es bei Deutsch.
+function t(text, werte) {
+  let s = (sprache !== "de" && UEBERSETZUNG[sprache] && UEBERSETZUNG[sprache][text]) || text;
+  if (werte) s = s.replace(/\{(\w+)\}/g, (m, k) => (k in werte ? werte[k] : m));
+  return s;
+}
+
+const gebietsschema = () => (sprache === "en" ? "en-GB" : sprache);
+
+// Auswahlwerte werden als neutrale Schlüssel gespeichert, angezeigt wird die Übersetzung.
+const OPTIONEN = {
+  jaNein: { ja: "Ja", nein: "Nein", weissNicht: "Weiß nicht" },
+  familienstand: { ledig: "ledig", verheiratet: "verheiratet", partnerschaft: "eingetragene Lebenspartnerschaft", getrennt: "getrennt lebend", geschieden: "geschieden", verwitwet: "verwitwet" },
+  rolle: { angehoerig: "Angehörige/r", bevollmaechtigt: "Bevollmächtigte/r", betreuer: "Betreuer/in", nachbar: "Nachbar/in", freund: "Freund/in", sonstige: "Sonstige" },
+  pflegegrad: { kein: "kein Pflegegrad", 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", beantragt: "beantragt" },
+  blutgruppe: { "0+": "0 positiv", "0-": "0 negativ", "A+": "A positiv", "A-": "A negativ", "B+": "B positiv", "B-": "B negativ", "AB+": "AB positiv", "AB-": "AB negativ", unbekannt: "unbekannt" },
+  organspende: { ja: "Ja", nein: "Nein", teilweise: "Nur bestimmte Organe", offen: "Noch nicht entschieden" },
+  kontoart: { giro: "Girokonto", spar: "Sparkonto", tagesgeld: "Tagesgeld", festgeld: "Festgeld", depot: "Depot", bauspar: "Bausparvertrag", kreditkarte: "Kreditkarte", kredit: "Darlehen / Kredit", sonstiges: "Sonstiges" },
+  versicherung: { leben: "Lebensversicherung", sterbegeld: "Sterbegeldversicherung", unfall: "Unfallversicherung", rente: "Private Rentenversicherung", haftpflicht: "Haftpflicht", hausrat: "Hausrat", gebaeude: "Wohngebäude", kfz: "Kfz", rechtsschutz: "Rechtsschutz", bu: "Berufsunfähigkeit", kranken: "Private Kranken- oder Zusatzversicherung", pflege: "Pflegezusatzversicherung", sonstige: "Sonstige" },
+  vertrag: { miete: "Miete", strom: "Strom", gas: "Gas", wasser: "Wasser", telefon: "Telefon und Internet", handy: "Handy", rundfunk: "Rundfunkbeitrag", streaming: "Streaming", zeitung: "Zeitung oder Zeitschrift", verein: "Verein oder Mitgliedschaft", fitness: "Fitnessstudio", sonstiges: "Sonstiges" },
+  wohnform: { miete: "zur Miete", eigentum: "im Eigentum", wohnrecht: "mit Wohnrecht", pflegeheim: "in einer Pflegeeinrichtung", sonstiges: "Sonstiges" },
+  onlineArt: { email: "E-Mail", shop: "Online-Shop", bezahl: "Bezahldienst", sozial: "Soziales Netzwerk", messenger: "Messenger", cloud: "Cloud-Speicher", streaming: "Streaming", banking: "Online-Banking", sonstiges: "Sonstiges" },
+  wunsch: { loeschen: "Löschen", gedenken: "In Gedenkzustand versetzen", uebertragen: "An jemanden übertragen" },
+  bestattung: { erd: "Erdbestattung", urne: "Feuerbestattung mit Urnengrab", see: "Seebestattung", baum: "Baumbestattung", anonym: "Anonyme Bestattung", offen: "Noch nicht entschieden", sonstiges: "Sonstiges" },
+  zugangArt: { geraet: "Handy oder Tablet", computer: "Computer", email: "E-Mail", online: "Online-Konto", wlan: "WLAN", sonstiges: "Sonstiges" }
+};
+
+// Ältere Dateien enthalten noch den deutschen Anzeigetext statt des Schlüssels.
+function normWert(wert, name) {
+  const g = OPTIONEN[name];
+  if (!wert || wert in g) return wert || "";
+  const k = Object.keys(g).find(s => g[s] === wert);
+  return k || wert;
+}
+
+function optText(name, wert) {
+  const k = normWert(wert, name);
+  return OPTIONEN[name][k] ? t(OPTIONEN[name][k]) : (wert || "");
+}
 const DATEITYPEN = [{ description: "Klarordner-Datei", accept: { "application/json": [".json"] } }];
 const hatFsa = typeof window.showOpenFilePicker === "function" && typeof window.showSaveFilePicker === "function";
 
@@ -355,29 +409,29 @@ const SYMBOLE = {
 
 const BEREICHE = [
   { id: "persoenlich", titel: "Persönliche Daten", farbe: "#2a7cf0", symbol: "person",
-    text: "Wer Sie sind und wo Ihre Ausweise liegen." },
+    text: t("Wer Sie sind und wo Ihre Ausweise liegen.") },
   { id: "kontakte", titel: "Ansprechpartner", farbe: "#23a149", symbol: "telefon",
-    text: "Wer im Notfall angerufen werden soll." },
+    text: t("Wer im Notfall angerufen werden soll.") },
   { id: "gesundheit", titel: "Gesundheit", farbe: "#e8403c", symbol: "herz",
-    text: "Ärzte, Krankenkasse, Medikamente, Allergien." },
+    text: t("Ärzte, Krankenkasse, Medikamente, Allergien.") },
   { id: "vollmachten", titel: "Vollmachten", farbe: "#8a55e8", symbol: "dokument",
-    text: "Welche es gibt und wo das Original liegt." },
+    text: t("Welche es gibt und wo das Original liegt.") },
   { id: "finanzen", titel: "Konten und Finanzen", farbe: "#14919a", symbol: "bank",
-    text: "Ihre Banken und wer darüber verfügen darf." },
+    text: t("Ihre Banken und wer darüber verfügen darf.") },
   { id: "versicherungen", titel: "Versicherungen", farbe: "#e9810f", symbol: "schild",
-    text: "Ihre Policen und wo die Unterlagen liegen." },
+    text: t("Ihre Policen und wo die Unterlagen liegen.") },
   { id: "vertraege", titel: "Verträge und Abos", farbe: "#d93a82", symbol: "kreislauf",
-    text: "Was regelmäßig kostet und gekündigt werden muss." },
+    text: t("Was regelmäßig kostet und gekündigt werden muss.") },
   { id: "wohnen", titel: "Wohnen", farbe: "#9a7046", symbol: "haus",
-    text: "Wohnung, Schlüssel und Haustiere." },
+    text: t("Wohnung, Schlüssel und Haustiere.") },
   { id: "digital", titel: "Digitaler Nachlass", farbe: "#4a57d4", symbol: "globus",
-    text: "Ihre Konten im Internet und was damit geschieht." },
+    text: t("Ihre Konten im Internet und was damit geschieht.") },
   { id: "zugang", titel: "Zugangsdaten", farbe: "#55595f", symbol: "schloss",
-    text: "Passwörter und Codes, mit eigenem Passwort geschützt." },
+    text: t("Passwörter und Codes, mit eigenem Passwort geschützt.") },
   { id: "sterbefall", titel: "Für den Sterbefall", farbe: "#6a7fa6", symbol: "kerze",
-    text: "Ihre Wünsche und eine Checkliste für die Familie." },
+    text: t("Ihre Wünsche und eine Checkliste für die Familie.") },
   { id: "nachricht", titel: "Persönliche Nachricht", farbe: "#d99a00", symbol: "brief",
-    text: "Was Sie Ihren Liebsten noch sagen möchten." }
+    text: t("Was Sie Ihren Liebsten noch sagen möchten.") }
 ];
 
 function leereDaten() {
@@ -429,7 +483,25 @@ function leereDaten() {
 }
 
 const MIGRATIONEN = {
-  // Beispiel für später: 1: d => { d.neuesFeld = ""; }  hebt eine Datei von Version 1 auf 2
+  // Version 2: Auswahlfelder speichern neutrale Schlüssel statt deutscher Texte.
+  1: d => {
+    const setze = (obj, feldname, name) => { if (obj && typeof obj[feldname] === "string") obj[feldname] = normWert(obj[feldname], name); };
+    const jede = (liste, f) => { if (Array.isArray(liste)) liste.forEach(f); };
+    setze(d.persoenlich, "familienstand", "familienstand");
+    jede(d.kontakte, k => setze(k, "rolle", "rolle"));
+    for (const f of ["pflegegrad", "blutgruppe", "organspende"]) setze(d.gesundheit, f, f);
+    for (const v of ["vorsorgevollmacht", "betreuungsverfuegung", "patientenverfuegung", "bankvollmacht"]) {
+      const block = d.vollmachten && d.vollmachten[v];
+      setze(block, "vorhanden", "jaNein");
+      setze(block, "registriert", "jaNein");
+    }
+    jede(d.finanzen && d.finanzen.konten, k => { setze(k, "kontoart", "kontoart"); setze(k, "vollmachtUeberTod", "jaNein"); });
+    jede(d.versicherungen, v => setze(v, "art", "versicherung"));
+    jede(d.vertraege, v => setze(v, "art", "vertrag"));
+    setze(d.wohnen, "wohnform", "wohnform");
+    jede(d.digital && d.digital.konten, k => { setze(k, "kategorie", "onlineArt"); setze(k, "wunsch", "wunsch"); });
+    setze(d.sterbefall, "bestattungsart", "bestattung");
+  }
 };
 
 function istObjekt(x) {
@@ -497,26 +569,26 @@ function el(tag, attrs = {}, ...kinder) {
 }
 
 function datumText(iso) {
-  if (!iso) return "noch nie";
-  return new Date(iso).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  if (!iso) return t("noch nie");
+  return new Date(iso).toLocaleDateString(gebietsschema(), { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function uhrzeit(d) {
-  return d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(gebietsschema(), { hour: "2-digit", minute: "2-digit" });
 }
 
 /* ---------- Dialoge ---------- */
 
 function fragen(titel, absaetze, knoepfe) {
   const dlg = $("dialog");
-  $("dialogTitel").textContent = titel;
-  $("dialogText").replaceChildren(...absaetze.map(t => el("p", { text: t })));
+  $("dialogTitel").textContent = t(titel);
+  $("dialogText").replaceChildren(...absaetze.map(a => el("p", { text: t(a) })));
   return new Promise(resolve => {
     const reihe = $("dialogKnoepfe");
     reihe.replaceChildren(...knoepfe.map((k, i) => el("button", {
       type: "button",
       class: "btn" + (k.primaer ? " primaer" : ""),
-      text: k.text,
+      text: t(k.text),
       onclick: () => { dlg.close(); resolve(k.wert); }
     })));
     dlg.onclose = () => resolve(null);
@@ -527,7 +599,7 @@ function fragen(titel, absaetze, knoepfe) {
 }
 
 function melden(titel, ...absaetze) {
-  return fragen(titel, absaetze, [{ text: "Verstanden", wert: true, primaer: true }]);
+  return fragen(titel, absaetze, [{ text: t("Verstanden"), wert: true, primaer: true }]);
 }
 
 // Die Eingaben bleiben automatisch auf diesem Gerät erhalten. Die Datei dient als Sicherung und zur Weitergabe.
@@ -591,9 +663,9 @@ async function ersetzenOk() {
   const absaetze = ["Die Daten aus der Datei ersetzen den Ordner, der gerade auf diesem Gerät gespeichert ist."];
   if (zustand.geaendert) absaetze.push("Ihr aktueller Ordner hat Änderungen, die noch nicht als Datei gesichert sind.");
   const antwort = await fragen("Ordner ersetzen?", absaetze, [
-    ...(zustand.geaendert ? [{ text: "Zuerst als Datei sichern", wert: "sichern", primaer: true }] : []),
-    { text: "Ersetzen", wert: "ersetzen", primaer: !zustand.geaendert },
-    { text: "Abbrechen", wert: "abbrechen" }
+    ...(zustand.geaendert ? [{ text: t("Zuerst als Datei sichern"), wert: "sichern", primaer: true }] : []),
+    { text: t("Ersetzen"), wert: "ersetzen", primaer: !zustand.geaendert },
+    { text: t("Abbrechen"), wert: "abbrechen" }
   ]);
   if (antwort === "ersetzen") return true;
   if (antwort === "sichern") return await sichern();
@@ -603,12 +675,12 @@ async function ersetzenOk() {
 async function vomGeraetLoeschen() {
   const absaetze = ["Ihr Ordner wird von diesem Gerät entfernt. Das ist sinnvoll, wenn Sie das Gerät weitergeben oder andere es mitbenutzen."];
   absaetze.push(zustand.gesichertAm
-    ? `Ihre letzte Sicherung als Datei ist vom ${datumText(zustand.gesichertAm)}. Danach geänderte Angaben gehen verloren.`
+    ? t("Ihre letzte Sicherung als Datei ist vom {datum}. Danach geänderte Angaben gehen verloren.", { datum: datumText(zustand.gesichertAm) })
     : "Sie haben Ihren Ordner noch nie als Datei gesichert. Ohne Sicherung sind alle Angaben verloren.");
   const antwort = await fragen("Von diesem Gerät löschen?", absaetze, [
-    { text: "Zuerst als Datei sichern", wert: "sichern", primaer: true },
-    { text: "Endgültig löschen", wert: "loeschen" },
-    { text: "Abbrechen", wert: "abbrechen" }
+    { text: t("Zuerst als Datei sichern"), wert: "sichern", primaer: true },
+    { text: t("Endgültig löschen"), wert: "loeschen" },
+    { text: t("Abbrechen"), wert: "abbrechen" }
   ]);
   if (antwort === "sichern") { await sichern(); return; }
   if (antwort !== "loeschen") return;
@@ -661,7 +733,7 @@ async function teilen(text, name) {
     const weiter = await fragen("Speichern auf dem iPad",
       ["Gleich öffnet sich ein Fenster. Tippen Sie dort auf „In Dateien sichern“.",
        "Wählen Sie den Ordner, in dem Ihre bisherige Datei liegt, und tippen Sie auf „Sichern“. Fragt das iPad, ob die vorhandene Datei ersetzt werden soll, bestätigen Sie das."],
-      [{ text: "Weiter", wert: true, primaer: true }, { text: "Abbrechen", wert: false }]);
+      [{ text: t("Weiter"), wert: true, primaer: true }, { text: t("Abbrechen"), wert: false }]);
     if (!weiter) throw new DOMException("Abgebrochen", "AbortError");
     zustand.teilenHinweisGezeigt = true;
   }
@@ -677,7 +749,7 @@ async function neuAnlegen() {
   const daten = leereDaten();
   daten.lastModified = new Date().toISOString();
   tresorVergessen();
-  Object.assign(zustand, { daten, handle: null, dateiname: STANDARDNAME, geaendert: true, gesichertAm: null, ansicht: "uebersicht" });
+  Object.assign(zustand, { daten, handle: null, dateiname: standardName(), geaendert: true, gesichertAm: null, ansicht: "uebersicht" });
   await imGeraetSpeichern();
   alles();
 }
@@ -726,7 +798,7 @@ async function sichern() {
   try {
     if (hatFsa) {
       if (!zustand.handle) {
-        const handle = await speicherortWaehlen(zustand.dateiname || STANDARDNAME);
+        const handle = await speicherortWaehlen(zustand.dateiname || standardName());
         if (!handle) return false;
         zustand.handle = handle;
       }
@@ -738,7 +810,7 @@ async function sichern() {
       await inHandleSchreiben(zustand.handle, alsText());
       zustand.dateiname = zustand.handle.name;
     } else {
-      const name = zustand.dateiname || STANDARDNAME;
+      const name = zustand.dateiname || standardName();
       weg = kannTeilen && (await teilen(alsText(), name)) ? "teilen" : "download";
       if (weg === "download") herunterladen(alsText(), name);
     }
@@ -755,7 +827,7 @@ async function sichern() {
   if (weg === "download" && !zustand.downloadHinweisGezeigt) {
     zustand.downloadHinweisGezeigt = true;
     await melden("Datei liegt im Download-Ordner",
-      `Ihr Ordner wurde als „${zustand.dateiname}“ in Ihren Download-Ordner gespeichert.`,
+      t("Ihr Ordner wurde als „{name}“ in Ihren Download-Ordner gespeichert.", { name: zustand.dateiname }),
       "Bitte verschieben Sie diese Datei jetzt an den Ort Ihrer bisherigen Datei und ersetzen Sie die alte Datei damit. Sonst öffnen Sie beim nächsten Mal versehentlich den alten Stand.",
       "Steht im Dateinamen eine Zahl in Klammern, zum Beispiel „(1)“, hat der Browser die Datei umbenannt. Löschen Sie dann die alte Datei und entfernen Sie die Zahl aus dem neuen Namen.");
   }
@@ -764,7 +836,7 @@ async function sichern() {
 
 function fehlerText(e) {
   if (e && e.name === "NotAllowedError") return "Der Browser hat den Zugriff auf die Datei nicht erlaubt.";
-  return "Technische Meldung: " + (e && e.message ? e.message : String(e));
+  return t("Technische Meldung: {text}", { text: e && e.message ? e.message : String(e) });
 }
 
 /* ---------- Daten ändern ---------- */
@@ -839,7 +911,9 @@ async function tresorEntschluesseln(passwort) {
   const salt = ausB64(z.salt);
   const schluessel = await schluesselAbleiten(passwort, salt, z.runden);
   const klar = await crypto.subtle.decrypt({ name: "AES-GCM", iv: ausB64(z.iv) }, schluessel, ausB64(z.daten));
-  return { schluessel, salt, runden: z.runden, inhalt: JSON.parse(new TextDecoder().decode(klar)) };
+  const inhalt = JSON.parse(new TextDecoder().decode(klar));
+  (inhalt.eintraege || []).forEach(e => { e.art = normWert(e.art, "zugangArt"); });
+  return { schluessel, salt, runden: z.runden, inhalt };
 }
 
 function tresorGeaendert() {
@@ -893,21 +967,21 @@ function tresorAnlegen() {
   const hakenId = neueId();
   const haken = el("input", { type: "checkbox", id: hakenId });
   const fehler = fehlerZeile();
-  const knopf = el("button", { type: "submit", class: "btn primaer", text: "Zugangsdaten schützen" });
+  const knopf = el("button", { type: "submit", class: "btn primaer", text: t("Zugangsdaten schützen") });
   const formular = el("form", { class: "felder", novalidate: true },
     eins.feld, zwei.feld,
     el("div", { class: "bestaetigung breit" }, haken,
-      el("label", { for: hakenId, text: "Ich habe verstanden: Ohne dieses Passwort sind die Zugangsdaten verloren." })),
+      el("label", { for: hakenId, text: t("Ich habe verstanden: Ohne dieses Passwort sind die Zugangsdaten verloren.") })),
     fehler, el("div", { class: "knopfreihe breit" }, knopf));
   formular.addEventListener("submit", async e => {
     e.preventDefault();
     const pw = eins.eingabe.value;
     fehler.textContent = "";
-    if (pw.length < 10) { fehler.textContent = `Das Passwort ist zu kurz: ${pw.length} von mindestens 10 Zeichen.`; eins.eingabe.focus(); return; }
-    if (pw !== zwei.eingabe.value) { fehler.textContent = "Die beiden Eingaben stimmen nicht überein."; zwei.eingabe.focus(); return; }
-    if (!haken.checked) { fehler.textContent = "Bitte bestätigen Sie den Hinweis zum Passwort."; haken.focus(); return; }
+    if (pw.length < 10) { fehler.textContent = t("Das Passwort ist zu kurz: {n} von mindestens 10 Zeichen.", { n: pw.length }); eins.eingabe.focus(); return; }
+    if (pw !== zwei.eingabe.value) { fehler.textContent = t("Die beiden Eingaben stimmen nicht überein."); zwei.eingabe.focus(); return; }
+    if (!haken.checked) { fehler.textContent = t("Bitte bestätigen Sie den Hinweis zum Passwort."); haken.focus(); return; }
     knopf.disabled = true;
-    knopf.textContent = "Wird eingerichtet …";
+    knopf.textContent = t("Wird eingerichtet …");
     const salt = crypto.getRandomValues(new Uint8Array(16));
     Object.assign(tresor, { schluessel: await schluesselAbleiten(pw, salt, TRESOR_RUNDEN), salt, runden: TRESOR_RUNDEN, inhalt: { eintraege: [] } });
     await tresorVerschluesseln(zustand.daten);
@@ -920,8 +994,8 @@ function tresorAnlegen() {
       "Hinterlegen Sie das Passwort deshalb sicher, zum Beispiel bei Ihrem Testament, beim Notar oder in einem versiegelten Umschlag bei einer Vertrauensperson."],
       "gelb", "Wichtig: Merken Sie sich dieses Passwort gut"),
     el("section", { class: "formkarte" },
-      el("h3", { text: "Passwort für die Zugangsdaten festlegen" }),
-      el("p", { class: "kartenhilfe", text: "Dieses Passwort gilt nur für diesen Bereich. Alle anderen Bereiche bleiben ohne Passwort lesbar, damit Ihre Angehörigen im Notfall schnell an das Wichtigste kommen." }),
+      el("h3", { text: t("Passwort für die Zugangsdaten festlegen") }),
+      el("p", { class: "kartenhilfe", text: t("Dieses Passwort gilt nur für diesen Bereich. Alle anderen Bereiche bleiben ohne Passwort lesbar, damit Ihre Angehörigen im Notfall schnell an das Wichtigste kommen.") }),
       formular)
   ];
 }
@@ -929,28 +1003,28 @@ function tresorAnlegen() {
 function tresorOeffnen() {
   const pw = passwortFeld("Passwort für die Zugangsdaten");
   const fehler = fehlerZeile();
-  const knopf = el("button", { type: "submit", class: "btn primaer", text: "Öffnen" });
+  const knopf = el("button", { type: "submit", class: "btn primaer", text: t("Öffnen") });
   const formular = el("form", { class: "felder", novalidate: true }, pw.feld, fehler, el("div", { class: "knopfreihe breit" }, knopf));
   formular.addEventListener("submit", async e => {
     e.preventDefault();
     fehler.textContent = "";
     knopf.disabled = true;
-    knopf.textContent = "Wird geöffnet …";
+    knopf.textContent = t("Wird geöffnet …");
     try {
       Object.assign(tresor, await tresorEntschluesseln(pw.eingabe.value));
       sperreVerlaengern();
       inhaltZeigen();
     } catch {
-      fehler.textContent = "Das Passwort stimmt nicht. Bitte achten Sie auf Groß- und Kleinschreibung.";
+      fehler.textContent = t("Das Passwort stimmt nicht. Bitte achten Sie auf Groß- und Kleinschreibung.");
       pw.eingabe.value = "";
       pw.eingabe.focus();
       knopf.disabled = false;
-      knopf.textContent = "Öffnen";
+      knopf.textContent = t("Öffnen");
     }
   });
   return [el("section", { class: "formkarte" },
-    el("h3", { text: "Die Zugangsdaten sind gesperrt" }),
-    el("p", { class: "kartenhilfe", text: "Geben Sie das Passwort ein, das Sie für diesen Bereich festgelegt haben." }),
+    el("h3", { text: t("Die Zugangsdaten sind gesperrt") }),
+    el("p", { class: "kartenhilfe", text: t("Geben Sie das Passwort ein, das Sie für diesen Bereich festgelegt haben.") }),
     formular)];
 }
 
@@ -959,22 +1033,22 @@ function passwortAendern() {
   const neu = passwortFeld("Neues Passwort", "Mindestens 10 Zeichen.");
   const neu2 = passwortFeld("Neues Passwort wiederholen");
   const fehler = fehlerZeile();
-  const knopf = el("button", { type: "submit", class: "btn primaer", text: "Passwort ändern" });
+  const knopf = el("button", { type: "submit", class: "btn primaer", text: t("Passwort ändern") });
   const formular = el("form", { class: "felder", novalidate: true }, alt.feld, neu.feld, neu2.feld, fehler,
     el("div", { class: "knopfreihe breit" }, knopf,
-      el("button", { type: "button", class: "btn", text: "Abbrechen", onclick: () => { tresor.aendern = false; inhaltZeigen(); } })));
+      el("button", { type: "button", class: "btn", text: t("Abbrechen"), onclick: () => { tresor.aendern = false; inhaltZeigen(); } })));
   formular.addEventListener("submit", async e => {
     e.preventDefault();
     fehler.textContent = "";
     const pw = neu.eingabe.value;
-    if (pw.length < 10) { fehler.textContent = `Das neue Passwort ist zu kurz: ${pw.length} von mindestens 10 Zeichen.`; return; }
-    if (pw !== neu2.eingabe.value) { fehler.textContent = "Die beiden neuen Eingaben stimmen nicht überein."; return; }
+    if (pw.length < 10) { fehler.textContent = t("Das neue Passwort ist zu kurz: {n} von mindestens 10 Zeichen.", { n: pw.length }); return; }
+    if (pw !== neu2.eingabe.value) { fehler.textContent = t("Die beiden neuen Eingaben stimmen nicht überein."); return; }
     knopf.disabled = true;
     if (tresorTimer) await tresorSichern(); else await tresorLauf;
     try {
       await tresorEntschluesseln(alt.eingabe.value);
     } catch {
-      fehler.textContent = "Das bisherige Passwort stimmt nicht.";
+      fehler.textContent = t("Das bisherige Passwort stimmt nicht.");
       knopf.disabled = false;
       return;
     }
@@ -987,17 +1061,17 @@ function passwortAendern() {
       "Ersetzen Sie auch das hinterlegte Passwort, zum Beispiel im Umschlag oder beim Notar.",
       "Ältere Sicherungsdateien lassen sich weiterhin nur mit dem bisherigen Passwort öffnen. Sichern Sie Ihren Ordner deshalb jetzt neu als Datei.");
   });
-  return el("section", { class: "formkarte" }, el("h3", { text: "Passwort ändern" }), formular);
+  return el("section", { class: "formkarte" }, el("h3", { text: t("Passwort ändern") }), formular);
 }
 
 function tresorInhalt() {
   return [
     el("section", { class: "formkarte offen" },
-      el("h3", {}, symbol("schloss", "klein", "#23a149"), " Geöffnet"),
-      el("p", { class: "kartenhilfe", text: "Der Bereich sperrt sich nach 10 Minuten ohne Eingabe von selbst." }),
+      el("h3", {}, symbol("schloss", "klein", "#23a149"), " " + t("Geöffnet")),
+      el("p", { class: "kartenhilfe", text: t("Der Bereich sperrt sich nach 10 Minuten ohne Eingabe von selbst.") }),
       el("div", { class: "knopfreihe" },
-        el("button", { type: "button", class: "btn primaer", text: "Jetzt sperren", onclick: tresorSperren }),
-        tresor.aendern ? null : el("button", { type: "button", class: "btn", text: "Passwort ändern", onclick: () => { tresor.aendern = true; inhaltZeigen(); } }))),
+        el("button", { type: "button", class: "btn primaer", text: t("Jetzt sperren"), onclick: tresorSperren }),
+        tresor.aendern ? null : el("button", { type: "button", class: "btn", text: t("Passwort ändern"), onclick: () => { tresor.aendern = true; inhaltZeigen(); } }))),
     tresor.aendern ? passwortAendern() : null,
     hinweis("Bitte tragen Sie hier keine Bank-PIN, keine TAN und keine Zugänge zum Online-Banking ein. Ihre Angehörigen bekommen mit Vollmacht oder Erbschein über die Bank Zugang zu Ihren Konten."),
     gruppe("Ihre Zugangsdaten", "Zum Beispiel der Code für Ihr Handy, das Passwort für den Computer oder für Ihr E-Mail-Postfach.",
@@ -1006,7 +1080,7 @@ function tresorInhalt() {
         neu: () => ({ art: "", bezeichnung: "", benutzer: "", passwort: "", notiz: "" }),
         kopf: z => z.bezeichnung,
         felder: p => [
-          feld(p + ".art", "Art", { typ: "auswahl", optionen: ["Handy oder Tablet", "Computer", "E-Mail", "Online-Konto", "WLAN", "Sonstiges"] }),
+          feld(p + ".art", "Art", { typ: "auswahl", optionen: "zugangArt" }),
           feld(p + ".bezeichnung", "Wofür?", { hilfe: "Zum Beispiel: iPhone, Amazon, GMX" }),
           feld(p + ".benutzer", "Benutzername oder E-Mail-Adresse", { breit: true }),
           feld(p + ".passwort", "Passwort, PIN oder Code", { typ: "password", breit: true }),
@@ -1031,12 +1105,12 @@ function statusZeigen() {
   let pille;
   if (!zustand.geraetOk) {
     pille = zustand.geaendert
-      ? el("span", { class: "pille offen", text: "Noch nicht als Datei gesichert" })
-      : el("span", { class: "pille ok", text: "Als Datei gesichert" });
+      ? el("span", { class: "pille offen", text: t("Noch nicht als Datei gesichert") })
+      : el("span", { class: "pille ok", text: t("Als Datei gesichert") });
   } else if (zustand.speichertGerade || tresorTimer) {
-    pille = el("span", { class: "pille", text: "Wird gespeichert …" });
+    pille = el("span", { class: "pille", text: t("Wird gespeichert …") });
   } else {
-    pille = el("span", { class: "pille ok", text: "Auf diesem Gerät gespeichert" });
+    pille = el("span", { class: "pille ok", text: t("Auf diesem Gerät gespeichert") });
   }
   box.replaceChildren(pille);
 }
@@ -1047,7 +1121,7 @@ function navZeigen() {
       type: "button",
       "aria-current": zustand.ansicht === id ? "page" : false,
       onclick: () => wechseln(id)
-    }, symbol(sym, "klein", farbe), el("span", { text: titel })));
+    }, symbol(sym, "klein", farbe), el("span", { text: t(titel) })));
   $("navStart").replaceChildren(punkt("uebersicht", "Übersicht", "raster", "#0a64c8"));
   $("navliste").replaceChildren(...BEREICHE.map(b => punkt(b.id, b.titel, b.symbol, b.farbe)));
 }
@@ -1070,12 +1144,12 @@ function inhaltZeigen() {
   const nr = BEREICHE.findIndex(b => b.id === zustand.ansicht);
   const b = BEREICHE[nr];
   const kinder = [
-    el("button", { type: "button", class: "btn flach zurueck-oben", onclick: () => wechseln("uebersicht"), text: "‹ Übersicht" }),
+    el("button", { type: "button", class: "btn flach zurueck-oben", onclick: () => wechseln("uebersicht"), text: t("‹ Übersicht") }),
     el("div", { class: "seitenkopf" },
       symbol(b.symbol, "gross", b.farbe),
       el("div", {},
-        el("h2", { tabindex: "-1", text: b.titel }),
-        el("p", { text: b.text })))
+        el("h2", { tabindex: "-1", text: t(b.titel) }),
+        el("p", { text: t(b.text) })))
   ];
   const form = FORMULARE[b.id];
   if (form) kinder.push(el("div", { class: "bereichinhalt" }, ...form()));
@@ -1088,45 +1162,45 @@ function blaettern(nr) {
   const nach = BEREICHE[nr + 1];
   return el("div", { class: "blaettern" },
     vor
-      ? el("button", { type: "button", class: "btn", onclick: () => wechseln(vor.id), text: `‹ ${vor.titel}` })
-      : el("button", { type: "button", class: "btn", onclick: () => wechseln("uebersicht"), text: "‹ Übersicht" }),
+      ? el("button", { type: "button", class: "btn", onclick: () => wechseln(vor.id), text: `‹ ${t(vor.titel)}` })
+      : el("button", { type: "button", class: "btn", onclick: () => wechseln("uebersicht"), text: t("‹ Übersicht") }),
     nach
-      ? el("button", { type: "button", class: "btn primaer", onclick: () => wechseln(nach.id), text: `${nach.titel} ›` })
-      : el("button", { type: "button", class: "btn primaer", onclick: () => wechseln("uebersicht"), text: "Zur Übersicht ›" }));
+      ? el("button", { type: "button", class: "btn primaer", onclick: () => wechseln(nach.id), text: `${t(nach.titel)} ›` })
+      : el("button", { type: "button", class: "btn primaer", onclick: () => wechseln("uebersicht"), text: t("Zur Übersicht ›") }));
 }
 
 function sicherungsKarte() {
   const tage = zustand.gesichertAm ? Math.floor((Date.now() - new Date(zustand.gesichertAm)) / 864e5) : null;
   // Erinnern erst, wenn eine vorhandene Sicherung veraltet ist. Beim ersten Ausfüllen wird nicht gedrängelt.
   const dringend = zustand.geaendert && tage !== null && tage >= 30;
-  const stand = zustand.gesichertAm ? `Letzte Sicherung: ${datumText(zustand.gesichertAm)}` : "Noch nicht als Datei gesichert";
+  const stand = zustand.gesichertAm ? t("Letzte Sicherung: {datum}", { datum: datumText(zustand.gesichertAm) }) : t("Noch nicht als Datei gesichert");
   return el("section", { class: "formkarte sicherung" + (dringend ? " dringend" : "") },
-    el("h3", { text: "Sicherung als Datei" }),
-    el("p", { class: "kartenhilfe", text: zustand.geraetOk
+    el("h3", { text: t("Sicherung als Datei") }),
+    el("p", { class: "kartenhilfe", text: t(zustand.geraetOk
       ? "Ihre Eingaben bleiben auf diesem Gerät gespeichert, Sie können jederzeit weitermachen. Wenn Sie fertig sind oder etwas Wichtiges geändert haben, sichern Sie Ihren Ordner als Datei, zum Beispiel für einen USB-Stick oder für Ihre Angehörigen."
-      : "Dieser Browser kann Ihre Eingaben nicht auf dem Gerät behalten. Bitte sichern Sie Ihren Ordner als Datei, bevor Sie die App schließen." }),
+      : "Dieser Browser kann Ihre Eingaben nicht auf dem Gerät behalten. Bitte sichern Sie Ihren Ordner als Datei, bevor Sie die App schließen.") }),
     el("p", { class: "sicherungsstand" }, el("strong", { text: stand }),
-      zustand.gesichertAm && zustand.geaendert ? " · seitdem geändert" : null),
+      zustand.gesichertAm && zustand.geaendert ? " · " + t("seitdem geändert") : null),
     el("div", { class: "knopfreihe" },
-      el("button", { type: "button", class: "btn primaer", onclick: sichern, text: "Als Datei sichern" }),
-      zustand.geraetOk ? el("button", { type: "button", class: "btn flach loeschen", onclick: vomGeraetLoeschen, text: "Von diesem Gerät löschen" }) : null));
+      el("button", { type: "button", class: "btn primaer", onclick: sichern, text: t("Als Datei sichern") }),
+      zustand.geraetOk ? el("button", { type: "button", class: "btn flach loeschen", onclick: vomGeraetLoeschen, text: t("Von diesem Gerät löschen") }) : null));
 }
 
 function uebersicht() {
   return [
     el("div", { class: "seitenkopf" },
       el("div", {},
-        el("h2", { tabindex: "-1", text: "Mein Ordner" }),
-        el("p", { class: "stand" }, "Zuletzt geändert: ", el("strong", { text: datumText(zustand.daten.lastModified) })))),
+        el("h2", { tabindex: "-1", text: t("Mein Ordner") }),
+        el("p", { class: "stand" }, t("Zuletzt geändert:") + " ", el("strong", { text: datumText(zustand.daten.lastModified) })))),
     el("ul", { class: "kacheln" },
       ...BEREICHE.map(b => el("li", {},
         el("button", { type: "button", class: "kachel", onclick: () => wechseln(b.id) },
           symbol(b.symbol, "mittel", b.farbe),
           el("span", {},
-            el("span", { class: "name", text: b.titel }),
-            el("span", { class: "unter", text: b.text })))))),
+            el("span", { class: "name", text: t(b.titel) }),
+            el("span", { class: "unter", text: t(b.text) })))))),
     sicherungsKarte(),
-    el("p", { class: "kleingedruckt", text: "Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form. Die Inhalte beziehen sich auf deutsches Recht." })
+    el("p", { class: "kleingedruckt", text: t("Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form. Die Inhalte beziehen sich auf deutsches Recht.") })
   ];
 }
 
@@ -1143,33 +1217,35 @@ function feld(pfad, beschriftung, opt = {}) {
   if (typ === "mehrzeilig") {
     eingabe = el("textarea", { id, rows: opt.zeilen || 4 });
   } else if (typ === "auswahl") {
-    const optionen = opt.optionen.includes(wert) || wert === "" ? opt.optionen : [...opt.optionen, wert];
+    const werte = OPTIONEN[opt.optionen];
+    const aktuell = normWert(wert, opt.optionen);
     eingabe = el("select", { id },
-      el("option", { value: "", text: "Bitte wählen" }),
-      ...optionen.map(o => el("option", { value: o, text: o })));
+      el("option", { value: "", text: t("Bitte wählen") }),
+      ...Object.keys(werte).map(k => el("option", { value: k, text: t(werte[k]) })),
+      aktuell && !(aktuell in werte) ? el("option", { value: aktuell, text: aktuell }) : null);
   } else {
     eingabe = el("input", { id, type: typ, autocomplete: "off", inputmode: opt.eingabemodus, autocapitalize: opt.gross ? "characters" : null });
   }
-  eingabe.value = wert;
+  eingabe.value = typ === "auswahl" ? normWert(wert, opt.optionen) : wert;
   eingabe.addEventListener(typ === "auswahl" ? "change" : "input", () => {
     pfadSchreiben(pfad, eingabe.value);
     if (opt.beiAenderung) opt.beiAenderung(eingabe.value);
   });
   let hilfe = null;
   if (opt.hilfe) {
-    hilfe = el("p", { class: "hilfe", id: id + "h", text: opt.hilfe });
+    hilfe = el("p", { class: "hilfe", id: id + "h", text: t(opt.hilfe) });
     eingabe.setAttribute("aria-describedby", id + "h");
   }
   return el("div", { class: "feld" + (opt.breit || typ === "mehrzeilig" ? " breit" : "") },
-    el("label", { for: id, text: beschriftung }), hilfe, typ === "password" ? geheimZeile(eingabe) : eingabe);
+    el("label", { for: id, text: t(beschriftung) }), hilfe, typ === "password" ? geheimZeile(eingabe) : eingabe);
 }
 
 function geheimZeile(eingabe) {
-  const knopf = el("button", { type: "button", class: "btn zeigen", "aria-pressed": "false", text: "Anzeigen" });
+  const knopf = el("button", { type: "button", class: "btn zeigen", "aria-pressed": "false", text: t("Anzeigen") });
   knopf.addEventListener("click", () => {
     const sichtbar = eingabe.type === "password";
     eingabe.type = sichtbar ? "text" : "password";
-    knopf.textContent = sichtbar ? "Verbergen" : "Anzeigen";
+    knopf.textContent = t(sichtbar ? "Verbergen" : "Anzeigen");
     knopf.setAttribute("aria-pressed", String(sichtbar));
   });
   return el("div", { class: "geheimzeile" }, eingabe, knopf);
@@ -1178,9 +1254,9 @@ function geheimZeile(eingabe) {
 function passwortFeld(beschriftung, hilfe) {
   const id = neueId();
   const eingabe = el("input", { id, type: "password", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
-  const teile = [el("label", { for: id, text: beschriftung })];
+  const teile = [el("label", { for: id, text: t(beschriftung) })];
   if (hilfe) {
-    teile.push(el("p", { class: "hilfe", id: id + "h", text: hilfe }));
+    teile.push(el("p", { class: "hilfe", id: id + "h", text: t(hilfe) }));
     eingabe.setAttribute("aria-describedby", id + "h");
   }
   return { eingabe, feld: el("div", { class: "feld breit" }, ...teile, geheimZeile(eingabe)) };
@@ -1188,31 +1264,32 @@ function passwortFeld(beschriftung, hilfe) {
 
 function wahl(pfad, frage, optionen, opt = {}) {
   const name = neueId();
-  const aktuell = pfadLesen(pfad) ?? "";
+  const aktuell = normWert(pfadLesen(pfad) ?? "", optionen);
+  const werte = OPTIONEN[optionen];
   return el("fieldset", { class: "wahl breit" },
-    el("legend", { text: frage }),
-    opt.hilfe ? el("p", { class: "hilfe", text: opt.hilfe }) : null,
-    el("div", { class: "optionen" }, ...optionen.map(o => {
-      const knopf = el("input", { type: "radio", name, value: o, checked: o === aktuell });
+    el("legend", { text: t(frage) }),
+    opt.hilfe ? el("p", { class: "hilfe", text: t(opt.hilfe) }) : null,
+    el("div", { class: "optionen" }, ...Object.keys(werte).map(k => {
+      const knopf = el("input", { type: "radio", name, value: k, checked: k === aktuell });
       knopf.addEventListener("change", () => {
-        pfadSchreiben(pfad, o);
-        if (opt.beiAenderung) opt.beiAenderung(o);
+        pfadSchreiben(pfad, k);
+        if (opt.beiAenderung) opt.beiAenderung(k);
       });
-      return el("label", {}, knopf, el("span", { text: o }));
+      return el("label", {}, knopf, el("span", { text: t(werte[k]) }));
     })));
 }
 
 function gruppe(titel, hilfe, ...kinder) {
   return el("section", { class: "formkarte" },
-    el("h3", { text: titel }),
-    hilfe ? el("p", { class: "kartenhilfe", text: hilfe }) : null,
+    el("h3", { text: t(titel) }),
+    hilfe ? el("p", { class: "kartenhilfe", text: t(hilfe) }) : null,
     el("div", { class: "felder" }, ...kinder));
 }
 
 function hinweis(text, art = "info", titel = null) {
   return el("div", { class: "hinweis " + art + " breit" },
-    titel ? el("p", {}, el("strong", { text: titel })) : null,
-    ...[].concat(text).map(t => el("p", { text: t })));
+    titel ? el("p", {}, el("strong", { text: t(titel) })) : null,
+    ...[].concat(text).map(a => el("p", { text: t(a) })));
 }
 
 // Wird ein- oder ausgeblendet, je nachdem was der Nutzer vorher gewählt hat.
@@ -1224,7 +1301,7 @@ function bedingt(sichtbar, ...kinder) {
 
 function liste(pfad, cfg) {
   const box = el("div", { class: "liste breit" });
-  const titelVon = (eintrag, i) => cfg.kopf(eintrag) || `${cfg.einzahl} ${i + 1}`;
+  const titelVon = (eintrag, i) => cfg.kopf(eintrag) || `${t(cfg.einzahl)} ${i + 1}`;
 
   const zeichnen = fokusNeu => {
     const eintraege = pfadLesen(pfad);
@@ -1235,12 +1312,12 @@ function liste(pfad, cfg) {
           kopf,
           el("button", {
             type: "button", class: "btn entfernen",
-            "aria-label": `${titelVon(eintrag, i)} entfernen`,
-            text: "Entfernen",
+            "aria-label": t("{name} entfernen", { name: titelVon(eintrag, i) }),
+            text: t("Entfernen"),
             onclick: async () => {
-              const ok = await fragen(`${cfg.einzahl} entfernen?`,
-                [`„${titelVon(eintrag, i)}“ wird aus Ihrem Ordner gelöscht.`],
-                [{ text: "Entfernen", wert: true, primaer: true }, { text: "Abbrechen", wert: false }]);
+              const ok = await fragen(t("{name} entfernen?", { name: t(cfg.einzahl) }),
+                [t("„{name}“ wird aus Ihrem Ordner gelöscht.", { name: titelVon(eintrag, i) })],
+                [{ text: t("Entfernen"), wert: true, primaer: true }, { text: t("Abbrechen"), wert: false }]);
               if (!ok) return;
               eintraege.splice(i, 1);
               aenderung(pfad);
@@ -1255,7 +1332,7 @@ function liste(pfad, cfg) {
     box.replaceChildren(...karten,
       el("button", {
         type: "button", class: "btn hinzufuegen",
-        text: `+ ${cfg.hinzu || cfg.einzahl} hinzufügen`,
+        text: t("+ {name} hinzufügen", { name: t(cfg.hinzu || cfg.einzahl) }),
         onclick: () => {
           eintraege.push(cfg.neu());
           aenderung(pfad);
@@ -1272,10 +1349,10 @@ function liste(pfad, cfg) {
 }
 
 function sprungKnopf(ziel, text) {
-  return el("button", { type: "button", class: "btn flach sprung", onclick: () => wechseln(ziel), text });
+  return el("button", { type: "button", class: "btn flach sprung", onclick: () => wechseln(ziel), text: t(text) });
 }
 
-const JA_NEIN = ["Ja", "Nein", "Weiß nicht"];
+const JA_NEIN = "jaNein";
 
 /* ---------- Formulare der Bereiche ---------- */
 
@@ -1288,8 +1365,7 @@ const FORMULARE = {
       feld("persoenlich.geburtsdatum", "Geburtsdatum", { typ: "date" }),
       feld("persoenlich.geburtsort", "Geburtsort"),
       feld("persoenlich.staatsangehoerigkeit", "Staatsangehörigkeit"),
-      feld("persoenlich.familienstand", "Familienstand", { typ: "auswahl", optionen: [
-        "ledig", "verheiratet", "eingetragene Lebenspartnerschaft", "getrennt lebend", "geschieden", "verwitwet"] })),
+      feld("persoenlich.familienstand", "Familienstand", { typ: "auswahl", optionen: "familienstand" })),
     gruppe("Anschrift und Erreichbarkeit", null,
       feld("persoenlich.strasse", "Straße und Hausnummer", { breit: true }),
       feld("persoenlich.plz", "Postleitzahl", { eingabemodus: "numeric" }),
@@ -1317,8 +1393,7 @@ const FORMULARE = {
         felder: (p) => [
           feld(p + ".name", "Name"),
           feld(p + ".beziehung", "Beziehung zu Ihnen", { hilfe: "Zum Beispiel: Tochter, Nachbar" }),
-          feld(p + ".rolle", "Rolle", { typ: "auswahl", optionen: [
-            "Angehörige/r", "Bevollmächtigte/r", "Betreuer/in", "Nachbar/in", "Freund/in", "Sonstige"] }),
+          feld(p + ".rolle", "Rolle", { typ: "auswahl", optionen: "rolle" }),
           feld(p + ".telefon", "Telefon", { typ: "tel" }),
           feld(p + ".mobil", "Handy", { typ: "tel" }),
           feld(p + ".email", "E-Mail", { typ: "email" }),
@@ -1349,7 +1424,7 @@ const FORMULARE = {
       feld("gesundheit.krankenkasse.name", "Krankenkasse"),
       feld("gesundheit.krankenkasse.versichertennummer", "Versichertennummer", { hilfe: "Steht auf der Gesundheitskarte.", gross: true }),
       feld("gesundheit.krankenkasse.telefon", "Telefon der Krankenkasse", { typ: "tel" }),
-      feld("gesundheit.pflegegrad", "Pflegegrad", { typ: "auswahl", optionen: ["kein Pflegegrad", "1", "2", "3", "4", "5", "beantragt"] })),
+      feld("gesundheit.pflegegrad", "Pflegegrad", { typ: "auswahl", optionen: "pflegegrad" })),
     gruppe("Medikamente", "Was nehmen Sie regelmäßig ein?",
       liste("gesundheit.medikamente", {
         einzahl: "Medikament",
@@ -1364,15 +1439,16 @@ const FORMULARE = {
     gruppe("Allergien und Erkrankungen", null,
       feld("gesundheit.allergien", "Allergien und Unverträglichkeiten", { typ: "mehrzeilig", zeilen: 2 }),
       feld("gesundheit.vorerkrankungen", "Wichtige Erkrankungen, Implantate, Herzschrittmacher", { typ: "mehrzeilig", zeilen: 3 }),
-      feld("gesundheit.blutgruppe", "Blutgruppe", { typ: "auswahl", optionen: ["0 positiv", "0 negativ", "A positiv", "A negativ", "B positiv", "B negativ", "AB positiv", "AB negativ", "unbekannt"] })),
+      feld("gesundheit.blutgruppe", "Blutgruppe", { typ: "auswahl", optionen: "blutgruppe" })),
     (() => {
-      const ausweis = bedingt(pfadLesen("gesundheit.organspende") === "Ja" || pfadLesen("gesundheit.organspende") === "Nur bestimmte Organe",
+      const spendet = v => v === "ja" || v === "teilweise";
+      const ausweis = bedingt(spendet(normWert(pfadLesen("gesundheit.organspende"), "organspende")),
         el("div", { class: "felder" }, feld("gesundheit.ablageOrganspendeausweis", "Wo liegt Ihr Organspendeausweis?", { breit: true })));
       return gruppe("Organspende", null,
-        wahl("gesundheit.organspende", "Möchten Sie Organe spenden?", ["Ja", "Nein", "Nur bestimmte Organe", "Noch nicht entschieden"],
-          { beiAenderung: v => { ausweis.hidden = !(v === "Ja" || v === "Nur bestimmte Organe"); } }),
+        wahl("gesundheit.organspende", "Möchten Sie Organe spenden?", "organspende",
+          { beiAenderung: v => { ausweis.hidden = !spendet(v); } }),
         ausweis,
-        el("p", { class: "verweis breit" }, "Die Patientenverfügung tragen Sie im Bereich Vollmachten ein. ", sprungKnopf("vollmachten", "Zu den Vollmachten ›")));
+        el("p", { class: "verweis breit" }, t("Die Patientenverfügung tragen Sie im Bereich Vollmachten ein.") + " ", sprungKnopf("vollmachten", "Zu den Vollmachten ›")));
     })(),
     gruppe("Sonstiges", null, feld("gesundheit.notizen", "Weitere Hinweise für Ärzte", { typ: "mehrzeilig", zeilen: 3 }))
   ],
@@ -1380,14 +1456,14 @@ const FORMULARE = {
   vollmachten: () => {
     const block = (schluessel, titel, erklaerung, register) => {
       const basis = "vollmachten." + schluessel;
-      const details = bedingt(pfadLesen(basis + ".vorhanden") === "Ja",
+      const details = bedingt(normWert(pfadLesen(basis + ".vorhanden"), "jaNein") === "ja",
         el("div", { class: "felder" },
           feld(basis + ".bevollmaechtigt", schluessel === "patientenverfuegung" ? "Wer soll Ihren Willen durchsetzen?" : "Wer ist bevollmächtigt?", { breit: true }),
           feld(basis + ".ablage", "Wo liegt das Original?", { breit: true }),
           register ? wahl(basis + ".registriert", "Im Zentralen Vorsorgeregister eingetragen?", JA_NEIN,
             { hilfe: "Dort können Ärzte und Gerichte nachsehen, ob es eine Vollmacht gibt." }) : null));
       return gruppe(titel, erklaerung,
-        wahl(basis + ".vorhanden", "Haben Sie das?", JA_NEIN, { beiAenderung: v => { details.hidden = v !== "Ja"; } }),
+        wahl(basis + ".vorhanden", "Haben Sie das?", JA_NEIN, { beiAenderung: v => { details.hidden = v !== "ja"; } }),
         details);
     };
     return [
@@ -1409,11 +1485,10 @@ const FORMULARE = {
       liste("finanzen.konten", {
         einzahl: "Konto",
         neu: () => ({ bank: "", kontoart: "", iban: "", ansprechpartner: "", telefon: "", vollmachtUeberTod: "", bevollmaechtigt: "", notiz: "" }),
-        kopf: k => [k.bank, k.kontoart].filter(Boolean).join(" · "),
+        kopf: k => [k.bank, optText("kontoart", k.kontoart)].filter(Boolean).join(" · "),
         felder: p => [
           feld(p + ".bank", "Bank"),
-          feld(p + ".kontoart", "Art", { typ: "auswahl", optionen: [
-            "Girokonto", "Sparkonto", "Tagesgeld", "Festgeld", "Depot", "Bausparvertrag", "Kreditkarte", "Darlehen / Kredit", "Sonstiges"] }),
+          feld(p + ".kontoart", "Art", { typ: "auswahl", optionen: "kontoart" }),
           feld(p + ".iban", "IBAN", { gross: true, breit: true }),
           feld(p + ".ansprechpartner", "Ansprechpartner bei der Bank"),
           feld(p + ".telefon", "Telefon", { typ: "tel" }),
@@ -1429,21 +1504,18 @@ const FORMULARE = {
   ],
 
   versicherungen: () => {
-    const eilig = ["Lebensversicherung", "Sterbegeldversicherung", "Unfallversicherung"];
+    const eilig = ["leben", "sterbegeld", "unfall"];
     return [
       gruppe("Ihre Versicherungen", null,
         liste("versicherungen", {
           einzahl: "Versicherung",
           neu: () => ({ art: "", gesellschaft: "", vertragsnummer: "", beguenstigt: "", ablage: "", notiz: "" }),
-          kopf: v => [v.art, v.gesellschaft].filter(Boolean).join(" · "),
+          kopf: v => [optText("versicherung", v.art), v.gesellschaft].filter(Boolean).join(" · "),
           felder: (p, v) => {
-            const frist = bedingt(eilig.includes(v.art),
+            const frist = bedingt(eilig.includes(normWert(v.art, "versicherung")),
               hinweis("Diese Versicherung muss nach einem Todesfall sofort gemeldet werden, bei Unfallversicherungen meist innerhalb von 48 Stunden. Die genaue Frist steht in Ihren Vertragsunterlagen.", "gelb", "Eilt im Todesfall"));
             return [
-              feld(p + ".art", "Art", { typ: "auswahl", optionen: [
-                "Lebensversicherung", "Sterbegeldversicherung", "Unfallversicherung", "Private Rentenversicherung",
-                "Haftpflicht", "Hausrat", "Wohngebäude", "Kfz", "Rechtsschutz", "Berufsunfähigkeit",
-                "Private Kranken- oder Zusatzversicherung", "Pflegezusatzversicherung", "Sonstige"],
+              feld(p + ".art", "Art", { typ: "auswahl", optionen: "versicherung",
                 beiAenderung: w => { frist.hidden = !eilig.includes(w); } }),
               feld(p + ".gesellschaft", "Versicherungsgesellschaft"),
               frist,
@@ -1463,11 +1535,9 @@ const FORMULARE = {
       liste("vertraege", {
         einzahl: "Vertrag",
         neu: () => ({ art: "", anbieter: "", vertragsnummer: "", kosten: "", kuendigung: "", notiz: "" }),
-        kopf: v => [v.art, v.anbieter].filter(Boolean).join(" · "),
+        kopf: v => [optText("vertrag", v.art), v.anbieter].filter(Boolean).join(" · "),
         felder: p => [
-          feld(p + ".art", "Art", { typ: "auswahl", optionen: [
-            "Miete", "Strom", "Gas", "Wasser", "Telefon und Internet", "Handy", "Rundfunkbeitrag",
-            "Streaming", "Zeitung oder Zeitschrift", "Verein oder Mitgliedschaft", "Fitnessstudio", "Sonstiges"] }),
+          feld(p + ".art", "Art", { typ: "auswahl", optionen: "vertrag" }),
           feld(p + ".anbieter", "Anbieter"),
           feld(p + ".vertragsnummer", "Vertrags- oder Kundennummer", { gross: true }),
           feld(p + ".kosten", "Kosten", { hilfe: "Zum Beispiel: 12,99 € im Monat" }),
@@ -1479,8 +1549,7 @@ const FORMULARE = {
 
   wohnen: () => [
     gruppe("Ihre Wohnung", null,
-      feld("wohnen.wohnform", "Wie wohnen Sie?", { typ: "auswahl", optionen: [
-        "zur Miete", "im Eigentum", "mit Wohnrecht", "in einer Pflegeeinrichtung", "Sonstiges"] }),
+      feld("wohnen.wohnform", "Wie wohnen Sie?", { typ: "auswahl", optionen: "wohnform" }),
       feld("wohnen.vermieter", "Vermieter", { hilfe: "Name und Telefon" }),
       feld("wohnen.hausverwaltung", "Hausverwaltung", { hilfe: "Name und Telefon" }),
       feld("wohnen.ablageMietvertrag", "Wo liegt der Mietvertrag?"),
@@ -1514,16 +1583,14 @@ const FORMULARE = {
         neu: () => ({ kategorie: "", anbieter: "", benutzername: "", wunsch: "", uebertragenAn: "", notiz: "" }),
         kopf: k => k.anbieter,
         felder: (p, k) => {
-          const empfaenger = bedingt(k.wunsch === "An jemanden übertragen",
+          const empfaenger = bedingt(normWert(k.wunsch, "wunsch") === "uebertragen",
             el("div", { class: "felder" }, feld(p + ".uebertragenAn", "An wen?", { breit: true })));
           return [
-            feld(p + ".kategorie", "Art", { typ: "auswahl", optionen: [
-              "E-Mail", "Online-Shop", "Bezahldienst", "Soziales Netzwerk", "Messenger", "Cloud-Speicher",
-              "Streaming", "Online-Banking", "Sonstiges"] }),
+            feld(p + ".kategorie", "Art", { typ: "auswahl", optionen: "onlineArt" }),
             feld(p + ".anbieter", "Anbieter", { hilfe: "Zum Beispiel: Amazon, PayPal, GMX" }),
             feld(p + ".benutzername", "Benutzername oder E-Mail-Adresse", { breit: true }),
-            wahl(p + ".wunsch", "Was soll mit dem Konto geschehen?", ["Löschen", "In Gedenkzustand versetzen", "An jemanden übertragen"],
-              { beiAenderung: v => { empfaenger.hidden = v !== "An jemanden übertragen"; } }),
+            wahl(p + ".wunsch", "Was soll mit dem Konto geschehen?", "wunsch",
+              { beiAenderung: v => { empfaenger.hidden = v !== "uebertragen"; } }),
             empfaenger,
             feld(p + ".notiz", "Hinweis", { breit: true })
           ];
@@ -1536,8 +1603,7 @@ const FORMULARE = {
 
   sterbefall: () => [
     gruppe("Bestattung", null,
-      feld("sterbefall.bestattungsart", "Wie möchten Sie bestattet werden?", { typ: "auswahl", optionen: [
-        "Erdbestattung", "Feuerbestattung mit Urnengrab", "Seebestattung", "Baumbestattung", "Anonyme Bestattung", "Noch nicht entschieden", "Sonstiges"] }),
+      feld("sterbefall.bestattungsart", "Wie möchten Sie bestattet werden?", { typ: "auswahl", optionen: "bestattung" }),
       feld("sterbefall.bestatter", "Gewünschter Bestatter", { hilfe: "Name und Telefon" }),
       feld("sterbefall.vorsorgevertrag", "Gibt es einen Bestattungsvorsorgevertrag? Wo liegt er?", { breit: true }),
       feld("sterbefall.grabstelle", "Friedhof und Grabstelle", { breit: true, hilfe: "Zum Beispiel: Familiengrab auf dem Hauptfriedhof, Feld 12" })),
@@ -1567,8 +1633,8 @@ const FORMULARE = {
           geaendert();
         });
         return el("div", { class: "checkpunkt breit" },
-          el("label", { for: id }, el("span", { class: "kaestchen", "aria-hidden": "true" }), el("strong", { text: titel })),
-          el("p", { class: "hilfe", text: text }),
+          el("label", { for: id }, el("span", { class: "kaestchen", "aria-hidden": "true" }), el("strong", { text: t(titel) })),
+          text ? el("p", { class: "hilfe", text: t(text) }) : null,
           eingabe);
       }))
   ],
@@ -1622,7 +1688,55 @@ function startseiteFuellen() {
     ["drucker", "#e9810f", "Zum Ausdrucken für die Familie"]
   ];
   $("vorteile").replaceChildren(...vorteile.map(([sym, farbe, text]) =>
-    el("li", {}, symbol(sym, "mittel", farbe), el("span", { text }))));
+    el("li", {}, symbol(sym, "mittel", farbe), el("span", { text: t(text) }))));
+  $("hinweisBrowser").replaceChildren(kannTeilen
+    ? el("p", {}, el("strong", { text: t("So speichern Sie:") + " " }), t("Über „Als Datei sichern“ öffnet sich das Teilen-Fenster. Dort wählen Sie „In Dateien sichern“."))
+    : el("p", {}, el("strong", { text: t("Tipp:") + " " }), t("In diesem Browser landet jede gespeicherte Fassung im Download-Ordner. Bequemer geht es mit Google Chrome oder Microsoft Edge.")));
+}
+
+/* ---------- Sprache ---------- */
+
+function statischeTexte() {
+  document.documentElement.lang = sprache;
+  for (const knoten of document.querySelectorAll("[data-t]")) knoten.textContent = t(knoten.dataset.t);
+  $("navigation").setAttribute("aria-label", t("Bereiche"));
+  $("btnSprache").replaceChildren(el("span", { "aria-hidden": "true" }), SPRACHEN[sprache]);
+  $("btnSprache").firstChild.innerHTML = `<svg viewBox="0 0 24 24">${SYMBOLE.globus}</svg>`;
+  $("btnSprache").setAttribute("aria-label", t("Sprache wählen") + ": " + SPRACHEN[sprache]);
+}
+
+function spracheSetzen(code) {
+  sprache = code in SPRACHEN ? code : "de";
+  try { localStorage.setItem("klarordner.sprache", sprache); } catch {}
+  statischeTexte();
+  startseiteFuellen();
+  alles();
+}
+
+function spracheWaehlen() {
+  const dlg = $("dialog");
+  $("dialogTitel").textContent = t("Sprache wählen");
+  $("dialogText").replaceChildren(el("div", { class: "sprachliste" },
+    ...Object.entries(SPRACHEN).map(([code, name]) => el("button", {
+      type: "button", lang: code, class: "btn" + (code === sprache ? " primaer" : ""), text: name,
+      onclick: () => { dlg.close(); spracheSetzen(code); }
+    }))));
+  $("dialogKnoepfe").replaceChildren(el("button", { type: "button", class: "btn", text: t("Abbrechen"), onclick: () => dlg.close() }));
+  dlg.onclose = null;
+  dlg.showModal();
+  dlg.querySelector(".sprachliste .primaer").focus();
+}
+
+function startSprache() {
+  try {
+    const gemerkt = localStorage.getItem("klarordner.sprache");
+    if (gemerkt in SPRACHEN) return gemerkt;
+  } catch {}
+  for (const l of navigator.languages || [navigator.language || ""]) {
+    const code = l.slice(0, 2).toLowerCase();
+    if (code in SPRACHEN) return code;
+  }
+  return "de";
 }
 
 /* ---------- Start ---------- */
@@ -1641,16 +1755,12 @@ try {
 } catch {}
 
 $("hinweisBrowser").hidden = hatFsa;
-if (kannTeilen) {
-  $("hinweisBrowser").replaceChildren(el("p", {},
-    el("strong", { text: "So speichern Sie: " }),
-    "Über „Als Datei sichern“ öffnet sich das Teilen-Fenster. Dort wählen Sie „In Dateien sichern“."));
-}
 $("btnNeu").addEventListener("click", neuAnlegen);
 $("btnStartOeffnen").addEventListener("click", oeffnen);
 $("btnOeffnen").addEventListener("click", oeffnen);
 $("btnSpeichern").addEventListener("click", sichern);
 $("btnSchrift").addEventListener("click", schriftUmschalten);
+$("btnSprache").addEventListener("click", spracheWaehlen);
 $("dateiwahl").addEventListener("change", e => {
   const datei = e.target.files[0];
   if (datei) laden(datei, null);
@@ -1689,6 +1799,8 @@ if (location.protocol === "https:" || location.hostname === "localhost") {
 }
 
 async function starten() {
+  sprache = startSprache();
+  statischeTexte();
   startseiteFuellen();
   if (zustand.geraetOk) {
     try {
@@ -1696,7 +1808,7 @@ async function starten() {
       if (gespeichert && gespeichert.daten) {
         Object.assign(zustand, {
           daten: einlesen(JSON.stringify(gespeichert.daten)),
-          dateiname: gespeichert.dateiname || STANDARDNAME,
+          dateiname: gespeichert.dateiname || standardName(),
           gesichertAm: gespeichert.gesichertAm || null,
           geaendert: !!gespeichert.geaendert
         });

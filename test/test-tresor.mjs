@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { webcrypto } from 'crypto';
 const hier = path.dirname(new URL(import.meta.url).pathname);
-const url = 'file://' + path.join(hier, '../app/klarordner.html');
+const url = 'file://' + path.join(hier, '../dist/klarordner.html');
 const PW = 'Mein Hund heisst Bello';
 const GEHEIM = 'SuperGeheim-4711';
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
@@ -28,7 +28,7 @@ const entschluesseln = async (z, pw) => {
   return JSON.parse(new TextDecoder().decode(await webcrypto.subtle.decrypt({ name: 'AES-GCM', iv: b(z.iv) }, key, b(z.daten))));
 };
 
-const ctx = await browser.newContext({ acceptDownloads: true, viewport: { width: 1280, height: 900 } });
+const ctx = await browser.newContext({ locale: 'de-DE',  acceptDownloads: true, viewport: { width: 1280, height: 900 } });
 const p = await neueSeite(ctx);
 await p.goto(url);
 await p.click('#btnNeu');
@@ -94,7 +94,7 @@ await p.waitForSelector('text=Jetzt sperren');
 console.log('Mit neuem Passwort geöffnet:', await p.locator('.eintrag h4').textContent());
 
 // Automatische Sperre nach 10 Minuten ohne Eingabe
-const ctx2 = await browser.newContext({ acceptDownloads: true });
+const ctx2 = await browser.newContext({ locale: 'de-DE',  acceptDownloads: true });
 const q = await neueSeite(ctx2);
 await q.clock.install();
 await q.goto(url);
