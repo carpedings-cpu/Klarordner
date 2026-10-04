@@ -17,6 +17,10 @@ quelle = (app / "klarordner.html").read_text(encoding="utf-8")
 marke = "/*UEBERSETZUNGEN*/{}"
 assert marke in quelle, "Marke für Übersetzungen fehlt"
 fertig = quelle.replace(marke, json.dumps(uebersetzungen, ensure_ascii=False, separators=(",", ":")))
+# Anbieter-Steckbriefe für die Schreiben im Todesfall.
+anbieter = json.loads((app / "anbieter.json").read_text(encoding="utf-8"))
+assert "/*ANBIETER*/[]" in fertig, "Marke für Anbieter fehlt"
+fertig = fertig.replace("/*ANBIETER*/[]", json.dumps(anbieter, ensure_ascii=False, separators=(",", ":")))
 subprocess.run([sys.executable, str(wurzel / "werkzeuge" / "texte.py")], check=True)
 
 shutil.rmtree(docs, ignore_errors=True)

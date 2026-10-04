@@ -286,6 +286,16 @@ dialog .knopfreihe .btn { width: 100%; }
 
 /* Druckansicht: auf dem Bildschirm unsichtbar, beim Drucken das Einzige */
 #druck { display: none; }
+.schreibliste { display: grid; gap: .6rem; }
+.schreibzeile { background: var(--grund); border-radius: 16px; padding: .8rem 1rem; }
+.schreibkopf { display: flex; align-items: flex-start; gap: .8rem; }
+.schreibkopf input { width: 1.5rem; height: 1.5rem; margin: .2rem 0 0; flex: none; accent-color: var(--blau); }
+.schreibkopf label { display: flex; flex-direction: column; cursor: pointer; }
+.schreibart { font-size: .85rem; color: var(--leise); }
+.schreibzeile .hilfe { margin: .4rem 0 0 2.3rem; }
+.schreibzeile details { margin: .5rem 0 0 2.3rem; }
+.schreibzeile summary { cursor: pointer; color: var(--blau); font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.schreibzeile textarea { background: var(--karte); }
 .druckliste { display: grid; gap: .25rem; text-align: left; margin-top: .4rem; }
 .druckliste label { display: flex; align-items: center; gap: .7rem; min-height: 44px; padding: .2rem .5rem; border-radius: 10px; cursor: pointer; color: var(--text); }
 .druckliste label:hover { background: var(--grund); }
@@ -339,6 +349,23 @@ dialog .knopfreihe .btn { width: 100%; }
   .ddeck .dinhalt li { margin: 1mm 0; }
   .ddeck .dnotiz { max-width: 140mm; margin: 12mm auto 0; font-size: 9.5pt; color: #333; }
   .ddeck .dklein { max-width: 140mm; margin: 6mm auto 0; font-size: 8pt; color: #555; }
+  .dbrief { break-before: page; font-size: 11pt; line-height: 1.45; }
+  .dbrief:first-child { break-before: auto; }
+  .dbrief p { margin: 0 0 3.5mm; }
+  .bz { display: block; min-height: 5mm; }
+  .bz.leer { border-bottom: .6pt solid #888; width: 75mm; margin-bottom: 1.5mm; }
+  .babsender { text-align: right; font-size: 10pt; min-height: 22mm; }
+  .babsender .bz.leer { margin-left: auto; }
+  .bempfaenger { min-height: 40mm; margin: 0 0 8mm; width: 85mm; }
+  .brueck { display: block; font-size: 7.5pt; color: #444; border-bottom: .4pt solid #888; margin-bottom: 2mm; min-height: 3mm; }
+  .bdatum { text-align: right; }
+  .bbetreff { font-weight: 700; margin: 4mm 0 6mm !important; }
+  .bunterschrift { height: 16mm; width: 70mm; border-bottom: .6pt solid #888; margin: 0 0 1.5mm; }
+  .banlagen { margin-top: 8mm !important; font-size: 10pt; }
+  .danleitung h1 { font-size: 16pt; margin: 0 0 6mm; }
+  .danleitung ol { margin: 0 0 4mm; padding-left: 6mm; }
+  .danleitung li { margin: 0 0 2mm; }
+  .bstand { font-size: 9pt; color: #555; margin-top: 8mm !important; }
   .dfuss { position: fixed; bottom: -12mm; left: 0; right: 0; font-size: 8.5pt; color: #555; display: flex; justify-content: space-between; }
   #druck.randboxen .dfuss { display: none; }
 }
@@ -422,6 +449,8 @@ const SPRACHEN = {
 };
 // Wird beim Bauen mit den Dateien aus app/sprachen/ gefüllt.
 const UEBERSETZUNG = /*UEBERSETZUNGEN*/{};
+// Steckbriefe der Anbieter aus app/anbieter.json, beim Bauen eingesetzt.
+const ANBIETER = /*ANBIETER*/[];
 let sprache = "de";
 
 // Der deutsche Text ist zugleich der Schlüssel. Fehlt eine Übersetzung, bleibt es bei Deutsch.
@@ -557,7 +586,8 @@ function leereDaten() {
       bestattungsart: "", bestatter: "", vorsorgevertrag: "", grabstelle: "",
       trauerfeier: "", traueranzeige: "", wuensche: "", informieren: [], checkliste: {}
     },
-    nachricht: { text: "" }
+    nachricht: { text: "" },
+    schreiben: { absender: "", anschrift: "", beziehung: "", sterbedatum: "", ort: "", empfaenger: {} }
   };
 }
 
@@ -1238,6 +1268,10 @@ function inhaltZeigen() {
     ziel.replaceChildren(...uebersicht());
     return;
   }
+  if (zustand.ansicht === "schreiben") {
+    ziel.replaceChildren(...schreibenAnsicht());
+    return;
+  }
   const nr = BEREICHE.findIndex(b => b.id === zustand.ansicht);
   const b = BEREICHE[nr];
   const kinder = [
@@ -1411,7 +1445,7 @@ function feld(pfad, beschriftung, opt = {}) {
       ...Object.keys(werte).map(k => el("option", { value: k, text: t(werte[k]) })),
       aktuell && !(aktuell in werte) ? el("option", { value: aktuell, text: aktuell }) : null);
   } else {
-    eingabe = el("input", { id, type: typ, autocomplete: "off", inputmode: opt.eingabemodus, autocapitalize: opt.gross ? "characters" : null });
+    eingabe = el("input", { id, type: typ, autocomplete: "off", inputmode: opt.eingabemodus, autocapitalize: opt.gross ? "characters" : null, list: opt.vorschlaege ? "anbieterListe" : null });
   }
   eingabe.value = typ === "auswahl" ? normWert(wert, opt.optionen) : wert;
   eingabe.addEventListener(typ === "auswahl" ? "change" : "input", () => {
@@ -1755,7 +1789,7 @@ const FORMULARE = {
         kopf: v => [optText("vertrag", v.art), v.anbieter].filter(Boolean).join(" · "),
         felder: p => [
           feld(p + ".art", "Art", { typ: "auswahl", optionen: "vertrag" }),
-          feld(p + ".anbieter", "Anbieter"),
+          feld(p + ".anbieter", "Anbieter", { vorschlaege: true }),
           feld(p + ".vertragsnummer", "Vertrags- oder Kundennummer", { gross: true }),
           feld(p + ".kosten", "Kosten", { hilfe: "Zum Beispiel: 12,99 € im Monat" }),
           feld(p + ".kuendigung", "Wie wird gekündigt?", { breit: true, hilfe: "Kündigungsfrist, Adresse oder Telefonnummer" }),
@@ -1804,7 +1838,7 @@ const FORMULARE = {
             el("div", { class: "felder" }, feld(p + ".uebertragenAn", "An wen?", { breit: true })));
           return [
             feld(p + ".kategorie", "Art", { typ: "auswahl", optionen: "onlineArt" }),
-            feld(p + ".anbieter", "Anbieter", { hilfe: "Zum Beispiel: Amazon, PayPal, GMX" }),
+            feld(p + ".anbieter", "Anbieter", { hilfe: "Zum Beispiel: Amazon, PayPal, GMX", vorschlaege: true }),
             feld(p + ".benutzername", "Benutzername oder E-Mail-Adresse", { breit: true }),
             wahl(p + ".wunsch", "Was soll mit dem Konto geschehen?", "wunsch",
               { beiAenderung: v => { empfaenger.hidden = v !== "uebertragen"; } }),
@@ -1819,6 +1853,9 @@ const FORMULARE = {
   ],
 
   sterbefall: () => [
+    druck ? null : gruppe("Schreiben für Ihre Angehörigen", "Kündigungen und Mitteilungen, die nach Ihrem Tod verschickt werden müssen. Klarordner füllt sie mit Ihren Angaben vor, Ihre Angehörigen ergänzen nur Absender und Sterbedatum.",
+      el("div", { class: "knopfreihe breit" },
+        el("button", { type: "button", class: "btn primaer", text: t("Schreiben vorbereiten"), onclick: () => wechseln("schreiben") }))),
     gruppe("Bestattung", null,
       feld("sterbefall.bestattungsart", "Wie möchten Sie bestattet werden?", { typ: "auswahl", optionen: "bestattung" }),
       feld("sterbefall.bestatter", "Gewünschter Bestatter", { hilfe: "Name und Telefon" }),
@@ -2026,6 +2063,7 @@ async function druckenStarten() {
   $("dialogTitel").textContent = t("Drucken");
   $("dialogText").replaceChildren(
     el("p", { text: t("Wählen Sie, was gedruckt werden soll. Leere Bereiche werden als Formular zum Ausfüllen von Hand gedruckt.") }),
+    el("p", { text: pdfTipp() }),
     sprache !== "de" ? el("p", { text: t("Der Ausdruck ist auf Deutsch, damit Ärzte, Banken und Ämter ihn lesen können.") }) : null,
     liste);
   const antwort = await new Promise(resolve => {
@@ -2056,6 +2094,249 @@ async function druckenStarten() {
     if (!ids.length) return;
   }
   druckErzeugen(ids, mitDeckblatt);
+  window.print();
+}
+
+/* ---------- Schreiben für den Todesfall ---------- */
+
+function pdfTipp() {
+  return kannTeilen
+    ? t("Als PDF speichern: Im Druckfenster oben auf Teilen tippen und „In Dateien sichern“ wählen.")
+    : t("Als PDF speichern: Im Druckfenster statt eines Druckers „Als PDF speichern“ wählen.");
+}
+
+const klein = s => String(s || "").toLowerCase().replace(/[^a-z0-9äöüß+.]/g, "");
+
+function anbieterFinden(text) {
+  const k = klein(text);
+  if (!k) return null;
+  return ANBIETER.find(a => [a.name, ...(a.alias || [])].some(n => k.includes(klein(n)))) || null;
+}
+
+function anbieterListe() {
+  let liste = $("anbieterListe");
+  if (!liste) {
+    liste = el("datalist", { id: "anbieterListe" });
+    document.body.append(liste);
+  }
+  liste.replaceChildren(...ANBIETER.filter(a => a.id !== "rentenservice" && a.id !== "rundfunk").map(a => el("option", { value: a.name })));
+}
+
+// Stellt aus den Angaben im Ordner zusammen, welche Schreiben nach dem Tod nötig sind.
+function schreibenListe() {
+  const d = zustand.daten;
+  const liste = [];
+  const eilig = ["leben", "sterbegeld", "unfall", "rente"];
+  const rs = ANBIETER.find(a => a.id === "rentenservice");
+  liste.push({ id: "rente", art: "rente", titel: "Renten Service der Deutschen Post", gruppe: "Mitteilungen", adresse: rs && rs.adresse, anbieter: rs });
+  if (voll(d.gesundheit.krankenkasse.name)) {
+    liste.push({ id: "krankenkasse", art: "krankenkasse", titel: d.gesundheit.krankenkasse.name, gruppe: "Mitteilungen", adresse: d.gesundheit.krankenkasse.name });
+  }
+  const banken = [...new Set(d.finanzen.konten.map(k => k.bank.trim()).filter(Boolean))];
+  for (const bank of banken) {
+    liste.push({ id: "bank:" + bank, art: "bank", titel: bank, gruppe: "Mitteilungen", adresse: bank, konten: d.finanzen.konten.filter(k => k.bank.trim() === bank) });
+  }
+  d.versicherungen.forEach((v, i) => {
+    if (!voll(v.gesellschaft) && !voll(v.art)) return;
+    const art = normWert(v.art, "versicherung");
+    liste.push({ id: "vers:" + i, art: eilig.includes(art) ? "versMeldung" : "versEnde", titel: [optText("versicherung", v.art), v.gesellschaft].filter(Boolean).join(" · "), gruppe: "Mitteilungen", adresse: v.gesellschaft, vertrag: v });
+  });
+  if (normWert(d.wohnen.wohnform, "wohnform") === "miete" || d.vertraege.some(v => normWert(v.art, "vertrag") === "miete")) {
+    liste.push({ id: "vermieter", art: "vermieter", titel: t("Vermieter"), gruppe: "Kündigungen", adresse: d.wohnen.hausverwaltung || d.wohnen.vermieter,
+      hinweis: "Nur, wenn niemand in den Mietvertrag eintritt, zum Beispiel ein Ehepartner im selben Haushalt. Die Kündigung muss innerhalb eines Monats erklärt werden, nachdem Sie davon erfahren haben." });
+  }
+  const rf = ANBIETER.find(a => a.id === "rundfunk");
+  const rfVertrag = d.vertraege.find(v => normWert(v.art, "vertrag") === "rundfunk");
+  liste.push({ id: "rundfunk", art: "rundfunk", titel: t("Rundfunkbeitrag"), gruppe: "Kündigungen", adresse: rf && rf.adresse, anbieter: rf, vertrag: rfVertrag });
+  d.vertraege.forEach((v, i) => {
+    const art = normWert(v.art, "vertrag");
+    if (art === "miete" || art === "rundfunk" || (!voll(v.anbieter) && !voll(v.art))) return;
+    const a = anbieterFinden(v.anbieter);
+    liste.push({ id: "vertrag:" + i, art: a && a.weg === "online" ? "anleitung" : "kuendigung", titel: [optText("vertrag", v.art), v.anbieter].filter(Boolean).join(" · "), gruppe: "Kündigungen", adresse: (a && a.adresse) || v.anbieter, anbieter: a, vertrag: v });
+  });
+  d.digital.konten.forEach((k, i) => {
+    if (!voll(k.anbieter)) return;
+    const a = anbieterFinden(k.anbieter);
+    const wunsch = normWert(k.wunsch, "wunsch");
+    const nurOnline = (a && a.weg === "online") || wunsch === "gedenken";
+    liste.push({ id: "online:" + i, art: nurOnline ? "anleitung" : (wunsch === "uebertragen" ? "uebertragen" : "loeschen"), titel: k.anbieter, gruppe: "Online-Konten", adresse: (a && a.adresse) || k.anbieter, anbieter: a, konto: k });
+  });
+  return liste;
+}
+
+/* NUR-DEUTSCH-START: Briefe gehen an deutsche Stellen und werden nicht übersetzt. */
+const LUECKE = "____________________";
+
+function datumDe(iso) {
+  return iso ? new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
+}
+
+function briefInhalt(s) {
+  const d = zustand.daten;
+  const p = d.persoenlich;
+  const w = d.schreiben;
+  const name = [p.vorname, p.nachname].filter(Boolean).join(" ") || LUECKE;
+  const geb = datumDe(p.geburtsdatum) || LUECKE;
+  const adresse = [p.strasse, [p.plz, p.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ") || LUECKE;
+  const tod = datumDe(w.sterbedatum) || LUECKE;
+  const tot = `${name}, geboren am ${geb}, zuletzt wohnhaft ${adresse}, ist am ${tod} verstorben.`;
+  const ich = voll(w.beziehung) ? `Ich wende mich als ${w.beziehung.trim()} der verstorbenen Person an Sie und kümmere mich um den Nachlass.` : null;
+  const bestaetigung = "Bitte bestätigen Sie mir den Eingang dieses Schreibens und die Erledigung schriftlich an die oben genannte Anschrift.";
+  const nr = s.vertrag && voll(s.vertrag.vertragsnummer) ? s.vertrag.vertragsnummer.trim() : "";
+  const mit = (betreff, wert) => betreff + (wert ? `, ${wert}` : "");
+  switch (s.art) {
+    case "rente":
+      return { betreff: mit("Mitteilung über einen Sterbefall", voll(p.rentenversicherungsnummer) && `Rentenversicherungsnummer ${p.rentenversicherungsnummer.trim()}`),
+        absaetze: [tot, ich, "Bitte stellen Sie die Rentenzahlung zum Ende des Sterbemonats ein. Falls Hinterbliebene Anspruch auf eine Rente oder einen Vorschuss haben, senden Sie mir bitte die nötigen Antragsunterlagen.", bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde"] };
+    case "krankenkasse":
+      return { betreff: mit("Mitteilung über einen Sterbefall", voll(d.gesundheit.krankenkasse.versichertennummer) && `Versichertennummer ${d.gesundheit.krankenkasse.versichertennummer.trim()}`),
+        absaetze: [tot, ich, "Bitte beenden Sie die Mitgliedschaft zum Todestag und teilen Sie mir mit, ob Sie weitere Unterlagen benötigen. Die Gesundheitskarte der verstorbenen Person liegt bei.", bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde", "Gesundheitskarte"] };
+    case "bank": {
+      const ibans = s.konten.map(k => [optText("kontoart", k.kontoart), k.iban].filter(Boolean).join(" ")).filter(Boolean);
+      const vollmacht = s.konten.find(k => normWert(k.vollmachtUeberTod, "jaNein") === "ja");
+      return { betreff: mit("Mitteilung über einen Sterbefall", ibans.length === 1 && ibans[0]),
+        absaetze: [tot, ich,
+          ibans.length > 1 ? `Betroffen sind die folgenden Konten: ${ibans.join("; ")}.` : null,
+          vollmacht ? `Für die Konten besteht eine Vollmacht über den Tod hinaus${voll(vollmacht.bevollmaechtigt) ? ` zugunsten von ${vollmacht.bevollmaechtigt.trim()}` : ""}.` : null,
+          "Bitte teilen Sie mir den Kontostand zum Todestag mit und senden Sie mir eine Aufstellung der Daueraufträge und regelmäßigen Lastschriften. Teilen Sie mir außerdem mit, welche Unterlagen Sie für die Verfügung über die Konten und deren Auflösung benötigen.",
+          bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde"] };
+    }
+    case "versMeldung":
+      return { betreff: mit("Meldung eines Todesfalls", nr && `Versicherungsnummer ${nr}`),
+        absaetze: [tot, ich, `Ich melde Ihnen hiermit den Tod der versicherten Person und bitte um Auszahlung der vereinbarten Leistung an die bezugsberechtigte Person${voll(s.vertrag.beguenstigt) ? ` (${s.vertrag.beguenstigt.trim()})` : ""}.`,
+          "Bitte teilen Sie mir mit, welche Unterlagen Sie für die Bearbeitung benötigen.", bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde"] };
+    case "versEnde":
+      return { betreff: mit("Tod der versicherten Person", nr && `Versicherungsnummer ${nr}`),
+        absaetze: [tot, ich, "Bitte teilen Sie mir mit, ob der Vertrag mit dem Tod endet. Andernfalls kündige ich ihn hiermit zum nächstmöglichen Zeitpunkt. Zu viel gezahlte Beiträge erstatten Sie bitte.", bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde"] };
+    case "vermieter":
+      return { betreff: "Kündigung des Mietverhältnisses wegen Todesfalls",
+        absaetze: [`${name}, geboren am ${geb}, Mieter oder Mieterin der Wohnung ${adresse}, ist am ${tod} verstorben.`, ich,
+          "Als Erbe oder Erbin kündige ich das Mietverhältnis gemäß § 564 BGB außerordentlich mit der gesetzlichen Frist zum nächstmöglichen Termin.",
+          "Bitte vereinbaren Sie mit mir einen Termin für die Wohnungsübergabe und teilen Sie mir mit, wie mit der Mietkaution verfahren wird.", bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde"] };
+    case "rundfunk":
+      return { betreff: mit("Abmeldung wegen Todesfalls", nr && `Beitragsnummer ${nr}`),
+        absaetze: [tot, ich, `Ich melde hiermit die Beitragspflicht der verstorbenen Person zum Ende des Sterbemonats ab.${nr ? "" : " Die Beitragsnummer ist mir nicht bekannt, bitte ordnen Sie das Konto anhand von Name, Geburtsdatum und Anschrift zu."} Bitte stellen Sie die Abbuchungen ein und erstatten Sie zu viel gezahlte Beiträge.`, bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde"] };
+    case "uebertragen":
+      return { betreff: mit("Konto einer verstorbenen Person", voll(s.konto.benutzername) && `Konto ${s.konto.benutzername.trim()}`),
+        absaetze: [tot, ich, `Die verstorbene Person hat gewünscht, dass ihr Konto${voll(s.konto.uebertragenAn) ? ` an ${s.konto.uebertragenAn.trim()}` : ""} übertragen wird. Bitte teilen Sie mir mit, ob und wie das möglich ist. Andernfalls bitte ich darum, das Konto zu schließen und die gespeicherten Daten zu löschen.`, bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde"] };
+    default: {
+      const konto = s.konto && voll(s.konto.benutzername) ? `Konto ${s.konto.benutzername.trim()}` : (nr ? `Kunden- oder Vertragsnummer ${nr}` : "");
+      return { betreff: mit("Kündigung wegen Todesfalls", konto),
+        absaetze: [tot, ich, "Hiermit kündige ich den oben genannten Vertrag zum nächstmöglichen Zeitpunkt, hilfsweise außerordentlich wegen des Todesfalls. Bitte stellen Sie alle Abbuchungen ein und erstatten Sie zu viel gezahlte Beträge.",
+          s.konto ? "Bitte schließen Sie das Kundenkonto und löschen Sie alle dazu gespeicherten Daten." : null, bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde"] };
+    }
+  }
+}
+
+function briefSeite(s) {
+  const w = zustand.daten.schreiben;
+  const inhalt = briefInhalt(s);
+  const absender = [w.absender, ...String(w.anschrift || "").split("\n")].map(z => z.trim()).filter(Boolean);
+  const empf = String(w.empfaenger[s.id] || s.adresse || "").split("\n").map(z => z.trim()).filter(Boolean);
+  const zeilen = (liste, n) => liste.length ? liste.map(z => el("span", { class: "bz", text: z })) : Array.from({ length: n }, () => el("span", { class: "bz leer" }));
+  const heute = new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return el("section", { class: "dbrief" },
+    el("div", { class: "babsender" }, ...zeilen(absender, 3)),
+    el("div", { class: "bempfaenger" },
+      el("span", { class: "brueck", text: absender.length ? absender.join(", ") : "" }),
+      ...zeilen(empf, 4)),
+    el("p", { class: "bdatum", text: `${voll(w.ort) ? w.ort.trim() + ", " : ""}${heute}` }),
+    el("p", { class: "bbetreff", text: inhalt.betreff }),
+    el("p", { text: "Sehr geehrte Damen und Herren," }),
+    ...inhalt.absaetze.filter(Boolean).map(a => el("p", { text: a })),
+    el("p", { text: "Mit freundlichen Grüßen" }),
+    el("div", { class: "bunterschrift" }),
+    el("p", { class: "bname", text: voll(w.absender) ? w.absender.trim() : "" }),
+    el("p", { class: "banlagen" }, el("strong", { text: "Anlagen: " }), inhalt.anlagen.join(", ")));
+}
+
+function anleitungSeite(s) {
+  const a = s.anbieter;
+  const k = s.konto || {};
+  return el("section", { class: "dbrief danleitung" },
+    el("h1", { text: `${s.titel}: Was ist zu tun?` }),
+    voll(k.benutzername) ? el("p", {}, el("strong", { text: "Konto: " }), k.benutzername) : null,
+    voll(k.wunsch) ? el("p", {}, el("strong", { text: "Wunsch der verstorbenen Person: " }), optText("wunsch", k.wunsch) + (voll(k.uebertragenAn) ? ` (${k.uebertragenAn})` : "")) : null,
+    a && a.schritte && a.schritte.length ? el("ol", {}, ...a.schritte.map(x => el("li", { text: x }))) : el("p", { text: "Dieser Anbieter nimmt Kündigungen im Todesfall nur über ein eigenes Online-Formular oder den Kundenservice an. Suchen Sie auf der Webseite des Anbieters nach „Konto einer verstorbenen Person“." }),
+    a && a.unterlagen && a.unterlagen.length ? el("p", {}, el("strong", { text: "Benötigte Unterlagen: " }), a.unterlagen.join(", ")) : null,
+    a && a.url ? el("p", {}, el("strong", { text: "Webseite: " }), a.url) : null,
+    a && a.hinweis ? el("p", { text: a.hinweis }) : null,
+    a && a.stand ? el("p", { class: "bstand", text: `Angaben geprüft im ${a.stand}. Bitte prüfen Sie vor dem Absenden, ob sich etwas geändert hat.` }) : null);
+}
+/* NUR-DEUTSCH-ENDE */
+
+function schreibenAnsicht() {
+  const liste = schreibenListe();
+  const gruppen = ["Mitteilungen", "Kündigungen", "Online-Konten"];
+  const art = s => s.art === "anleitung" ? t("Anleitung für den Online-Antrag") : t("Brief");
+  const eintrag = s => {
+    const id = neueId();
+    const box = el("input", { type: "checkbox", id, value: s.id, checked: true });
+    const empfId = neueId();
+    const empf = el("textarea", { id: empfId, rows: 4 });
+    empf.value = zustand.daten.schreiben.empfaenger[s.id] || s.adresse || "";
+    empf.addEventListener("input", () => { zustand.daten.schreiben.empfaenger[s.id] = empf.value; geaendert(); });
+    return el("div", { class: "schreibzeile" },
+      el("div", { class: "schreibkopf" }, box,
+        el("label", { for: id }, el("strong", { text: s.titel }), el("span", { class: "schreibart", text: art(s) + (s.anbieter && s.anbieter.stand ? " · " + t("Adresse hinterlegt") : "") }))),
+      s.hinweis ? el("p", { class: "hilfe", text: t(s.hinweis) }) : null,
+      s.art === "anleitung" ? null : el("details", {},
+        el("summary", { text: t("Empfänger ansehen oder ändern") }),
+        el("div", { class: "feld" }, el("label", { for: empfId, text: t("Anschrift des Empfängers") }), empf)));
+  };
+  return [
+    el("button", { type: "button", class: "btn flach zurueck-oben", onclick: () => wechseln("sterbefall"), text: "‹ " + t("Für den Sterbefall") }),
+    el("div", { class: "seitenkopf" },
+      symbol("brief", "gross", "#6a7fa6"),
+      el("div", {},
+        el("h2", { tabindex: "-1", text: t("Schreiben für den Todesfall") }),
+        el("p", { text: t("Vorausgefüllte Kündigungen und Mitteilungen für Ihre Angehörigen.") }))),
+    el("div", { class: "bereichinhalt" },
+      hinweis(["Diese Schreiben verschicken Ihre Angehörigen nach Ihrem Tod. Ihre Angaben aus dem Ordner sind schon eingesetzt.",
+        "Angehörige tragen unten ihren Namen, ihre Anschrift und das Sterbedatum ein, wählen die Schreiben aus und drucken sie oder speichern sie als PDF. Unterschreiben, Kopie der Sterbeurkunde beilegen, abschicken."]),
+      gruppe("Absender", "Wird von den Angehörigen ausgefüllt.",
+        feld("schreiben.absender", "Name des Absenders"),
+        feld("schreiben.beziehung", "Beziehung zur verstorbenen Person", { hilfe: "Zum Beispiel: Tochter und Erbin" }),
+        feld("schreiben.anschrift", "Anschrift des Absenders", { typ: "mehrzeilig", zeilen: 3 }),
+        feld("schreiben.sterbedatum", "Sterbedatum", { typ: "date" }),
+        feld("schreiben.ort", "Ort für die Datumszeile")),
+      ...gruppen.map(g => {
+        const teil = liste.filter(s => s.gruppe === g);
+        return teil.length ? gruppe(g, null, el("div", { class: "schreibliste breit" }, ...teil.map(eintrag))) : null;
+      }).filter(Boolean),
+      el("section", { class: "formkarte" },
+        el("p", { class: "kartenhilfe", text: pdfTipp() }),
+        el("div", { class: "knopfreihe" },
+          el("button", { type: "button", class: "btn primaer", text: t("Ausgewählte Schreiben drucken"), onclick: () => {
+            const ids = [...$("inhalt").querySelectorAll(".schreibliste input:checked")].map(i => i.value);
+            const auswahl = liste.filter(s => ids.includes(s.id));
+            if (!auswahl.length) { melden("Nichts ausgewählt", "Bitte wählen Sie mindestens ein Schreiben aus."); return; }
+            briefeDrucken(auswahl);
+          } }))))
+  ];
+}
+
+function briefeDrucken(auswahl) {
+  const ziel = $("druck");
+  ziel.className = "";
+  // Briefe gehen an deutsche Stellen, auch Auswahlwerte wie die Kontoart erscheinen auf Deutsch.
+  const vorher = sprache;
+  sprache = "de";
+  try {
+    ziel.replaceChildren(...auswahl.map(s => (s.art === "anleitung" ? anleitungSeite(s) : briefSeite(s))));
+  } finally {
+    sprache = vorher;
+  }
+  $("druckSeiten").textContent = "@media print { @page brief { margin: 18mm 20mm 18mm 25mm; } .dbrief { page: brief; } }";
   window.print();
 }
 
@@ -2171,6 +2452,7 @@ if (location.protocol === "https:" || location.hostname === "localhost") {
 }
 
 async function starten() {
+  anbieterListe();
   sprache = startSprache();
   statischeTexte();
   startseiteFuellen();

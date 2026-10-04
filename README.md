@@ -43,6 +43,7 @@ node test/test-tresor.mjs      # Verschlüsselung der Zugangsdaten, Sperre, Pass
 node test/test-sprache.mjs     # Spracherkennung, Sprachwahl, Umwandlung alter Dateien, deutsche Reste
 node test/test-druck.mjs       # Druckauswahl, PDF mit Kopf- und Fußzeilen, Formular, Zugangsdaten
 node test/test-schritt5.mjs    # Aktualitätshinweis, Fortschritt, Sicherungskopie mit Datum
+node test/test-schreiben.mjs   # vorausgefüllte Schreiben für den Todesfall als PDF
 ```
 
 ## Veröffentlichen
