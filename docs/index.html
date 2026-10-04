@@ -233,6 +233,12 @@ p { margin: 0; }
 .checkpunkt .hilfe { margin: 0 0 .5rem 1.95rem; }
 .kaestchen { width: 1.3rem; height: 1.3rem; border: 2px solid var(--leise); border-radius: 6px; flex: none; }
 
+.sicherung .sicherungsstand { margin-top: .8rem; }
+.sicherung .knopfreihe { margin-top: 1rem; }
+.sicherung.dringend { box-shadow: inset 0 0 0 2px var(--gelb-rand), var(--schatten); background: var(--gelb-hell); }
+.btn.loeschen { color: var(--rot); }
+.btn.loeschen:hover { background: #fde8e6; }
+
 .blaettern { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem; margin-top: 2rem; }
 
 dialog {
@@ -264,7 +270,7 @@ dialog .knopfreihe .btn { width: 100%; }
   <div class="marke"><img class="logo" id="logoKlein" alt="">Klarordner</div>
   <div class="dateistatus" id="dateistatus" aria-live="polite"></div>
   <div class="aktionen">
-    <button type="button" class="btn primaer" id="btnSpeichern" hidden>Speichern</button>
+    <button type="button" class="btn" id="btnSpeichern" hidden>Als Datei sichern</button>
     <button type="button" class="btn" id="btnOeffnen" hidden>Öffnen</button>
     <button type="button" class="btn" id="btnSchrift" aria-pressed="false">Schrift größer</button>
   </div>
@@ -458,7 +464,9 @@ const zustand = {
   dateiname: null,
   geaendert: false,
   ansicht: "uebersicht",
-  gespeichertUm: null,
+  gesichertAm: null,
+  geraetOk: !!window.indexedDB,
+  speichertGerade: false,
   downloadHinweisGezeigt: false,
   teilenHinweisGezeigt: false
 };
@@ -511,18 +519,92 @@ function melden(titel, ...absaetze) {
   return fragen(titel, absaetze, [{ text: "Verstanden", wert: true, primaer: true }]);
 }
 
-async function verwerfenOk() {
-  if (!zustand.geaendert) return true;
-  const antwort = await fragen("Nicht gespeicherte Änderungen",
-    ["Sie haben Änderungen, die noch nicht gespeichert sind. Möchten Sie zuerst speichern?"],
-    [
-      { text: "Abbrechen", wert: "abbrechen" },
-      { text: "Nicht speichern", wert: "verwerfen" },
-      { text: "Speichern", wert: "speichern", primaer: true }
-    ]);
-  if (antwort === "verwerfen") return true;
-  if (antwort === "speichern") return await speichern();
+// Die Eingaben bleiben automatisch auf diesem Gerät erhalten. Die Datei dient als Sicherung und zur Weitergabe.
+const speicher = {
+  db: null,
+  async verbinden() {
+    if (this.db) return this.db;
+    this.db = await new Promise((ok, fehler) => {
+      const anfrage = indexedDB.open("klarordner", 1);
+      anfrage.onupgradeneeded = () => anfrage.result.createObjectStore("ordner");
+      anfrage.onsuccess = () => ok(anfrage.result);
+      anfrage.onerror = () => fehler(anfrage.error);
+    });
+    return this.db;
+  },
+  async vorgang(modus, aktion) {
+    const db = await this.verbinden();
+    return new Promise((ok, fehler) => {
+      const tx = db.transaction("ordner", modus);
+      const anfrage = aktion(tx.objectStore("ordner"));
+      tx.oncomplete = () => ok(anfrage.result);
+      tx.onerror = () => fehler(tx.error);
+    });
+  },
+  lesen() { return this.vorgang("readonly", s => s.get("aktuell")); },
+  schreiben(wert) { return this.vorgang("readwrite", s => s.put(wert, "aktuell")); },
+  loeschen() { return this.vorgang("readwrite", s => s.delete("aktuell")); }
+};
+
+let speicherTimer = null;
+
+async function imGeraetSpeichern() {
+  clearTimeout(speicherTimer);
+  speicherTimer = null;
+  if (!zustand.daten || !zustand.geraetOk) return;
+  try {
+    await speicher.schreiben({
+      daten: zustand.daten,
+      dateiname: zustand.dateiname,
+      gesichertAm: zustand.gesichertAm,
+      geaendert: zustand.geaendert
+    });
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  } catch {
+    zustand.geraetOk = false;
+    melden("Speichern auf diesem Gerät nicht möglich",
+      "Der Browser lässt keine Daten auf diesem Gerät zu. Bitte sichern Sie Ihre Eingaben jetzt über „Als Datei sichern“.");
+  }
+  zustand.speichertGerade = false;
+  statusZeigen();
+}
+
+function speichernVormerken() {
+  zustand.speichertGerade = true;
+  clearTimeout(speicherTimer);
+  speicherTimer = setTimeout(imGeraetSpeichern, 500);
+}
+
+async function ersetzenOk() {
+  if (!zustand.daten) return true;
+  const absaetze = ["Die Daten aus der Datei ersetzen den Ordner, der gerade auf diesem Gerät gespeichert ist."];
+  if (zustand.geaendert) absaetze.push("Ihr aktueller Ordner hat Änderungen, die noch nicht als Datei gesichert sind.");
+  const antwort = await fragen("Ordner ersetzen?", absaetze, [
+    ...(zustand.geaendert ? [{ text: "Zuerst als Datei sichern", wert: "sichern", primaer: true }] : []),
+    { text: "Ersetzen", wert: "ersetzen", primaer: !zustand.geaendert },
+    { text: "Abbrechen", wert: "abbrechen" }
+  ]);
+  if (antwort === "ersetzen") return true;
+  if (antwort === "sichern") return await sichern();
   return false;
+}
+
+async function vomGeraetLoeschen() {
+  const absaetze = ["Ihr Ordner wird von diesem Gerät entfernt. Das ist sinnvoll, wenn Sie das Gerät weitergeben oder andere es mitbenutzen."];
+  absaetze.push(zustand.gesichertAm
+    ? `Ihre letzte Sicherung als Datei ist vom ${datumText(zustand.gesichertAm)}. Danach geänderte Angaben gehen verloren.`
+    : "Sie haben Ihren Ordner noch nie als Datei gesichert. Ohne Sicherung sind alle Angaben verloren.");
+  const antwort = await fragen("Von diesem Gerät löschen?", absaetze, [
+    { text: "Zuerst als Datei sichern", wert: "sichern", primaer: true },
+    { text: "Endgültig löschen", wert: "loeschen" },
+    { text: "Abbrechen", wert: "abbrechen" }
+  ]);
+  if (antwort === "sichern") { await sichern(); return; }
+  if (antwort !== "loeschen") return;
+  clearTimeout(speicherTimer);
+  try { await speicher.loeschen(); } catch {}
+  Object.assign(zustand, { daten: null, handle: null, dateiname: null, geaendert: false, gesichertAm: null, speichertGerade: false });
+  alles();
 }
 
 /* ---------- Dateien ---------- */
@@ -580,43 +662,15 @@ function alsText() {
 }
 
 async function neuAnlegen() {
-  if (!(await verwerfenOk())) return;
   const daten = leereDaten();
   daten.lastModified = new Date().toISOString();
-
-  if (hatFsa) {
-    const weiter = await fragen("Wo soll Ihre Datei liegen?",
-      ["Im nächsten Schritt wählen Sie den Ordner, in dem Ihre Notfalldaten gespeichert werden. Gut geeignet ist zum Beispiel der Ordner „Dokumente“.",
-       "Merken Sie sich den Ort. Dort finden Sie die Datei beim nächsten Mal wieder."],
-      [{ text: "Abbrechen", wert: false }, { text: "Ordner wählen", wert: true, primaer: true }]);
-    if (!weiter) return;
-    try {
-      const handle = await speicherortWaehlen(STANDARDNAME);
-      if (!handle) return;
-      zustand.daten = daten;
-      await inHandleSchreiben(handle, alsText());
-      zustand.handle = handle;
-      zustand.dateiname = handle.name;
-      zustand.geaendert = false;
-      zustand.gespeichertUm = new Date();
-    } catch (e) {
-      zustand.daten = null;
-      await melden("Die Datei konnte nicht angelegt werden", fehlerText(e));
-      return;
-    }
-  } else {
-    zustand.daten = daten;
-    zustand.handle = null;
-    zustand.dateiname = STANDARDNAME;
-    zustand.geaendert = true;
-    zustand.gespeichertUm = null;
-  }
-  zustand.ansicht = "uebersicht";
+  Object.assign(zustand, { daten, handle: null, dateiname: STANDARDNAME, geaendert: true, gesichertAm: null, ansicht: "uebersicht" });
+  await imGeraetSpeichern();
   alles();
 }
 
 async function oeffnen() {
-  if (!(await verwerfenOk())) return;
+  if (!(await ersetzenOk())) return;
   if (!hatFsa) {
     $("dateiwahl").value = "";
     $("dateiwahl").click();
@@ -641,16 +695,12 @@ async function laden(datei, handle) {
     await melden("Die Datei konnte nicht geöffnet werden", e.message);
     return;
   }
-  zustand.daten = daten;
-  zustand.handle = handle;
-  zustand.dateiname = datei.name;
-  zustand.geaendert = false;
-  zustand.gespeichertUm = null;
-  zustand.ansicht = "uebersicht";
+  Object.assign(zustand, { daten, handle, dateiname: datei.name, geaendert: false, gesichertAm: new Date().toISOString(), ansicht: "uebersicht" });
+  await imGeraetSpeichern();
   alles();
 }
 
-async function speichern() {
+async function sichern() {
   if (!zustand.daten) return false;
   let weg = "datei";
   try {
@@ -679,12 +729,13 @@ async function speichern() {
     return false;
   }
   zustand.geaendert = false;
-  zustand.gespeichertUm = new Date();
-  statusZeigen();
+  zustand.gesichertAm = new Date().toISOString();
+  await imGeraetSpeichern();
+  if (zustand.ansicht === "uebersicht") inhaltZeigen();
   if (weg === "download" && !zustand.downloadHinweisGezeigt) {
     zustand.downloadHinweisGezeigt = true;
     await melden("Datei liegt im Download-Ordner",
-      `Ihre Daten wurden als „${zustand.dateiname}“ in Ihren Download-Ordner gespeichert.`,
+      `Ihr Ordner wurde als „${zustand.dateiname}“ in Ihren Download-Ordner gespeichert.`,
       "Bitte verschieben Sie diese Datei jetzt an den Ort Ihrer bisherigen Datei und ersetzen Sie die alte Datei damit. Sonst öffnen Sie beim nächsten Mal versehentlich den alten Stand.",
       "Steht im Dateinamen eine Zahl in Klammern, zum Beispiel „(1)“, hat der Browser die Datei umbenannt. Löschen Sie dann die alte Datei und entfernen Sie die Zahl aus dem neuen Namen.");
   }
@@ -712,10 +763,9 @@ function pfadSchreiben(pfad, wert) {
 
 function geaendert() {
   zustand.daten.lastModified = new Date().toISOString();
-  if (!zustand.geaendert) {
-    zustand.geaendert = true;
-    statusZeigen();
-  }
+  zustand.geaendert = true;
+  speichernVormerken();
+  statusZeigen();
 }
 
 /* ---------- Anzeige ---------- */
@@ -731,14 +781,16 @@ function statusZeigen() {
   const box = $("dateistatus");
   if (!zustand.daten) { box.replaceChildren(); return; }
   let pille;
-  if (zustand.geaendert) {
-    pille = el("span", { class: "pille offen", text: "Noch nicht gespeichert" });
-  } else if (zustand.gespeichertUm) {
-    pille = el("span", { class: "pille ok", text: `Gespeichert um ${uhrzeit(zustand.gespeichertUm)} Uhr` });
+  if (!zustand.geraetOk) {
+    pille = zustand.geaendert
+      ? el("span", { class: "pille offen", text: "Noch nicht als Datei gesichert" })
+      : el("span", { class: "pille ok", text: "Als Datei gesichert" });
+  } else if (zustand.speichertGerade) {
+    pille = el("span", { class: "pille", text: "Wird gespeichert …" });
   } else {
-    pille = el("span", { class: "pille", text: "Alles gespeichert" });
+    pille = el("span", { class: "pille ok", text: "Auf diesem Gerät gespeichert" });
   }
-  box.replaceChildren(el("span", { class: "name", text: zustand.dateiname || STANDARDNAME }), pille);
+  box.replaceChildren(pille);
 }
 
 function navZeigen() {
@@ -795,6 +847,23 @@ function blaettern(nr) {
       : el("button", { type: "button", class: "btn primaer", onclick: () => wechseln("uebersicht"), text: "Zur Übersicht ›" }));
 }
 
+function sicherungsKarte() {
+  const tage = zustand.gesichertAm ? Math.floor((Date.now() - new Date(zustand.gesichertAm)) / 864e5) : null;
+  // Erinnern erst, wenn eine vorhandene Sicherung veraltet ist. Beim ersten Ausfüllen wird nicht gedrängelt.
+  const dringend = zustand.geaendert && tage !== null && tage >= 30;
+  const stand = zustand.gesichertAm ? `Letzte Sicherung: ${datumText(zustand.gesichertAm)}` : "Noch nicht als Datei gesichert";
+  return el("section", { class: "formkarte sicherung" + (dringend ? " dringend" : "") },
+    el("h3", { text: "Sicherung als Datei" }),
+    el("p", { class: "kartenhilfe", text: zustand.geraetOk
+      ? "Ihre Eingaben bleiben auf diesem Gerät gespeichert, Sie können jederzeit weitermachen. Wenn Sie fertig sind oder etwas Wichtiges geändert haben, sichern Sie Ihren Ordner als Datei, zum Beispiel für einen USB-Stick oder für Ihre Angehörigen."
+      : "Dieser Browser kann Ihre Eingaben nicht auf dem Gerät behalten. Bitte sichern Sie Ihren Ordner als Datei, bevor Sie die App schließen." }),
+    el("p", { class: "sicherungsstand" }, el("strong", { text: stand }),
+      zustand.gesichertAm && zustand.geaendert ? " · seitdem geändert" : null),
+    el("div", { class: "knopfreihe" },
+      el("button", { type: "button", class: "btn primaer", onclick: sichern, text: "Als Datei sichern" }),
+      zustand.geraetOk ? el("button", { type: "button", class: "btn flach loeschen", onclick: vomGeraetLoeschen, text: "Von diesem Gerät löschen" }) : null));
+}
+
 function uebersicht() {
   return [
     el("div", { class: "seitenkopf" },
@@ -808,6 +877,7 @@ function uebersicht() {
           el("span", {},
             el("span", { class: "name", text: b.titel }),
             el("span", { class: "unter", text: b.text })))))),
+    sicherungsKarte(),
     el("p", { class: "kleingedruckt", text: "Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form. Die Inhalte beziehen sich auf deutsches Recht." })
   ];
 }
@@ -1270,7 +1340,7 @@ function alles() {
 function startseiteFuellen() {
   $("logoKlein").src = document.querySelector('link[rel="icon"]').href;
   const vorteile = [
-    ["computer", "#2a7cf0", "Bleibt auf Ihrem Computer"],
+    ["computer", "#2a7cf0", "Bleibt auf Ihrem Gerät"],
     ["wolke", "#23a149", "Ohne Internet, ohne Konto"],
     ["drucker", "#e9810f", "Zum Ausdrucken für die Familie"]
   ];
@@ -1297,12 +1367,12 @@ $("hinweisBrowser").hidden = hatFsa;
 if (kannTeilen) {
   $("hinweisBrowser").replaceChildren(el("p", {},
     el("strong", { text: "So speichern Sie: " }),
-    "Über „Speichern“ öffnet sich das Teilen-Fenster. Dort wählen Sie „In Dateien sichern“."));
+    "Über „Als Datei sichern“ öffnet sich das Teilen-Fenster. Dort wählen Sie „In Dateien sichern“."));
 }
 $("btnNeu").addEventListener("click", neuAnlegen);
 $("btnStartOeffnen").addEventListener("click", oeffnen);
 $("btnOeffnen").addEventListener("click", oeffnen);
-$("btnSpeichern").addEventListener("click", speichern);
+$("btnSpeichern").addEventListener("click", sichern);
 $("btnSchrift").addEventListener("click", schriftUmschalten);
 $("dateiwahl").addEventListener("change", e => {
   const datei = e.target.files[0];
@@ -1312,12 +1382,17 @@ $("dateiwahl").addEventListener("change", e => {
 document.addEventListener("keydown", e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
     e.preventDefault();
-    speichern();
+    sichern();
   }
 });
 
+// Ausstehende Eingaben sofort ablegen, wenn die App in den Hintergrund geht.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && speicherTimer) imGeraetSpeichern();
+});
+
 window.addEventListener("beforeunload", e => {
-  if (zustand.geaendert) {
+  if (speicherTimer || (!zustand.geraetOk && zustand.geaendert)) {
     e.preventDefault();
     e.returnValue = "";
   }
@@ -1332,8 +1407,27 @@ if (location.protocol === "https:" || location.hostname === "localhost") {
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 
-startseiteFuellen();
-alles();
+async function starten() {
+  startseiteFuellen();
+  if (zustand.geraetOk) {
+    try {
+      const gespeichert = await speicher.lesen();
+      if (gespeichert && gespeichert.daten) {
+        Object.assign(zustand, {
+          daten: einlesen(JSON.stringify(gespeichert.daten)),
+          dateiname: gespeichert.dateiname || STANDARDNAME,
+          gesichertAm: gespeichert.gesichertAm || null,
+          geaendert: !!gespeichert.geaendert
+        });
+      }
+    } catch {
+      zustand.geraetOk = false;
+    }
+  }
+  alles();
+}
+
+starten();
 </script>
 </body>
 </html>

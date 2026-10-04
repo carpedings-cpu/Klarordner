@@ -1,6 +1,6 @@
 # Klarordner
 
-Persönlicher Notfall- und Vorsorgeordner, der komplett im Browser läuft. Kein Konto, keine Cloud, keine Verbindung nach außen. Alle Eingaben liegen in einer Datei `*.notfall.json` auf dem Gerät des Nutzers.
+Persönlicher Notfall- und Vorsorgeordner, der komplett im Browser läuft. Kein Konto, keine Cloud, keine Verbindung nach außen. Eingaben bleiben automatisch auf dem Gerät des Nutzers gespeichert (IndexedDB). Als Sicherung und zur Weitergabe wird der Ordner in eine Datei `*.notfall.json` exportiert.
 
 ## Aufbau
 
@@ -26,6 +26,7 @@ Erzeugt `docs/` für die Web-App mit neuer Cache-Version und `dist/klarordner.ht
 ```
 node test/test-formulare.mjs   # alle Bereiche, Einträge, Speichern
 node test/test-webapp.mjs      # Installation, Offline-Betrieb, Speichern über Teilen
+node test/test-geraet.mjs      # Speichern im Gerät, Sicherung als Datei, Löschen
 ```
 
 ## Veröffentlichen
@@ -34,4 +35,4 @@ GitHub Pages auf den Branch `main`, Ordner `/docs` stellen. Die App ist danach u
 
 ## Sicherheit
 
-Die Content-Security-Policy erlaubt nur Dateien der eigenen Adresse (App, Service Worker, Manifest, Symbole). Verbindungen aus der App heraus (`connect-src`) sind vollständig gesperrt. Es gibt keine Statistik, kein Tracking und keine Fehlerberichte. Nutzerdaten werden weder im Browser-Speicher noch im Cache abgelegt.
+Die Content-Security-Policy erlaubt nur Dateien der eigenen Adresse (App, Service Worker, Manifest, Symbole). Verbindungen aus der App heraus (`connect-src`) sind vollständig gesperrt. Es gibt keine Statistik, kein Tracking und keine Fehlerberichte. Nutzerdaten liegen ausschließlich in der IndexedDB des Geräts und in der vom Nutzer gesicherten Datei, nie im Cache des Service Workers. Der Bereich Zugangsdaten wird auch dort nur verschlüsselt abgelegt. Über „Von diesem Gerät löschen“ entfernt der Nutzer seinen Ordner vollständig.
