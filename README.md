@@ -41,6 +41,7 @@ node test/test-webapp.mjs      # Installation, Offline-Betrieb, Speichern über 
 node test/test-geraet.mjs      # Speichern im Gerät, Sicherung als Datei, Löschen
 node test/test-tresor.mjs      # Verschlüsselung der Zugangsdaten, Sperre, Passwortwechsel
 node test/test-sprache.mjs     # Spracherkennung, Sprachwahl, Umwandlung alter Dateien, deutsche Reste
+node test/test-druck.mjs       # Druckauswahl, PDF mit Kopf- und Fußzeilen, Formular, Zugangsdaten
 ```
 
 ## Veröffentlichen

@@ -23,15 +23,16 @@ TECHNISCH = re.compile(r"""
   | ^https?:
   | ^\s+[a-z]+$                        # angehängte Klassen wie " primaer"
   | ^[\s·]+$
-  | ^[a-z]+\s$|^[a-z]+\.$|^[a-z0-9\-]+/[a-z0-9\-./]+$
+  | ^[a-z]+(\s[a-z]+)*\s$|^[a-z]+\.$|^[a-z0-9\-]+/[a-z0-9\-./]+$
   | ^[0-9 ]+$|^2-digit$|^[a-z]{2}-[A-Z]{2}$
 """, re.X)
-IMMER = {"ledig", "verheiratet", "geschieden", "verwitwet", "beantragt", "unbekannt", "noch nie"}
+IMMER = {"von", "ledig", "verheiratet", "geschieden", "verwitwet", "beantragt", "unbekannt", "noch nie"}
 NIE = {"Klarordner", "Klarordner-Datei", "AbortError", "NotAllowedError", "PBKDF2", "SHA-256", "AES-GCM",
        "AES-GCM-256", "PBKDF2-SHA-256", "Abgebrochen", "SuperGeheim", "IBAN", "WLAN", "Kfz", "E-Mail",
        "1", "2", "3", "4", "5", "0+", "0-", "A+", "A-", "B+", "B-", "AB+", "AB-", "Depot", "Streaming",
        "Messenger", "Computer", "Deutsch", "English", "Türkçe", "Русский", "Українська", "Polski", "Română",
-       "Italiano", "Ελληνικά", "Hrvatski", "Български", "Čeština", "Español", "Français"}
+       "Italiano", "Ελληνικά", "Hrvatski", "Български", "Čeština", "Español", "Français",
+       "T12:00:00", "input:checked", "☐", "☒", "KLARORDNER"}
 
 
 def texte():
