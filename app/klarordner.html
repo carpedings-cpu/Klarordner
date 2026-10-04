@@ -552,7 +552,7 @@ function leereDaten() {
       vorname: "", nachname: "", geburtsname: "", geburtsdatum: "", geburtsort: "",
       familienstand: "", staatsangehoerigkeit: "",
       strasse: "", plz: "", ort: "", telefon: "", email: "",
-      steuerId: "", rentenversicherungsnummer: "",
+      steuerId: "", rentenversicherungsnummer: "", postrentennummer: "",
       ablagePersonalausweis: "", ablageReisepass: "", ablageGeburtsurkunde: "",
       ablageStammbuch: "", ablageHeiratsurkunde: "", notizen: ""
     },
@@ -1625,7 +1625,8 @@ const FORMULARE = {
       feld("persoenlich.email", "E-Mail", { typ: "email" })),
     gruppe("Wichtige Nummern", "Diese Nummern fragen Rentenversicherung, Finanzamt und Krankenkasse nach einem Todesfall ab.",
       feld("persoenlich.steuerId", "Steuer-Identifikationsnummer", { hilfe: "11 Ziffern, steht auf jedem Steuerbescheid.", eingabemodus: "numeric" }),
-      feld("persoenlich.rentenversicherungsnummer", "Rentenversicherungsnummer", { hilfe: "Steht auf dem Rentenbescheid oder dem Sozialversicherungsausweis.", gross: true })),
+      feld("persoenlich.rentenversicherungsnummer", "Rentenversicherungsnummer", { hilfe: "Steht auf dem Rentenbescheid oder dem Sozialversicherungsausweis.", gross: true }),
+      feld("persoenlich.postrentennummer", "Postrentennummer", { hilfe: "Nur wer schon Rente bekommt. Steht auf Schreiben des Renten Service der Deutschen Post, zum Beispiel der jährlichen Rentenanpassung." })),
     gruppe("Wo liegen Ihre Dokumente?", "Beschreiben Sie den Ort so, dass ihn jemand Fremdes findet.",
       feld("persoenlich.ablagePersonalausweis", "Personalausweis", { hilfe: "Zum Beispiel: Handtasche, Innenfach" }),
       feld("persoenlich.ablageReisepass", "Reisepass"),
@@ -2128,7 +2129,8 @@ function schreibenListe() {
   const liste = [];
   const eilig = ["leben", "sterbegeld", "unfall", "rente"];
   const rs = ANBIETER.find(a => a.id === "rentenservice");
-  liste.push({ id: "rente", art: "rente", titel: "Renten Service der Deutschen Post", gruppe: "Mitteilungen", adresse: rs && rs.adresse, anbieter: rs });
+  liste.push({ id: "rente", art: "rente", titel: "Renten Service der Deutschen Post", gruppe: "Mitteilungen", adresse: rs && rs.adresse, anbieter: rs,
+    hinweis: "Wichtig für Ehe- und Lebenspartner: Den Vorschuss für das Sterbevierteljahr innerhalb von 30 Tagen beantragen. Die Anleitung wird mitgedruckt." });
   if (voll(d.gesundheit.krankenkasse.name)) {
     liste.push({ id: "krankenkasse", art: "krankenkasse", titel: d.gesundheit.krankenkasse.name, gruppe: "Mitteilungen", adresse: d.gesundheit.krankenkasse.name });
   }
@@ -2147,7 +2149,8 @@ function schreibenListe() {
   }
   const rf = ANBIETER.find(a => a.id === "rundfunk");
   const rfVertrag = d.vertraege.find(v => normWert(v.art, "vertrag") === "rundfunk");
-  liste.push({ id: "rundfunk", art: "rundfunk", titel: t("Rundfunkbeitrag"), gruppe: "Kündigungen", adresse: rf && rf.adresse, anbieter: rf, vertrag: rfVertrag });
+  liste.push({ id: "rundfunk", art: "rundfunk", titel: t("Rundfunkbeitrag"), gruppe: "Kündigungen", adresse: rf && rf.adresse, anbieter: rf, vertrag: rfVertrag,
+    hinweis: "Schneller geht es mit dem Online-Formular „Wohnung abmelden“ auf rundfunkbeitrag.de. Der Brief ist der Weg ohne Internet." });
   d.vertraege.forEach((v, i) => {
     const art = normWert(v.art, "vertrag");
     if (art === "miete" || art === "rundfunk" || (!voll(v.anbieter) && !voll(v.art))) return;
@@ -2186,8 +2189,10 @@ function briefInhalt(s) {
   const mit = (betreff, wert) => betreff + (wert ? `, ${wert}` : "");
   switch (s.art) {
     case "rente":
-      return { betreff: mit("Mitteilung über einen Sterbefall", voll(p.rentenversicherungsnummer) && `Rentenversicherungsnummer ${p.rentenversicherungsnummer.trim()}`),
-        absaetze: [tot, ich, "Bitte stellen Sie die Rentenzahlung zum Ende des Sterbemonats ein. Falls Hinterbliebene Anspruch auf eine Rente oder einen Vorschuss haben, senden Sie mir bitte die nötigen Antragsunterlagen.", bestaetigung],
+      return { betreff: mit("Mitteilung über einen Sterbefall", voll(p.postrentennummer) ? `Postrentennummer ${p.postrentennummer.trim()}` : voll(p.rentenversicherungsnummer) && `Rentenversicherungsnummer ${p.rentenversicherungsnummer.trim()}`),
+        absaetze: [tot, ich, "Bitte stellen Sie die Rentenzahlung ein und teilen Sie mir mit, ob noch Beträge zurückzuzahlen oder nachzuzahlen sind.",
+          /ehe|witw|partner|gatt/i.test(w.beziehung || "") ? "Als hinterbliebene Ehe- oder Lebenspartnerin bzw. hinterbliebener Ehe- oder Lebenspartner beantrage ich den Vorschuss für das Sterbevierteljahr. Das Änderungsformular mit dem Original der Sterbeurkunde und meiner Bankverbindung reiche ich gesondert ein, sofern es nicht beiliegt." : null,
+          bestaetigung],
         anlagen: ["Kopie der Sterbeurkunde"] };
     case "krankenkasse":
       return { betreff: mit("Mitteilung über einen Sterbefall", voll(d.gesundheit.krankenkasse.versichertennummer) && `Versichertennummer ${d.gesundheit.krankenkasse.versichertennummer.trim()}`),
@@ -2256,7 +2261,7 @@ function briefSeite(s) {
     el("p", { text: "Mit freundlichen Grüßen" }),
     el("div", { class: "bunterschrift" }),
     el("p", { class: "bname", text: voll(w.absender) ? w.absender.trim() : "" }),
-    el("p", { class: "banlagen" }, el("strong", { text: "Anlagen: " }), inhalt.anlagen.join(", ")));
+    el("p", { class: "banlagen" }, el("strong", { text: "Anlagen: " }), ((s.anbieter && s.anbieter.anlagen) || inhalt.anlagen).join(", ")));
 }
 
 function anleitungSeite(s) {
@@ -2264,20 +2269,23 @@ function anleitungSeite(s) {
   const k = s.konto || {};
   return el("section", { class: "dbrief danleitung" },
     el("h1", { text: `${s.titel}: Was ist zu tun?` }),
+    s.art !== "anleitung" ? el("p", { text: "Diese Seite gehört zum vorbereiteten Schreiben und ist nicht zum Verschicken gedacht." }) : null,
     voll(k.benutzername) ? el("p", {}, el("strong", { text: "Konto: " }), k.benutzername) : null,
     voll(k.wunsch) ? el("p", {}, el("strong", { text: "Wunsch der verstorbenen Person: " }), optText("wunsch", k.wunsch) + (voll(k.uebertragenAn) ? ` (${k.uebertragenAn})` : "")) : null,
     a && a.schritte && a.schritte.length ? el("ol", {}, ...a.schritte.map(x => el("li", { text: x }))) : el("p", { text: "Dieser Anbieter nimmt Kündigungen im Todesfall nur über ein eigenes Online-Formular oder den Kundenservice an. Suchen Sie auf der Webseite des Anbieters nach „Konto einer verstorbenen Person“." }),
     a && a.unterlagen && a.unterlagen.length ? el("p", {}, el("strong", { text: "Benötigte Unterlagen: " }), a.unterlagen.join(", ")) : null,
     a && a.url ? el("p", {}, el("strong", { text: "Webseite: " }), a.url) : null,
     a && a.hinweis ? el("p", { text: a.hinweis }) : null,
-    a && a.stand ? el("p", { class: "bstand", text: `Angaben geprüft im ${a.stand}. Bitte prüfen Sie vor dem Absenden, ob sich etwas geändert hat.` }) : null);
+    a && a.stand ? el("p", { class: "bstand", text: a.sicher
+      ? `Angaben nach den Hilfeseiten des Anbieters, Stand ${a.stand}. Bitte prüfen Sie vor dem Absenden, ob sich etwas geändert hat.`
+      : `Stand ${a.stand}. Der Anbieter hat kein eigenes Verfahren für Todesfälle veröffentlicht oder die Angaben ließen sich nicht vollständig bestätigen. Bitte prüfen Sie sie auf der Webseite des Anbieters.` }) : null);
 }
 /* NUR-DEUTSCH-ENDE */
 
 function schreibenAnsicht() {
   const liste = schreibenListe();
   const gruppen = ["Mitteilungen", "Kündigungen", "Online-Konten"];
-  const art = s => s.art === "anleitung" ? t("Anleitung für den Online-Antrag") : t("Brief");
+  const art = s => s.art === "anleitung" ? t("Anleitung für den Online-Antrag") : (s.anbieter && s.anbieter.schritte ? t("Brief mit Anleitung") : t("Brief"));
   const eintrag = s => {
     const id = neueId();
     const box = el("input", { type: "checkbox", id, value: s.id, checked: true });
@@ -2332,7 +2340,9 @@ function briefeDrucken(auswahl) {
   const vorher = sprache;
   sprache = "de";
   try {
-    ziel.replaceChildren(...auswahl.map(s => (s.art === "anleitung" ? anleitungSeite(s) : briefSeite(s))));
+    // Bei Anbietern mit beschriebenem Verfahren folgt dem Brief eine Anleitung für die Angehörigen.
+    ziel.replaceChildren(...auswahl.flatMap(s => s.art === "anleitung" ? [anleitungSeite(s)]
+      : (s.anbieter && s.anbieter.schritte && s.anbieter.schritte.length ? [briefSeite(s), anleitungSeite(s)] : [briefSeite(s)])));
   } finally {
     sprache = vorher;
   }
