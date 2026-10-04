@@ -27,6 +27,7 @@ Erzeugt `docs/` für die Web-App mit neuer Cache-Version und `dist/klarordner.ht
 node test/test-formulare.mjs   # alle Bereiche, Einträge, Speichern
 node test/test-webapp.mjs      # Installation, Offline-Betrieb, Speichern über Teilen
 node test/test-geraet.mjs      # Speichern im Gerät, Sicherung als Datei, Löschen
+node test/test-tresor.mjs      # Verschlüsselung der Zugangsdaten, Sperre, Passwortwechsel
 ```
 
 ## Veröffentlichen

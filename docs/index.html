@@ -239,6 +239,17 @@ p { margin: 0; }
 .btn.loeschen { color: var(--rot); }
 .btn.loeschen:hover { background: #fde8e6; }
 
+.geheimzeile { display: flex; gap: .5rem; }
+.geheimzeile input { flex: 1; min-width: 0; }
+.btn.zeigen { flex: none; }
+.fehlertext { color: var(--rot); font-weight: 600; min-height: 0; }
+.fehlertext:empty { display: none; }
+.bestaetigung { display: flex; align-items: flex-start; gap: .75rem; }
+.bestaetigung input { width: 1.6rem; height: 1.6rem; margin: .1rem 0 0; flex: none; accent-color: var(--blau); }
+.bestaetigung label { font-weight: 600; }
+.formkarte.offen h3 { display: flex; align-items: center; gap: .5rem; }
+.formkarte.offen .knopfreihe { margin-top: 1rem; }
+
 .blaettern { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem; margin-top: 2rem; }
 
 dialog {
@@ -603,6 +614,7 @@ async function vomGeraetLoeschen() {
   if (antwort !== "loeschen") return;
   clearTimeout(speicherTimer);
   try { await speicher.loeschen(); } catch {}
+  tresorVergessen();
   Object.assign(zustand, { daten: null, handle: null, dateiname: null, geaendert: false, gesichertAm: null, speichertGerade: false });
   alles();
 }
@@ -664,6 +676,7 @@ function alsText() {
 async function neuAnlegen() {
   const daten = leereDaten();
   daten.lastModified = new Date().toISOString();
+  tresorVergessen();
   Object.assign(zustand, { daten, handle: null, dateiname: STANDARDNAME, geaendert: true, gesichertAm: null, ansicht: "uebersicht" });
   await imGeraetSpeichern();
   alles();
@@ -695,6 +708,7 @@ async function laden(datei, handle) {
     await melden("Die Datei konnte nicht geöffnet werden", e.message);
     return;
   }
+  tresorVergessen();
   Object.assign(zustand, { daten, handle, dateiname: datei.name, geaendert: false, gesichertAm: new Date().toISOString(), ansicht: "uebersicht" });
   await imGeraetSpeichern();
   alles();
@@ -702,6 +716,12 @@ async function laden(datei, handle) {
 
 async function sichern() {
   if (!zustand.daten) return false;
+  if (tresorTimer) await tresorSichern();
+  // Jede Sicherung bekommt einen neuen IV, auch ohne Änderung seit der letzten.
+  if (tresor.schluessel) {
+    await tresorLauf;
+    await tresorVerschluesseln(zustand.daten);
+  }
   let weg = "datei";
   try {
     if (hatFsa) {
@@ -749,16 +769,27 @@ function fehlerText(e) {
 
 /* ---------- Daten ändern ---------- */
 
+function wurzel(pfad) {
+  return pfad.startsWith("tresor.") ? [tresor.inhalt, pfad.slice(7)] : [zustand.daten, pfad];
+}
+
 function pfadLesen(pfad) {
-  return pfad.split(".").reduce((o, k) => (o == null ? undefined : o[k]), zustand.daten);
+  const [start, rest] = wurzel(pfad);
+  return rest.split(".").reduce((o, k) => (o == null ? undefined : o[k]), start);
 }
 
 function pfadSchreiben(pfad, wert) {
-  const teile = pfad.split(".");
+  const [start, rest] = wurzel(pfad);
+  const teile = rest.split(".");
   const letzter = teile.pop();
-  const obj = teile.reduce((o, k) => o[k], zustand.daten);
+  const obj = teile.reduce((o, k) => o[k], start);
   obj[letzter] = wert;
-  geaendert();
+  aenderung(pfad);
+}
+
+function aenderung(pfad) {
+  if (pfad.startsWith("tresor.")) tresorGeaendert();
+  else geaendert();
 }
 
 function geaendert() {
@@ -766,6 +797,223 @@ function geaendert() {
   zustand.geaendert = true;
   speichernVormerken();
   statusZeigen();
+}
+
+/* ---------- Tresor für Zugangsdaten ---------- */
+
+const TRESOR_RUNDEN = 600000;
+const SPERRE_NACH = 10 * 60 * 1000;
+const kryptoOk = !!(window.crypto && crypto.subtle);
+const tresor = { schluessel: null, salt: null, runden: TRESOR_RUNDEN, inhalt: null, sperrTimer: null, aendern: false };
+let tresorTimer = null;
+let tresorLauf = Promise.resolve();
+
+function zuB64(puffer) {
+  const bytes = new Uint8Array(puffer);
+  let text = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(text);
+}
+
+const ausB64 = text => Uint8Array.from(atob(text), c => c.charCodeAt(0));
+
+async function schluesselAbleiten(passwort, salt, runden) {
+  const basis = await crypto.subtle.importKey("raw", new TextEncoder().encode(passwort), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: runden, hash: "SHA-256" },
+    basis, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+
+// Jede Verschlüsselung bekommt einen neuen IV. Salt und Rundenzahl stehen mit in der Datei.
+async function tresorVerschluesseln(ziel) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const klar = new TextEncoder().encode(JSON.stringify(tresor.inhalt));
+  const geheim = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, tresor.schluessel, klar);
+  ziel.zugang = {
+    verfahren: "AES-GCM-256", ableitung: "PBKDF2-SHA-256", runden: tresor.runden,
+    salt: zuB64(tresor.salt), iv: zuB64(iv), daten: zuB64(geheim)
+  };
+}
+
+async function tresorEntschluesseln(passwort) {
+  const z = zustand.daten.zugang;
+  const salt = ausB64(z.salt);
+  const schluessel = await schluesselAbleiten(passwort, salt, z.runden);
+  const klar = await crypto.subtle.decrypt({ name: "AES-GCM", iv: ausB64(z.iv) }, schluessel, ausB64(z.daten));
+  return { schluessel, salt, runden: z.runden, inhalt: JSON.parse(new TextDecoder().decode(klar)) };
+}
+
+function tresorGeaendert() {
+  zustand.geaendert = true;
+  zustand.speichertGerade = true;
+  statusZeigen();
+  clearTimeout(tresorTimer);
+  tresorTimer = setTimeout(tresorSichern, 400);
+}
+
+function tresorSichern() {
+  clearTimeout(tresorTimer);
+  tresorTimer = null;
+  const ziel = zustand.daten;
+  if (!tresor.schluessel || !ziel) return tresorLauf;
+  tresorLauf = tresorLauf.then(async () => {
+    await tresorVerschluesseln(ziel);
+    if (ziel === zustand.daten) geaendert();
+  }).catch(() => {});
+  return tresorLauf;
+}
+
+async function tresorSperren() {
+  if (tresorTimer) await tresorSichern();
+  else await tresorLauf;
+  tresorVergessen();
+  if (zustand.daten && zustand.ansicht === "zugang") inhaltZeigen();
+}
+
+// Ohne erneute Verschlüsselung, wenn der Ordner ersetzt oder gelöscht wird.
+function tresorVergessen() {
+  clearTimeout(tresorTimer);
+  clearTimeout(tresor.sperrTimer);
+  tresorTimer = null;
+  Object.assign(tresor, { schluessel: null, salt: null, inhalt: null, sperrTimer: null, aendern: false });
+}
+
+function sperreVerlaengern() {
+  if (!tresor.schluessel) return;
+  clearTimeout(tresor.sperrTimer);
+  tresor.sperrTimer = setTimeout(tresorSperren, SPERRE_NACH);
+}
+
+function fehlerZeile() {
+  return el("p", { class: "fehlertext breit", role: "alert" });
+}
+
+function tresorAnlegen() {
+  const eins = passwortFeld("Passwort", "Mindestens 10 Zeichen. Gut merkbar ist ein ganzer Satz, den nur Sie kennen.");
+  const zwei = passwortFeld("Passwort wiederholen");
+  const hakenId = neueId();
+  const haken = el("input", { type: "checkbox", id: hakenId });
+  const fehler = fehlerZeile();
+  const knopf = el("button", { type: "submit", class: "btn primaer", text: "Zugangsdaten schützen" });
+  const formular = el("form", { class: "felder", novalidate: true },
+    eins.feld, zwei.feld,
+    el("div", { class: "bestaetigung breit" }, haken,
+      el("label", { for: hakenId, text: "Ich habe verstanden: Ohne dieses Passwort sind die Zugangsdaten verloren." })),
+    fehler, el("div", { class: "knopfreihe breit" }, knopf));
+  formular.addEventListener("submit", async e => {
+    e.preventDefault();
+    const pw = eins.eingabe.value;
+    fehler.textContent = "";
+    if (pw.length < 10) { fehler.textContent = `Das Passwort ist zu kurz: ${pw.length} von mindestens 10 Zeichen.`; eins.eingabe.focus(); return; }
+    if (pw !== zwei.eingabe.value) { fehler.textContent = "Die beiden Eingaben stimmen nicht überein."; zwei.eingabe.focus(); return; }
+    if (!haken.checked) { fehler.textContent = "Bitte bestätigen Sie den Hinweis zum Passwort."; haken.focus(); return; }
+    knopf.disabled = true;
+    knopf.textContent = "Wird eingerichtet …";
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    Object.assign(tresor, { schluessel: await schluesselAbleiten(pw, salt, TRESOR_RUNDEN), salt, runden: TRESOR_RUNDEN, inhalt: { eintraege: [] } });
+    await tresorVerschluesseln(zustand.daten);
+    geaendert();
+    sperreVerlaengern();
+    inhaltZeigen();
+  });
+  return [
+    hinweis(["Ihre Zugangsdaten werden mit einem eigenen Passwort verschlüsselt. Ohne dieses Passwort kann sie niemand öffnen, auch Sie selbst nicht. Ein vergessenes Passwort lässt sich nicht zurücksetzen.",
+      "Hinterlegen Sie das Passwort deshalb sicher, zum Beispiel bei Ihrem Testament, beim Notar oder in einem versiegelten Umschlag bei einer Vertrauensperson."],
+      "gelb", "Wichtig: Merken Sie sich dieses Passwort gut"),
+    el("section", { class: "formkarte" },
+      el("h3", { text: "Passwort für die Zugangsdaten festlegen" }),
+      el("p", { class: "kartenhilfe", text: "Dieses Passwort gilt nur für diesen Bereich. Alle anderen Bereiche bleiben ohne Passwort lesbar, damit Ihre Angehörigen im Notfall schnell an das Wichtigste kommen." }),
+      formular)
+  ];
+}
+
+function tresorOeffnen() {
+  const pw = passwortFeld("Passwort für die Zugangsdaten");
+  const fehler = fehlerZeile();
+  const knopf = el("button", { type: "submit", class: "btn primaer", text: "Öffnen" });
+  const formular = el("form", { class: "felder", novalidate: true }, pw.feld, fehler, el("div", { class: "knopfreihe breit" }, knopf));
+  formular.addEventListener("submit", async e => {
+    e.preventDefault();
+    fehler.textContent = "";
+    knopf.disabled = true;
+    knopf.textContent = "Wird geöffnet …";
+    try {
+      Object.assign(tresor, await tresorEntschluesseln(pw.eingabe.value));
+      sperreVerlaengern();
+      inhaltZeigen();
+    } catch {
+      fehler.textContent = "Das Passwort stimmt nicht. Bitte achten Sie auf Groß- und Kleinschreibung.";
+      pw.eingabe.value = "";
+      pw.eingabe.focus();
+      knopf.disabled = false;
+      knopf.textContent = "Öffnen";
+    }
+  });
+  return [el("section", { class: "formkarte" },
+    el("h3", { text: "Die Zugangsdaten sind gesperrt" }),
+    el("p", { class: "kartenhilfe", text: "Geben Sie das Passwort ein, das Sie für diesen Bereich festgelegt haben." }),
+    formular)];
+}
+
+function passwortAendern() {
+  const alt = passwortFeld("Bisheriges Passwort");
+  const neu = passwortFeld("Neues Passwort", "Mindestens 10 Zeichen.");
+  const neu2 = passwortFeld("Neues Passwort wiederholen");
+  const fehler = fehlerZeile();
+  const knopf = el("button", { type: "submit", class: "btn primaer", text: "Passwort ändern" });
+  const formular = el("form", { class: "felder", novalidate: true }, alt.feld, neu.feld, neu2.feld, fehler,
+    el("div", { class: "knopfreihe breit" }, knopf,
+      el("button", { type: "button", class: "btn", text: "Abbrechen", onclick: () => { tresor.aendern = false; inhaltZeigen(); } })));
+  formular.addEventListener("submit", async e => {
+    e.preventDefault();
+    fehler.textContent = "";
+    const pw = neu.eingabe.value;
+    if (pw.length < 10) { fehler.textContent = `Das neue Passwort ist zu kurz: ${pw.length} von mindestens 10 Zeichen.`; return; }
+    if (pw !== neu2.eingabe.value) { fehler.textContent = "Die beiden neuen Eingaben stimmen nicht überein."; return; }
+    knopf.disabled = true;
+    if (tresorTimer) await tresorSichern(); else await tresorLauf;
+    try {
+      await tresorEntschluesseln(alt.eingabe.value);
+    } catch {
+      fehler.textContent = "Das bisherige Passwort stimmt nicht.";
+      knopf.disabled = false;
+      return;
+    }
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    Object.assign(tresor, { schluessel: await schluesselAbleiten(pw, salt, TRESOR_RUNDEN), salt, runden: TRESOR_RUNDEN, aendern: false });
+    await tresorVerschluesseln(zustand.daten);
+    geaendert();
+    inhaltZeigen();
+    melden("Passwort geändert",
+      "Ersetzen Sie auch das hinterlegte Passwort, zum Beispiel im Umschlag oder beim Notar.",
+      "Ältere Sicherungsdateien lassen sich weiterhin nur mit dem bisherigen Passwort öffnen. Sichern Sie Ihren Ordner deshalb jetzt neu als Datei.");
+  });
+  return el("section", { class: "formkarte" }, el("h3", { text: "Passwort ändern" }), formular);
+}
+
+function tresorInhalt() {
+  return [
+    el("section", { class: "formkarte offen" },
+      el("h3", {}, symbol("schloss", "klein", "#23a149"), " Geöffnet"),
+      el("p", { class: "kartenhilfe", text: "Der Bereich sperrt sich nach 10 Minuten ohne Eingabe von selbst." }),
+      el("div", { class: "knopfreihe" },
+        el("button", { type: "button", class: "btn primaer", text: "Jetzt sperren", onclick: tresorSperren }),
+        tresor.aendern ? null : el("button", { type: "button", class: "btn", text: "Passwort ändern", onclick: () => { tresor.aendern = true; inhaltZeigen(); } }))),
+    tresor.aendern ? passwortAendern() : null,
+    hinweis("Bitte tragen Sie hier keine Bank-PIN, keine TAN und keine Zugänge zum Online-Banking ein. Ihre Angehörigen bekommen mit Vollmacht oder Erbschein über die Bank Zugang zu Ihren Konten."),
+    gruppe("Ihre Zugangsdaten", "Zum Beispiel der Code für Ihr Handy, das Passwort für den Computer oder für Ihr E-Mail-Postfach.",
+      liste("tresor.eintraege", {
+        einzahl: "Zugang",
+        neu: () => ({ art: "", bezeichnung: "", benutzer: "", passwort: "", notiz: "" }),
+        kopf: z => z.bezeichnung,
+        felder: p => [
+          feld(p + ".art", "Art", { typ: "auswahl", optionen: ["Handy oder Tablet", "Computer", "E-Mail", "Online-Konto", "WLAN", "Sonstiges"] }),
+          feld(p + ".bezeichnung", "Wofür?", { hilfe: "Zum Beispiel: iPhone, Amazon, GMX" }),
+          feld(p + ".benutzer", "Benutzername oder E-Mail-Adresse", { breit: true }),
+          feld(p + ".passwort", "Passwort, PIN oder Code", { typ: "password", breit: true }),
+          feld(p + ".notiz", "Hinweis", { breit: true })
+        ]
+      }))
+  ].filter(Boolean);
 }
 
 /* ---------- Anzeige ---------- */
@@ -785,7 +1033,7 @@ function statusZeigen() {
     pille = zustand.geaendert
       ? el("span", { class: "pille offen", text: "Noch nicht als Datei gesichert" })
       : el("span", { class: "pille ok", text: "Als Datei gesichert" });
-  } else if (zustand.speichertGerade) {
+  } else if (zustand.speichertGerade || tresorTimer) {
     pille = el("span", { class: "pille", text: "Wird gespeichert …" });
   } else {
     pille = el("span", { class: "pille ok", text: "Auf diesem Gerät gespeichert" });
@@ -913,7 +1161,29 @@ function feld(pfad, beschriftung, opt = {}) {
     eingabe.setAttribute("aria-describedby", id + "h");
   }
   return el("div", { class: "feld" + (opt.breit || typ === "mehrzeilig" ? " breit" : "") },
-    el("label", { for: id, text: beschriftung }), hilfe, eingabe);
+    el("label", { for: id, text: beschriftung }), hilfe, typ === "password" ? geheimZeile(eingabe) : eingabe);
+}
+
+function geheimZeile(eingabe) {
+  const knopf = el("button", { type: "button", class: "btn zeigen", "aria-pressed": "false", text: "Anzeigen" });
+  knopf.addEventListener("click", () => {
+    const sichtbar = eingabe.type === "password";
+    eingabe.type = sichtbar ? "text" : "password";
+    knopf.textContent = sichtbar ? "Verbergen" : "Anzeigen";
+    knopf.setAttribute("aria-pressed", String(sichtbar));
+  });
+  return el("div", { class: "geheimzeile" }, eingabe, knopf);
+}
+
+function passwortFeld(beschriftung, hilfe) {
+  const id = neueId();
+  const eingabe = el("input", { id, type: "password", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
+  const teile = [el("label", { for: id, text: beschriftung })];
+  if (hilfe) {
+    teile.push(el("p", { class: "hilfe", id: id + "h", text: hilfe }));
+    eingabe.setAttribute("aria-describedby", id + "h");
+  }
+  return { eingabe, feld: el("div", { class: "feld breit" }, ...teile, geheimZeile(eingabe)) };
 }
 
 function wahl(pfad, frage, optionen, opt = {}) {
@@ -973,7 +1243,7 @@ function liste(pfad, cfg) {
                 [{ text: "Entfernen", wert: true, primaer: true }, { text: "Abbrechen", wert: false }]);
               if (!ok) return;
               eintraege.splice(i, 1);
-              geaendert();
+              aenderung(pfad);
               zeichnen();
             }
           })),
@@ -988,7 +1258,7 @@ function liste(pfad, cfg) {
         text: `+ ${cfg.hinzu || cfg.einzahl} hinzufügen`,
         onclick: () => {
           eintraege.push(cfg.neu());
-          geaendert();
+          aenderung(pfad);
           zeichnen(true);
         }
       }));
@@ -1303,6 +1573,13 @@ const FORMULARE = {
       }))
   ],
 
+  zugang: () => {
+    if (!kryptoOk) return [hinweis("Dieser Bereich braucht eine sichere Umgebung. Bitte öffnen Sie Klarordner über die Web-Adresse oder in einem aktuellen Browser.", "gelb")];
+    if (!zustand.daten.zugang) return tresorAnlegen();
+    if (!tresor.schluessel) return tresorOeffnen();
+    return tresorInhalt();
+  },
+
   nachricht: () => [
     gruppe("Ihre Nachricht", "Schreiben Sie, was Ihnen am Herzen liegt. Sie können den Text jederzeit ändern.",
       feld("nachricht.text", "Ihre Nachricht an Ihre Angehörigen", { typ: "mehrzeilig", zeilen: 14 }))
@@ -1386,13 +1663,17 @@ document.addEventListener("keydown", e => {
   }
 });
 
+for (const art of ["input", "keydown", "pointerdown"]) document.addEventListener(art, sperreVerlaengern, true);
+
 // Ausstehende Eingaben sofort ablegen, wenn die App in den Hintergrund geht.
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden" && speicherTimer) imGeraetSpeichern();
+  if (document.visibilityState !== "hidden") return;
+  if (tresorTimer) tresorSichern().then(imGeraetSpeichern);
+  else if (speicherTimer) imGeraetSpeichern();
 });
 
 window.addEventListener("beforeunload", e => {
-  if (speicherTimer || (!zustand.geraetOk && zustand.geaendert)) {
+  if (speicherTimer || tresorTimer || (!zustand.geraetOk && zustand.geaendert)) {
     e.preventDefault();
     e.returnValue = "";
   }
