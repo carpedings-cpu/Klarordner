@@ -50,7 +50,7 @@ for (let i = 0; i <= 12; i++) {
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     const out = []; let n;
     while ((n = w.nextNode())) { const s = n.textContent.trim(); if (s && n.parentElement.offsetParent !== null) out.push(s); }
-    for (const o of document.querySelectorAll('option, [aria-label]')) out.push((o.textContent || o.getAttribute('aria-label')).trim());
+    for (const o of document.querySelectorAll('select option, [aria-label]')) out.push((o.textContent || o.getAttribute('aria-label') || '').trim());
     return out;
   });
   for (const s of texte) if (deutsch.has(s)) reste.add(s);
