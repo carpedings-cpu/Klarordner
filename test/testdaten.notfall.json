@@ -1,0 +1,45 @@
+{
+  "format": "klarordner",
+  "schemaVersion": 1,
+  "lastModified": "2025-06-14T09:30:00.000Z",
+  "persoenlich": {
+    "vorname": "Erika", "nachname": "Musterfrau", "geburtsname": "Beispiel",
+    "geburtsdatum": "1952-03-17", "geburtsort": "Musterhausen",
+    "familienstand": "verwitwet", "staatsangehoerigkeit": "deutsch",
+    "strasse": "Lindenweg 4", "plz": "12345", "ort": "Beispielstadt",
+    "telefon": "01234 567890",
+    "ablagePersonalausweis": "Handtasche, Innenfach",
+    "ablageStammbuch": "Wohnzimmerschrank, oberste Schublade"
+  },
+  "kontakte": [
+    { "name": "Thomas Musterfrau", "beziehung": "Sohn", "rolle": "Bevollmächtigte/r", "telefon": "01234 000001", "mobil": "", "email": "", "anschrift": "Am Markt 1, 12345 Beispielstadt", "notiz": "Hat einen Wohnungsschlüssel" },
+    { "name": "Gisela Nachbarin", "beziehung": "Nachbarin", "rolle": "Nachbar/in", "telefon": "01234 000002", "mobil": "", "email": "", "anschrift": "", "notiz": "" }
+  ],
+  "gesundheit": {
+    "hausarzt": { "name": "Dr. Beispiel, Praxis am Markt", "telefon": "01234 111111", "anschrift": "Marktplatz 1" },
+    "fachaerzte": [ { "fachrichtung": "Kardiologie", "name": "Dr. Herzlich", "telefon": "01234 222222", "anschrift": "" } ],
+    "krankenkasse": { "name": "Beispiel-Krankenkasse", "versichertennummer": "A123456789", "telefon": "" },
+    "medikamente": [ { "name": "Blutdrucksenker", "dosierung": "1 Tablette morgens", "hinweis": "" } ],
+    "allergien": "Penicillin",
+    "organspende": "Ja", "ablageOrganspendeausweis": "Geldbörse"
+  },
+  "vollmachten": {
+    "vorsorgevollmacht": { "vorhanden": "Ja", "bevollmaechtigt": "Thomas Musterfrau (Sohn)", "ablage": "Ordner im Arbeitszimmer", "registriert": "Ja" },
+    "patientenverfuegung": { "vorhanden": "Nein", "bevollmaechtigt": "", "ablage": "", "registriert": "" }
+  },
+  "finanzen": {
+    "konten": [ { "bank": "Beispielbank", "kontoart": "Girokonto", "iban": "DE00 0000 0000 0000 0000 00", "ansprechpartner": "", "telefon": "", "vollmachtUeberTod": "Ja", "bevollmaechtigt": "Thomas Musterfrau", "notiz": "" } ]
+  },
+  "versicherungen": [
+    { "art": "Sterbegeldversicherung", "gesellschaft": "Muster-Versicherung", "vertragsnummer": "SG-0001", "beguenstigt": "Thomas Musterfrau", "ablage": "Ordner Versicherungen", "notiz": "" }
+  ],
+  "vertraege": [
+    { "art": "Streaming", "anbieter": "Beispiel-Streaming", "vertragsnummer": "", "kosten": "9,99 € im Monat", "kuendigung": "Online im Kundenkonto", "notiz": "" }
+  ],
+  "wohnen": { "wohnform": "zur Miete", "haustiere": [ { "tier": "Katze", "name": "Minka", "betreuer": "Gisela Nachbarin", "tierarzt": "", "hinweis": "" } ] },
+  "digital": {
+    "konten": [ { "kategorie": "E-Mail", "anbieter": "Beispiel-Mail", "benutzername": "erika@example.org", "wunsch": "Löschen", "uebertragenAn": "", "notiz": "" } ]
+  },
+  "sterbefall": { "bestattungsart": "Feuerbestattung mit Urnengrab", "checkliste": { "rente": "Rentenversicherungsnummer siehe Persönliche Daten" } },
+  "nachricht": { "text": "Liebe Familie,\ndas hier ist ein Testtext." }
+}
