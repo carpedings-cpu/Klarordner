@@ -32,7 +32,7 @@ const ctx = await browser.newContext({ locale: 'de-DE',  acceptDownloads: true, 
 const p = await neueSeite(ctx);
 await p.goto(url);
 await p.click('#btnNeu');
-await p.click('#navliste li:nth-child(10) button');
+await p.click('#navliste button[data-id=zugang]');
 const pw1 = p.locator('#inhalt input[type=password]').nth(0), pw2 = p.locator('#inhalt input[type=password]').nth(1);
 await pw1.fill('kurz'); await p.click('button:has-text("Zugangsdaten schützen")');
 console.log('Zu kurz:', await p.textContent('.fehlertext'));
@@ -64,7 +64,7 @@ console.log('Klartext im Gerätespeicher:', geraet.includes(GEHEIM) || geraet.in
 
 // Neustart: gesperrt, falsches und richtiges Passwort
 await p.reload();
-await p.click('#navliste li:nth-child(10) button');
+await p.click('#navliste button[data-id=zugang]');
 console.log('Nach Neustart:', await p.textContent('#inhalt h3'));
 await p.fill('#inhalt input[type=password]', 'falsches Passwort');
 await p.click('form button:has-text("Öffnen")');
@@ -99,7 +99,7 @@ const q = await neueSeite(ctx2);
 await q.clock.install();
 await q.goto(url);
 await q.click('#btnNeu');
-await q.click('#navliste li:nth-child(10) button');
+await q.click('#navliste button[data-id=zugang]');
 await q.locator('#inhalt input[type=password]').nth(0).fill(PW);
 await q.locator('#inhalt input[type=password]').nth(1).fill(PW);
 await q.check('.bestaetigung input');

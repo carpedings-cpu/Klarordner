@@ -43,7 +43,7 @@ console.log('Druck aufgerufen:', await p.evaluate(() => window.__gedruckt));
 const a = await pdfText(p, 'druck-testdaten');
 const pruef = (was, ja) => console.log(`  ${ja ? 'ok ' : 'FEHLT'} ${was}`);
 console.log('PDF Seiten:', a.seiten);
-pruef('Deckblatt mit Name', a.text.includes('Notfall- und Vorsorgeordner') && a.text.includes('Erika Musterfrau'));
+pruef('Deckblatt mit Name', a.text.includes('Vorsorgeordner für meine Angehörigen') && a.text.includes('Erika Musterfrau'));
 pruef('geboren am 17.03.1952', a.text.includes('geboren am 17.03.1952'));
 pruef('Kopfzeile Bereichsname', /1\. Persönliche Daten[\s\S]*Erika Musterfrau/.test(a.text));
 pruef('Fußzeile Stand', a.text.includes('Stand: 14.06.2025'));
@@ -53,7 +53,10 @@ pruef('Auswahl als Text', a.text.includes('verwitwet') && a.text.includes('Sterb
 pruef('Kästchen angekreuzt', a.text.includes('☒ Ja'));
 pruef('Leere Checkliste mit Kästchen', a.text.includes('☐ Arzt rufen'));
 pruef('Hinweis Frist', a.text.includes('Eilt im Todesfall'));
-pruef('Ohne Zugangsdaten', !a.text.includes('10. Zugangsdaten'));
+pruef('Ohne Zugangsdaten', !a.text.includes('9. Zugangsdaten'));
+pruef('Kein Bereich Gesundheit mehr', !a.text.includes('Gesundheit') && !a.text.includes('Allergien'));
+pruef('Testament-Bereich', a.text.includes('3. Testament und Vollmachten') && a.text.includes('Haben Sie ein Testament?'));
+pruef('Hausarzt und Krankenkasse umgezogen', a.text.includes('Dr. Beispiel') && a.text.includes('Beispiel-Krankenkasse'));
 pruef('Kein Englisch im Ausdruck', !a.text.includes('Personal details') && !a.text.includes('Contacts'));
 await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
 console.log('Nach dem Druck geleert:', await p.evaluate(() => !document.getElementById('druck').firstChild));
@@ -72,7 +75,7 @@ pruef('Kurze Auswahl als Kästchen', b.text.includes('☐ verheiratet'));
 execFileSync('pdftoppm', ['-r', '50', '-png', '-f', '2', '-l', '3', b.datei, path.join(erg, 'leer')]);
 
 // 3. Zugangsdaten: gesperrt nicht wählbar, offen mit Warnung
-await p.click('#navliste li:nth-child(10) button');
+await p.click('#navliste button[data-id=zugang]');
 await p.locator('#inhalt input[type=password]').nth(0).fill('Mein Hund heisst Bello');
 await p.locator('#inhalt input[type=password]').nth(1).fill('Mein Hund heisst Bello');
 await p.check('.bestaetigung input');

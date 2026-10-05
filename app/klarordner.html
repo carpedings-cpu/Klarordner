@@ -400,7 +400,7 @@ dialog .knopfreihe .btn { width: 100%; }
     <div class="blasen" aria-hidden="true"><span class="blase"></span><span class="blase"></span><span class="blase"></span><span class="blase"></span><span class="blase"></span><span class="blase"></span></div>
     <div class="logo-gross" aria-hidden="true">K</div>
     <h1>Klarordner</h1>
-    <p class="unterzeile"><span data-t="Alles Wichtige für den Notfall.">Alles Wichtige für den Notfall.</span><br><span data-t="An einem Ort.">An einem Ort.</span></p>
+    <p class="unterzeile"><span data-t="Alles, was Ihre Angehörigen wissen müssen.">Alles, was Ihre Angehörigen wissen müssen.</span><br><span data-t="An einem Ort.">An einem Ort.</span></p>
     <div class="knopfreihe">
       <button type="button" class="btn primaer riesig" id="btnNeu" data-t="Neuen Ordner anlegen">Neuen Ordner anlegen</button>
       <button type="button" class="btn riesig" id="btnStartOeffnen" data-t="Datei öffnen">Datei öffnen</button>
@@ -438,9 +438,9 @@ dialog .knopfreihe .btn { width: 100%; }
 <script>
 "use strict";
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const FORMAT = "klarordner";
-const standardName = () => t("Meine Notfalldaten") + ".notfall.json";
+const standardName = () => t("Mein Vorsorgeordner") + ".notfall.json";
 
 const SPRACHEN = {
   de: "Deutsch", en: "English", tr: "Türkçe", ru: "Русский", uk: "Українська", pl: "Polski",
@@ -466,9 +466,8 @@ const gebietsschema = () => (sprache === "en" ? "en-GB" : sprache);
 const OPTIONEN = {
   jaNein: { ja: "Ja", nein: "Nein", weissNicht: "Weiß nicht" },
   familienstand: { ledig: "ledig", verheiratet: "verheiratet", partnerschaft: "eingetragene Lebenspartnerschaft", getrennt: "getrennt lebend", geschieden: "geschieden", verwitwet: "verwitwet" },
-  rolle: { angehoerig: "Angehörige/r", bevollmaechtigt: "Bevollmächtigte/r", betreuer: "Betreuer/in", nachbar: "Nachbar/in", freund: "Freund/in", sonstige: "Sonstige" },
-  pflegegrad: { kein: "kein Pflegegrad", 1: "1", 2: "2", 3: "3", 4: "4", 5: "5", beantragt: "beantragt" },
-  blutgruppe: { "0+": "0 positiv", "0-": "0 negativ", "A+": "A positiv", "A-": "A negativ", "B+": "B positiv", "B-": "B negativ", "AB+": "AB positiv", "AB-": "AB negativ", unbekannt: "unbekannt" },
+  rolle: { angehoerig: "Angehörige/r", erbe: "Erbe/Erbin", bevollmaechtigt: "Bevollmächtigte/r", freund: "Freund/in", nachbar: "Nachbar/in", verein: "Verein oder Gemeinde", sonstige: "Sonstige" },
+  testamentArt: { handschriftlich: "Handschriftlich", notariell: "Beim Notar", gemeinsam: "Gemeinschaftlich mit Ehe- oder Lebenspartner" },
   organspende: { ja: "Ja", nein: "Nein", teilweise: "Nur bestimmte Organe", offen: "Noch nicht entschieden" },
   kontoart: { giro: "Girokonto", spar: "Sparkonto", tagesgeld: "Tagesgeld", festgeld: "Festgeld", depot: "Depot", bauspar: "Bausparvertrag", kreditkarte: "Kreditkarte", kredit: "Darlehen / Kredit", sonstiges: "Sonstiges" },
   versicherung: { leben: "Lebensversicherung", sterbegeld: "Sterbegeldversicherung", unfall: "Unfallversicherung", rente: "Private Rentenversicherung", haftpflicht: "Haftpflicht", hausrat: "Hausrat", gebaeude: "Wohngebäude", kfz: "Kfz", rechtsschutz: "Rechtsschutz", bu: "Berufsunfähigkeit", kranken: "Private Kranken- oder Zusatzversicherung", pflege: "Pflegezusatzversicherung", sonstige: "Sonstige" },
@@ -519,11 +518,9 @@ const BEREICHE = [
   { id: "persoenlich", titel: "Persönliche Daten", farbe: "#2a7cf0", symbol: "person",
     text: t("Wer Sie sind und wo Ihre Ausweise liegen.") },
   { id: "kontakte", titel: "Ansprechpartner", farbe: "#23a149", symbol: "telefon",
-    text: t("Wer im Notfall angerufen werden soll.") },
-  { id: "gesundheit", titel: "Gesundheit", farbe: "#e8403c", symbol: "herz",
-    text: t("Ärzte, Krankenkasse, Medikamente, Allergien.") },
-  { id: "vollmachten", titel: "Vollmachten", farbe: "#8a55e8", symbol: "dokument",
-    text: t("Welche es gibt und wo das Original liegt.") },
+    text: t("Wer benachrichtigt werden soll und wer sich kümmert.") },
+  { id: "testament", titel: "Testament und Vollmachten", farbe: "#8a55e8", symbol: "dokument",
+    text: t("Wo Ihr Testament liegt und wer handeln darf.") },
   { id: "finanzen", titel: "Konten und Finanzen", farbe: "#14919a", symbol: "bank",
     text: t("Ihre Banken und wer darüber verfügen darf.") },
   { id: "versicherungen", titel: "Versicherungen", farbe: "#e9810f", symbol: "schild",
@@ -543,7 +540,7 @@ const BEREICHE = [
 ];
 
 function leereDaten() {
-  const vollmacht = () => ({ vorhanden: "", bevollmaechtigt: "", ablage: "", registriert: "" });
+  const vollmacht = () => ({ vorhanden: "", bevollmaechtigt: "", ablage: "", ueberTod: "" });
   return {
     format: FORMAT,
     schemaVersion: SCHEMA_VERSION,
@@ -553,23 +550,16 @@ function leereDaten() {
       familienstand: "", staatsangehoerigkeit: "",
       strasse: "", plz: "", ort: "", telefon: "", email: "",
       steuerId: "", rentenversicherungsnummer: "", postrentennummer: "",
+      krankenkasse: { name: "", versichertennummer: "" },
       ablagePersonalausweis: "", ablageReisepass: "", ablageGeburtsurkunde: "",
       ablageStammbuch: "", ablageHeiratsurkunde: "", notizen: ""
     },
     kontakte: [],
-    gesundheit: {
-      hausarzt: { name: "", telefon: "", anschrift: "" },
-      fachaerzte: [],
-      krankenkasse: { name: "", versichertennummer: "", telefon: "" },
-      pflegegrad: "",
-      medikamente: [],
-      allergien: "", vorerkrankungen: "", blutgruppe: "",
-      organspende: "", ablageOrganspendeausweis: "", notizen: ""
-    },
-    vollmachten: {
+    testament: {
+      testament: { vorhanden: "", art: "", datum: "", ablage: "", verwahrt: "", notar: "" },
+      erbvertrag: { vorhanden: "", ablage: "", notar: "" },
+      vollstrecker: { name: "", kontakt: "" },
       vorsorgevollmacht: vollmacht(),
-      betreuungsverfuegung: vollmacht(),
-      patientenverfuegung: vollmacht(),
       bankvollmacht: vollmacht(),
       notizen: ""
     },
@@ -583,8 +573,9 @@ function leereDaten() {
     digital: { konten: [], passwortManager: "", notizen: "" },
     zugang: null,
     sterbefall: {
+      hausarzt: { name: "", telefon: "" }, organspende: "", ablageOrganspendeausweis: "",
       bestattungsart: "", bestatter: "", vorsorgevertrag: "", grabstelle: "",
-      trauerfeier: "", traueranzeige: "", wuensche: "", informieren: [], checkliste: {}
+      trauerfeier: "", traueranzeige: "", wuensche: "", checkliste: {}
     },
     nachricht: { text: "" },
     schreiben: { absender: "", anschrift: "", beziehung: "", sterbedatum: "", ort: "", empfaenger: {} }
@@ -598,7 +589,7 @@ const MIGRATIONEN = {
     const jede = (liste, f) => { if (Array.isArray(liste)) liste.forEach(f); };
     setze(d.persoenlich, "familienstand", "familienstand");
     jede(d.kontakte, k => setze(k, "rolle", "rolle"));
-    for (const f of ["pflegegrad", "blutgruppe", "organspende"]) setze(d.gesundheit, f, f);
+    setze(d.gesundheit, "organspende", "organspende");
     for (const v of ["vorsorgevollmacht", "betreuungsverfuegung", "patientenverfuegung", "bankvollmacht"]) {
       const block = d.vollmachten && d.vollmachten[v];
       setze(block, "vorhanden", "jaNein");
@@ -610,6 +601,30 @@ const MIGRATIONEN = {
     setze(d.wohnen, "wohnform", "wohnform");
     jede(d.digital && d.digital.konten, k => { setze(k, "kategorie", "onlineArt"); setze(k, "wunsch", "wunsch"); });
     setze(d.sterbefall, "bestattungsart", "bestattung");
+  },
+  // Version 3: Klarordner ist ein Ordner für den Todesfall. Gesundheitsangaben entfallen,
+  // Krankenkasse, Hausarzt und Organspende werden umgezogen, Vollmachten werden zu Testament und Vollmachten.
+  2: d => {
+    const g = d.gesundheit || {};
+    d.persoenlich = d.persoenlich || {};
+    if (g.krankenkasse) d.persoenlich.krankenkasse = { name: g.krankenkasse.name || "", versichertennummer: g.krankenkasse.versichertennummer || "" };
+    d.sterbefall = d.sterbefall || {};
+    if (g.hausarzt) d.sterbefall.hausarzt = { name: g.hausarzt.name || "", telefon: g.hausarzt.telefon || "" };
+    if (g.organspende) d.sterbefall.organspende = g.organspende;
+    if (g.ablageOrganspendeausweis) d.sterbefall.ablageOrganspendeausweis = g.ablageOrganspendeausweis;
+    delete d.gesundheit;
+    const v = d.vollmachten || {};
+    const alt = b => b ? { vorhanden: b.vorhanden || "", bevollmaechtigt: b.bevollmaechtigt || "", ablage: b.ablage || "", ueberTod: "" } : undefined;
+    d.testament = { vorsorgevollmacht: alt(v.vorsorgevollmacht), bankvollmacht: alt(v.bankvollmacht), notizen: v.notizen || "" };
+    delete d.vollmachten;
+    const informieren = d.sterbefall.informieren || [];
+    d.kontakte = d.kontakte || [];
+    for (const x of informieren) {
+      const nurNummer = /^[\d\s+()\/-]+$/.test(x.kontakt || "");
+      d.kontakte.push({ name: x.name || "", beziehung: x.beziehung || "", rolle: "", telefon: nurNummer ? x.kontakt : "", mobil: "", email: "", anschrift: nurNummer ? "" : (x.kontakt || ""), notiz: "" });
+    }
+    delete d.sterbefall.informieren;
+    for (const k of d.kontakte) if (k.rolle === "betreuer") k.rolle = "sonstige";
   }
 };
 
@@ -911,7 +926,7 @@ async function sichern(kopie = false) {
   }
   let weg = "datei";
   const heute = new Date().toISOString().slice(0, 10);
-  const name = kopie ? `${t("Meine Notfalldaten")} ${heute}.notfall.json` : (zustand.dateiname || standardName());
+  const name = kopie ? `${t("Mein Vorsorgeordner")} ${heute}.notfall.json` : (zustand.dateiname || standardName());
   try {
     if (hatFsa && kopie) {
       const handle = await speicherortWaehlen(name);
@@ -1247,6 +1262,7 @@ function navZeigen() {
     el("button", {
       type: "button",
       "aria-current": zustand.ansicht === id ? "page" : false,
+      "data-id": id,
       onclick: () => wechseln(id)
     }, symbol(sym, "klein", farbe), el("span", { text: t(titel) })));
   $("navStart").replaceChildren(punkt("uebersicht", "Übersicht", "raster", "#0a64c8"));
@@ -1305,15 +1321,14 @@ const voll = v => typeof v === "string" ? v.trim() !== "" : !!v;
 const PRUEFUNG = {
   persoenlich: d => ["vorname", "nachname", "geburtsdatum", "strasse", "ort", "familienstand", "ablagePersonalausweis"].map(f => voll(d.persoenlich[f])),
   kontakte: d => [d.kontakte.length > 0, d.kontakte.some(k => voll(k.telefon) || voll(k.mobil))],
-  gesundheit: d => [voll(d.gesundheit.hausarzt.name), voll(d.gesundheit.krankenkasse.name), voll(d.gesundheit.organspende)],
-  vollmachten: d => ["vorsorgevollmacht", "betreuungsverfuegung", "patientenverfuegung", "bankvollmacht"].map(v => voll(d.vollmachten[v].vorhanden)),
+  testament: d => [voll(d.testament.testament.vorhanden), voll(d.testament.erbvertrag.vorhanden), voll(d.testament.vorsorgevollmacht.vorhanden), voll(d.testament.bankvollmacht.vorhanden)],
   finanzen: d => [d.finanzen.konten.length > 0],
   versicherungen: d => [d.versicherungen.length > 0],
   vertraege: d => [d.vertraege.length > 0],
   wohnen: d => [voll(d.wohnen.wohnform), voll(d.wohnen.schluessel)],
   digital: d => [d.digital.konten.length > 0 || voll(d.digital.passwortManager)],
   zugang: d => tresor.inhalt ? [true, tresor.inhalt.eintraege.length > 0] : [!!d.zugang],
-  sterbefall: d => [voll(d.sterbefall.bestattungsart), d.sterbefall.informieren.length > 0,
+  sterbefall: d => [voll(d.sterbefall.bestattungsart), voll(d.sterbefall.organspende),
     voll(d.sterbefall.bestatter) || voll(d.sterbefall.grabstelle) || voll(d.sterbefall.wuensche)],
   nachricht: d => [voll(d.nachricht.text)]
 };
@@ -1338,7 +1353,7 @@ function aktualitaetsKarte() {
   if (!veraltet()) return null;
   return el("section", { class: "formkarte aktuell" },
     el("h3", { text: t("Zeit für einen Blick in Ihren Ordner") }),
-    el("p", { class: "kartenhilfe", text: t("Seit der letzten Änderung ist mehr als ein Jahr vergangen. Stimmen Telefonnummern, Ärzte, Medikamente und Konten noch?") }),
+    el("p", { class: "kartenhilfe", text: t("Seit der letzten Änderung ist mehr als ein Jahr vergangen. Stimmen Telefonnummern, Konten, Verträge und Ihre Wünsche noch?") }),
     el("div", { class: "knopfreihe" },
       el("button", { type: "button", class: "btn primaer", text: t("Alles ist noch aktuell"), onclick: alsAktuellMarkieren })));
 }
@@ -1626,6 +1641,8 @@ const FORMULARE = {
     gruppe("Wichtige Nummern", "Diese Nummern fragen Rentenversicherung, Finanzamt und Krankenkasse nach einem Todesfall ab.",
       feld("persoenlich.steuerId", "Steuer-Identifikationsnummer", { hilfe: "11 Ziffern, steht auf jedem Steuerbescheid.", eingabemodus: "numeric" }),
       feld("persoenlich.rentenversicherungsnummer", "Rentenversicherungsnummer", { hilfe: "Steht auf dem Rentenbescheid oder dem Sozialversicherungsausweis.", gross: true }),
+      feld("persoenlich.krankenkasse.name", "Krankenkasse"),
+      feld("persoenlich.krankenkasse.versichertennummer", "Versichertennummer", { hilfe: "Steht auf der Gesundheitskarte.", gross: true }),
       feld("persoenlich.postrentennummer", "Postrentennummer", { hilfe: "Nur wer schon Rente bekommt. Steht auf Schreiben des Renten Service der Deutschen Post, zum Beispiel der jährlichen Rentenanpassung." })),
     gruppe("Wo liegen Ihre Dokumente?", "Beschreiben Sie den Ort so, dass ihn jemand Fremdes findet.",
       feld("persoenlich.ablagePersonalausweis", "Personalausweis", { hilfe: "Zum Beispiel: Handtasche, Innenfach" }),
@@ -1637,7 +1654,7 @@ const FORMULARE = {
   ],
 
   kontakte: () => [
-    gruppe("Wer soll benachrichtigt werden?", "Die wichtigste Person zuerst.",
+    gruppe("Wer soll benachrichtigt werden?", "Familie, Erben, Bevollmächtigte, Freunde, Verein oder Gemeinde. Die wichtigste Person zuerst.",
       liste("kontakte", {
         einzahl: "Ansprechpartner",
         neu: () => ({ name: "", beziehung: "", rolle: "", telefon: "", mobil: "", email: "", anschrift: "", notiz: "" }),
@@ -1655,78 +1672,41 @@ const FORMULARE = {
       }))
   ],
 
-  gesundheit: () => [
-    gruppe("Hausarzt", null,
-      feld("gesundheit.hausarzt.name", "Name und Praxis", { breit: true }),
-      feld("gesundheit.hausarzt.telefon", "Telefon", { typ: "tel" }),
-      feld("gesundheit.hausarzt.anschrift", "Anschrift")),
-    gruppe("Fachärzte", null,
-      liste("gesundheit.fachaerzte", {
-        einzahl: "Facharzt",
-        neu: () => ({ fachrichtung: "", name: "", telefon: "", anschrift: "" }),
-        kopf: a => [a.fachrichtung, a.name].filter(Boolean).join(" · "),
-        felder: p => [
-          feld(p + ".fachrichtung", "Fachrichtung", { hilfe: "Zum Beispiel: Kardiologe, Augenärztin" }),
-          feld(p + ".name", "Name und Praxis"),
-          feld(p + ".telefon", "Telefon", { typ: "tel" }),
-          feld(p + ".anschrift", "Anschrift")
-        ]
-      })),
-    gruppe("Krankenkasse und Pflege", null,
-      feld("gesundheit.krankenkasse.name", "Krankenkasse"),
-      feld("gesundheit.krankenkasse.versichertennummer", "Versichertennummer", { hilfe: "Steht auf der Gesundheitskarte.", gross: true }),
-      feld("gesundheit.krankenkasse.telefon", "Telefon der Krankenkasse", { typ: "tel" }),
-      feld("gesundheit.pflegegrad", "Pflegegrad", { typ: "auswahl", optionen: "pflegegrad" })),
-    gruppe("Medikamente", "Was nehmen Sie regelmäßig ein?",
-      liste("gesundheit.medikamente", {
-        einzahl: "Medikament",
-        neu: () => ({ name: "", dosierung: "", hinweis: "" }),
-        kopf: m => m.name,
-        felder: p => [
-          feld(p + ".name", "Name des Medikaments"),
-          feld(p + ".dosierung", "Wie viel und wann?", { hilfe: "Zum Beispiel: 1 Tablette morgens" }),
-          feld(p + ".hinweis", "Wofür / Hinweis", { breit: true })
-        ]
-      })),
-    gruppe("Allergien und Erkrankungen", null,
-      feld("gesundheit.allergien", "Allergien und Unverträglichkeiten", { typ: "mehrzeilig", zeilen: 2 }),
-      feld("gesundheit.vorerkrankungen", "Wichtige Erkrankungen, Implantate, Herzschrittmacher", { typ: "mehrzeilig", zeilen: 3 }),
-      feld("gesundheit.blutgruppe", "Blutgruppe", { typ: "auswahl", optionen: "blutgruppe" })),
-    (() => {
-      const spendet = v => v === "ja" || v === "teilweise";
-      const ausweis = bedingt(spendet(normWert(pfadLesen("gesundheit.organspende"), "organspende")),
-        el("div", { class: "felder" }, feld("gesundheit.ablageOrganspendeausweis", "Wo liegt Ihr Organspendeausweis?", { breit: true })));
-      return gruppe("Organspende", null,
-        wahl("gesundheit.organspende", "Möchten Sie Organe spenden?", "organspende",
-          { beiAenderung: v => { ausweis.hidden = !spendet(v); } }),
-        ausweis,
-        el("p", { class: "verweis breit" }, t("Die Patientenverfügung tragen Sie im Bereich Vollmachten ein.") + " ", sprungKnopf("vollmachten", "Zu den Vollmachten ›")));
-    })(),
-    gruppe("Sonstiges", null, feld("gesundheit.notizen", "Weitere Hinweise für Ärzte", { typ: "mehrzeilig", zeilen: 3 }))
-  ],
-
-  vollmachten: () => {
-    const block = (schluessel, titel, erklaerung, register) => {
-      const basis = "vollmachten." + schluessel;
-      const details = bedingt(normWert(pfadLesen(basis + ".vorhanden"), "jaNein") === "ja",
-        el("div", { class: "felder" },
-          feld(basis + ".bevollmaechtigt", schluessel === "patientenverfuegung" ? "Wer soll Ihren Willen durchsetzen?" : "Wer ist bevollmächtigt?", { breit: true }),
-          feld(basis + ".ablage", "Wo liegt das Original?", { breit: true }),
-          register ? wahl(basis + ".registriert", "Im Zentralen Vorsorgeregister eingetragen?", JA_NEIN,
-            { hilfe: "Dort können Ärzte und Gerichte nachsehen, ob es eine Vollmacht gibt." }) : null));
-      return gruppe(titel, erklaerung,
-        wahl(basis + ".vorhanden", "Haben Sie das?", JA_NEIN, { beiAenderung: v => { details.hidden = v !== "ja"; } }),
-        details);
+  testament: () => {
+    const ja = pfad => normWert(pfadLesen(pfad), "jaNein") === "ja";
+    const umschalter = (pfad, frage, ...felder) => {
+      const details = bedingt(ja(pfad), el("div", { class: "felder" }, ...felder));
+      return [wahl(pfad, frage, JA_NEIN, { beiAenderung: v => { details.hidden = v !== "ja"; } }), details];
+    };
+    const vollmacht = (schluessel, titel, erklaerung) => {
+      const basis = "testament." + schluessel;
+      return gruppe(titel, erklaerung, ...umschalter(basis + ".vorhanden", "Haben Sie das?",
+        feld(basis + ".bevollmaechtigt", "Wer ist bevollmächtigt?", { breit: true }),
+        feld(basis + ".ablage", "Wo liegt das Original?", { breit: true }),
+        wahl(basis + ".ueberTod", "Gilt sie über den Tod hinaus?", JA_NEIN,
+          { hilfe: "Dann kann die bevollmächtigte Person sofort handeln, ohne auf den Erbschein zu warten. Steht meist im Text der Vollmacht." })));
     };
     return [
-      gruppe("Kostenlose Muster", null,
-        hinweis(["Klarordner hält nur fest, ob es diese Dokumente gibt und wo sie liegen. Die Dokumente selbst erstellen Sie getrennt.",
-          "Das Bundesministerium der Justiz bietet kostenlose Muster und eine Broschüre zum Betreuungsrecht an: www.bmj.de, Suchbegriff „Vorsorgevollmacht“."])),
-      block("vorsorgevollmacht", "Vorsorgevollmacht", "Eine Person Ihres Vertrauens darf für Sie entscheiden, wenn Sie es selbst nicht mehr können.", true),
-      block("betreuungsverfuegung", "Betreuungsverfügung", "Wen das Gericht als Betreuer einsetzen soll, falls eine Betreuung nötig wird.", true),
-      block("patientenverfuegung", "Patientenverfügung", "Welche ärztlichen Behandlungen Sie wünschen oder ablehnen, wenn Sie sich nicht mehr äußern können.", true),
-      block("bankvollmacht", "Bankvollmacht", "Eine Vollmacht für Ihre Konten, meist auf einem Formular der Bank.", false),
-      gruppe("Sonstiges", null, feld("vollmachten.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 }))
+      hinweis(["Klarordner hält nur fest, ob es diese Dokumente gibt und wo sie liegen. Die Dokumente selbst erstellen Sie getrennt.",
+        "Ein Testament muss vollständig von Hand geschrieben und unterschrieben sein oder beim Notar errichtet werden. Ein am Computer geschriebenes Testament ist ungültig."]),
+      gruppe("Testament", "Ihre Angehörigen müssen es finden. Wer ein Testament findet, muss es beim Nachlassgericht abgeben.",
+        ...umschalter("testament.testament.vorhanden", "Haben Sie ein Testament?",
+          wahl("testament.testament.art", "Wie ist es errichtet?", "testamentArt"),
+          feld("testament.testament.datum", "Datum des Testaments", { hilfe: "Gibt es mehrere, das neueste." }),
+          feld("testament.testament.ablage", "Wo liegt das Original?", { breit: true }),
+          wahl("testament.testament.verwahrt", "In amtlicher Verwahrung beim Amtsgericht?", JA_NEIN,
+            { hilfe: "Gegen eine einmalige Gebühr verwahrt das Amtsgericht das Testament. Im Todesfall wird es dann sicher gefunden und eröffnet." }),
+          feld("testament.testament.notar", "Notar oder Amtsgericht", { breit: true, hilfe: "Name und Ort" }))),
+      gruppe("Erbvertrag", "Ein Vertrag beim Notar, zum Beispiel zwischen Ehepartnern oder mit den Kindern.",
+        ...umschalter("testament.erbvertrag.vorhanden", "Gibt es einen Erbvertrag?",
+          feld("testament.erbvertrag.ablage", "Wo liegt Ihre Ausfertigung?", { breit: true }),
+          feld("testament.erbvertrag.notar", "Notar", { breit: true, hilfe: "Name und Ort" }))),
+      gruppe("Testamentsvollstrecker", "Nur ausfüllen, wenn Sie im Testament jemanden dafür bestimmt haben.",
+        feld("testament.vollstrecker.name", "Name"),
+        feld("testament.vollstrecker.kontakt", "Telefon oder Anschrift")),
+      vollmacht("vorsorgevollmacht", "Vorsorgevollmacht", "Eine Person Ihres Vertrauens darf für Sie entscheiden und handeln."),
+      vollmacht("bankvollmacht", "Bankvollmacht", "Eine Vollmacht für Ihre Konten, meist auf einem Formular der Bank."),
+      gruppe("Sonstiges", null, feld("testament.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 }))
     ];
   },
 
@@ -1857,6 +1837,17 @@ const FORMULARE = {
     druck ? null : gruppe("Schreiben für Ihre Angehörigen", "Kündigungen und Mitteilungen, die nach Ihrem Tod verschickt werden müssen. Klarordner füllt sie mit Ihren Angaben vor, Ihre Angehörigen ergänzen nur Absender und Sterbedatum.",
       el("div", { class: "knopfreihe breit" },
         el("button", { type: "button", class: "btn primaer", text: t("Schreiben vorbereiten"), onclick: () => wechseln("schreiben") }))),
+    (() => {
+      const spendet = v => v === "ja" || v === "teilweise";
+      const ausweis = bedingt(spendet(normWert(pfadLesen("sterbefall.organspende"), "organspende")),
+        el("div", { class: "felder" }, feld("sterbefall.ablageOrganspendeausweis", "Wo liegt Ihr Organspendeausweis?", { breit: true })));
+      return gruppe("Arzt und Organspende", null,
+        feld("sterbefall.hausarzt.name", "Hausarzt", { hilfe: "Er stellt oft den Totenschein aus." }),
+        feld("sterbefall.hausarzt.telefon", "Telefon des Hausarztes", { typ: "tel" }),
+        wahl("sterbefall.organspende", "Möchten Sie Organe spenden?", "organspende",
+          { beiAenderung: v => { ausweis.hidden = !spendet(v); } }),
+        ausweis);
+    })(),
     gruppe("Bestattung", null,
       feld("sterbefall.bestattungsart", "Wie möchten Sie bestattet werden?", { typ: "auswahl", optionen: "bestattung" }),
       feld("sterbefall.bestatter", "Gewünschter Bestatter", { hilfe: "Name und Telefon" }),
@@ -1866,18 +1857,7 @@ const FORMULARE = {
       feld("sterbefall.trauerfeier", "Trauerfeier", { typ: "mehrzeilig", zeilen: 3, hilfe: "Ort, Musik, Redner, Blumen" }),
       feld("sterbefall.traueranzeige", "Traueranzeige", { typ: "mehrzeilig", zeilen: 2, hilfe: "In welcher Zeitung, welcher Spruch?" }),
       feld("sterbefall.wuensche", "Weitere Wünsche", { typ: "mehrzeilig", zeilen: 3 })),
-    gruppe("Wer soll informiert werden?", "Personen, Vereine, Gemeinde, ehemalige Kollegen.",
-      liste("sterbefall.informieren", {
-        einzahl: "Person oder Stelle",
-        hinzu: "Person oder Stelle",
-        neu: () => ({ name: "", beziehung: "", kontakt: "" }),
-        kopf: x => x.name,
-        felder: p => [
-          feld(p + ".name", "Name"),
-          feld(p + ".beziehung", "Beziehung"),
-          feld(p + ".kontakt", "Telefon oder Anschrift", { breit: true })
-        ]
-      })),
+    druck ? null : el("p", { class: "verweis" }, t("Wer benachrichtigt werden soll, tragen Sie bei den Ansprechpartnern ein.") + " ", sprungKnopf("kontakte", "Zu den Ansprechpartnern ›")),
     gruppe("Checkliste für Ihre Angehörigen", "Was nach einem Todesfall zu tun ist. Notieren Sie zu jedem Punkt, was Ihre Angehörigen wissen müssen.",
       ...CHECKLISTE.map(([schluessel, titel, text]) => {
         if (druck) {
@@ -1974,7 +1954,7 @@ async function aktualitaetPruefen() {
   zustand.aktualitaetGefragt = true;
   const antwort = await fragen("Zeit für einen Blick in Ihren Ordner",
     [t("Ihr Ordner wurde zuletzt am {datum} geändert, vor mehr als einem Jahr.", { datum: datumText(zustand.daten.lastModified) }),
-     "Bitte prüfen Sie, ob noch alles stimmt: Telefonnummern, Ärzte, Medikamente, Konten und Verträge. Dauert meist nur ein paar Minuten."],
+     "Bitte prüfen Sie, ob noch alles stimmt: Ansprechpartner, Testament, Konten, Verträge und Ihre Wünsche. Dauert meist nur ein paar Minuten."],
     [{ text: "Jetzt durchsehen", wert: "durchsehen", primaer: true },
      { text: "Alles ist noch aktuell", wert: "aktuell" },
      { text: "Später", wert: "spaeter" }]);
@@ -1991,14 +1971,14 @@ function deckblatt(bereiche) {
   const name = [p.vorname, p.nachname].filter(Boolean).join(" ");
   return el("section", { class: "dbereich ddeck" },
     el("p", { class: "dmarke", text: "KLARORDNER" }),
-    el("h1", { text: t("Notfall- und Vorsorgeordner") }),
+    el("h1", { text: t("Vorsorgeordner für meine Angehörigen") }),
     name ? el("p", { class: "dname", text: name }) : el("p", { class: "dname" }, ...druckWert("")),
     p.geburtsdatum ? el("p", { class: "dgeb", text: t("geboren am {datum}", { datum: new Date(p.geburtsdatum + "T12:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) }) }) : null,
     el("p", { class: "dstand", text: t("Stand: {datum}", { datum: datumText(zustand.daten.lastModified) }) }),
     el("div", { class: "dinhalt" },
       el("h2", { text: t("Inhalt") }),
       el("ol", {}, ...bereiche.map(b => el("li", { value: BEREICHE.indexOf(b) + 1, text: t(b.titel) })))),
-    el("p", { class: "dnotiz", text: t("Im Notfall bitte zuerst die Ansprechpartner anrufen. Diese Unterlagen enthalten persönliche Daten und gehören an einen sicheren Ort.") }),
+    el("p", { class: "dnotiz", text: t("Bitte benachrichtigen Sie zuerst die Ansprechpartner aus Abschnitt 2. Diese Unterlagen enthalten persönliche Daten und gehören an einen sicheren Ort.") }),
     el("p", { class: "dklein", text: t("Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form, etwa handschriftlich oder notariell. Die Inhalte beziehen sich auf deutsches Recht.") }));
 }
 
@@ -2032,7 +2012,7 @@ function druckErzeugen(ids, mitDeckblatt) {
     }
     teile.push(el("div", { class: "dfuss" },
       el("span", { text: t("Stand: {datum}", { datum: datumText(zustand.daten.lastModified) }) }),
-      el("span", { text: name ? t("Notfallordner von {name}", { name }) : "Klarordner" })));
+      el("span", { text: name ? t("Vorsorgeordner von {name}", { name }) : "Klarordner" })));
     const ziel = $("druck");
     ziel.className = navigator.userAgentData ? "randboxen" : "";
     ziel.replaceChildren(...teile);
@@ -2131,8 +2111,8 @@ function schreibenListe() {
   const rs = ANBIETER.find(a => a.id === "rentenservice");
   liste.push({ id: "rente", art: "rente", titel: "Renten Service der Deutschen Post", gruppe: "Mitteilungen", adresse: rs && rs.adresse, anbieter: rs,
     hinweis: "Wichtig für Ehe- und Lebenspartner: Den Vorschuss für das Sterbevierteljahr innerhalb von 30 Tagen beantragen. Die Anleitung wird mitgedruckt." });
-  if (voll(d.gesundheit.krankenkasse.name)) {
-    liste.push({ id: "krankenkasse", art: "krankenkasse", titel: d.gesundheit.krankenkasse.name, gruppe: "Mitteilungen", adresse: d.gesundheit.krankenkasse.name });
+  if (voll(d.persoenlich.krankenkasse.name)) {
+    liste.push({ id: "krankenkasse", art: "krankenkasse", titel: d.persoenlich.krankenkasse.name, gruppe: "Mitteilungen", adresse: d.persoenlich.krankenkasse.name });
   }
   const banken = [...new Set(d.finanzen.konten.map(k => k.bank.trim()).filter(Boolean))];
   for (const bank of banken) {
@@ -2195,7 +2175,7 @@ function briefInhalt(s) {
           bestaetigung],
         anlagen: ["Kopie der Sterbeurkunde"] };
     case "krankenkasse":
-      return { betreff: mit("Mitteilung über einen Sterbefall", voll(d.gesundheit.krankenkasse.versichertennummer) && `Versichertennummer ${d.gesundheit.krankenkasse.versichertennummer.trim()}`),
+      return { betreff: mit("Mitteilung über einen Sterbefall", voll(d.persoenlich.krankenkasse.versichertennummer) && `Versichertennummer ${d.persoenlich.krankenkasse.versichertennummer.trim()}`),
         absaetze: [tot, ich, "Bitte beenden Sie die Mitgliedschaft zum Todestag und teilen Sie mir mit, ob Sie weitere Unterlagen benötigen. Die Gesundheitskarte der verstorbenen Person liegt bei.", bestaetigung],
         anlagen: ["Kopie der Sterbeurkunde", "Gesundheitskarte"] };
     case "bank": {

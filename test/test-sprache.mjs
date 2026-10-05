@@ -32,19 +32,19 @@ await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
 await spaeter(p);
 await p.waitForSelector('.kacheln');
 console.log('Stand:', await p.textContent('.stand'));
-await p.click('#navliste li:nth-child(1) button');
+await p.click('#navliste button[data-id=persoenlich]');
 const fs1 = p.locator('#inhalt select').first();
 console.log('Familienstand:', await fs1.inputValue(), '/', await fs1.locator('option:checked').textContent());
-await p.click('#navliste li:nth-child(3) button');
+await p.click('#navliste button[data-id=sterbefall]');
 console.log('Organspende gewählt:', await p.locator('.wahl label:has(input:checked)').first().textContent(), '| Ausweisfeld sichtbar:', await p.isVisible('text=Where is your organ donor card?'));
-await p.click('#navliste li:nth-child(4) button');
-console.log('Vorsorgevollmacht Details sichtbar:', await p.locator('.bedingt').first().isVisible());
-await p.click('#navliste li:nth-child(6) button');
+await p.click('#navliste button[data-id=testament]');
+console.log('Vorsorgevollmacht übernommen, Details sichtbar:', await p.locator('.formkarte', { hasText: 'Lasting power of attorney' }).locator('.bedingt').isVisible());
+await p.click('#navliste button[data-id=versicherungen]');
 console.log('Versicherung Kopf:', await p.locator('.eintrag h4').first().textContent(), '| Frist-Hinweis:', await p.locator('.bedingt').first().isVisible());
 
 // In jedem Bereich nach deutschen Resten suchen
 const reste = new Set();
-for (let i = 0; i <= 12; i++) {
+for (let i = 0; i <= 11; i++) {
   await p.click(i === 0 ? '#navStart button' : `#navliste li:nth-child(${i}) button`);
   const texte = await p.evaluate(() => {
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -60,6 +60,6 @@ console.log('Deutsche Reste in der englischen Oberfläche:', [...reste]);
 // Gespeicherte Datei ist Version 2 mit neutralen Schlüsseln
 const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
 const d = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
-console.log('Dateiname:', dl.suggestedFilename(), '| Version:', d.schemaVersion, '| Werte:', d.persoenlich.familienstand, d.gesundheit.organspende, d.vollmachten.vorsorgevollmacht.vorhanden, d.versicherungen[0].art, d.wohnen.wohnform, d.digital.konten[0].wunsch, d.sterbefall.bestattungsart);
+console.log('Dateiname:', dl.suggestedFilename(), '| Version:', d.schemaVersion, '| Werte:', d.persoenlich.familienstand, d.sterbefall.organspende, d.testament.vorsorgevollmacht.vorhanden, d.persoenlich.krankenkasse.name, d.sterbefall.hausarzt.name, d.kontakte.length, d.versicherungen[0].art, d.wohnen.wohnform, d.digital.konten[0].wunsch, d.sterbefall.bestattungsart);
 console.log('Fehler:', fehler);
 await browser.close();

@@ -22,7 +22,7 @@ await p.evaluate(() => {
   zustand.daten.digital.konten.push({ kategorie: 'sozial', anbieter: 'Facebook', benutzername: 'erika.m', wunsch: 'gedenken', uebertragenAn: '', notiz: '' });
 });
 console.log('Anbieter-Vorschläge beim Tippen:', await p.locator('#anbieterListe option').count());
-await p.click('#navliste li:nth-child(11) button');
+await p.click('#navliste button[data-id=sterbefall]');
 await p.click('button:has-text("Prepare letters")');
 console.log('Ansicht:', await p.textContent('#inhalt h2'));
 const titel = await p.locator('.schreibzeile strong').allTextContents();

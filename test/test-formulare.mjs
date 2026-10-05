@@ -18,18 +18,18 @@ await p.goto(url);
 await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
 await spaeter(p);
 await p.waitForSelector('.kacheln');
-const ids = ['persoenlich','kontakte','gesundheit','vollmachten','finanzen','versicherungen','vertraege','wohnen','digital','zugang','sterbefall','nachricht'];
+const ids = ['persoenlich','kontakte','testament','finanzen','versicherungen','vertraege','wohnen','digital','zugang','sterbefall','nachricht'];
 for (const [i, id] of ids.entries()) {
-  await p.click(`#navliste li:nth-child(${i + 1}) button`);
+  await p.click(`#navliste button[data-id=${id}]`);
   const n = await p.locator('#inhalt input, #inhalt select, #inhalt textarea').count();
   const labelsOk = await p.evaluate(() => [...document.querySelectorAll('#inhalt input:not([type=radio]), #inhalt select, #inhalt textarea')].every(e => document.querySelector(`label[for="${e.id}"]`)));
   console.log(id.padEnd(15), 'Felder:', n, 'Labels ok:', labelsOk);
 }
 // Werte geladen?
-await p.click('#navliste li:nth-child(1) button');
+await p.click('#navliste button[data-id=persoenlich]');
 console.log('Vorname:', await p.inputValue('#inhalt input >> nth=0'), '| Familienstand:', await p.locator('#inhalt select').first().inputValue());
 // Kontakte: hinzufügen, tippen, Kopf aktualisiert, entfernen
-await p.click('#navliste li:nth-child(2) button');
+await p.click('#navliste button[data-id=kontakte]');
 await p.click('text=+ Ansprechpartner hinzufügen');
 const fokus = await p.evaluate(() => document.activeElement.closest('.eintrag') === [...document.querySelectorAll('.eintrag')].pop());
 await p.keyboard.type('Neue Person');
@@ -37,29 +37,31 @@ console.log('Fokus im neuen Eintrag:', fokus, '| Kopf:', await p.locator('.eintr
 await p.locator('.eintrag').nth(1).locator('.entfernen').click();
 await p.click('dialog button:has-text("Entfernen")');
 console.log('Einträge nach Entfernen:', await p.locator('.eintrag h4').allTextContents());
-// Vollmachten: Bedingung
-await p.click('#navliste li:nth-child(4) button');
+// Testament und Vollmachten: Bedingung
+await p.click('#navliste button[data-id=testament]');
 const sichtbar = async () => p.locator('.bedingt').evaluateAll(b => b.map(x => !x.hidden));
-console.log('Vollmachten Details sichtbar:', await sichtbar());
-await p.locator('.formkarte').nth(3).locator('label:has-text("Ja")').first().click();
-console.log('Nach Ja bei Patientenverfügung:', await sichtbar());
+console.log('Testament/Erbvertrag/Vorsorge/Bank sichtbar:', await sichtbar());
+await p.locator('.formkarte', { hasText: 'Haben Sie ein Testament?' }).locator('label:has-text("Ja")').first().click();
+console.log('Nach Ja beim Testament:', await sichtbar());
+await p.locator('.formkarte', { hasText: 'Wie ist es errichtet?' }).locator('label:has-text("Beim Notar")').click();
+await p.locator('.formkarte', { hasText: 'Haben Sie ein Testament?' }).locator('input[type=text]').nth(1).fill('Schreibtisch, Mappe Testament');
 // Versicherung: Frist-Hinweis
-await p.click('#navliste li:nth-child(6) button');
+await p.click('#navliste button[data-id=versicherungen]');
 console.log('Frist sichtbar (Sterbegeld):', await p.locator('.bedingt').first().isVisible());
 await p.locator('.eintrag select').first().selectOption('Haftpflicht');
 console.log('Frist sichtbar (Haftpflicht):', await p.locator('.bedingt').first().isVisible());
 // Checkliste
-await p.click('#navliste li:nth-child(11) button');
+await p.click('#navliste button[data-id=sterbefall]');
 await p.locator('.checkpunkt input').nth(0).fill('Hausarzt anrufen');
 // Speichern und prüfen
 const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
 const d = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
-console.log('Gespeichert: Kontakte', d.kontakte.map(k => k.name), '| PV vorhanden', d.vollmachten.patientenverfuegung.vorhanden,
-  '| Vers.art', d.versicherungen[0].art, '| Checkliste', JSON.stringify(d.sterbefall.checkliste), '| Betreuungsverf.', JSON.stringify(d.vollmachten.betreuungsverfuegung));
+console.log('Gespeichert: Kontakte', d.kontakte.map(k => k.name), '| Testament', JSON.stringify(d.testament.testament),
+  '| Vers.art', d.versicherungen[0].art, '| Checkliste', JSON.stringify(d.sterbefall.checkliste), '| Gesundheit weg:', !('gesundheit' in d), '| Version', d.schemaVersion);
 await p.click('dialog button:has-text("Verstanden")');
 // Bilder
-for (const [n, i] of [['persoenlich', 1], ['kontakte', 2], ['vollmachten', 4], ['finanzen', 5]]) {
-  await p.click(`#navliste li:nth-child(${i}) button`);
+for (const n of ['persoenlich', 'kontakte', 'testament', 'sterbefall']) {
+  await p.click(`#navliste button[data-id=${n}]`);
   await p.screenshot({ path: path.join(hier, `ergebnisse/bild-${n}.png`), fullPage: true });
 }
 await p.setViewportSize({ width: 820, height: 1180 });

@@ -22,7 +22,7 @@ console.log('Kein Aktualitätshinweis bei neuem Ordner:', !(await p.isVisible('d
 await p.click('.kachel:has-text("Persönliche Nachricht")');
 await p.fill('textarea', 'Hallo');
 await p.click('.kachel-zurueck, #navStart button');
-console.log('Nachricht ausgefüllt:', (await stufen())[11], '|', await p.textContent('.fortschritt-text'));
+console.log('Nachricht ausgefüllt:', (await stufen())[10], '|', await p.textContent('.fortschritt-text'));
 await p.click('.kachel:has-text("Persönliche Daten")');
 await p.fill('#inhalt input >> nth=0', 'Erika');
 await p.click('#navStart button');
@@ -57,7 +57,7 @@ await p.click('#navStart button');
 const vorher = await p.evaluate(() => zustand.dateiname);
 const [dl] = await Promise.all([p.waitForEvent('download'), p.click('.sicherung button:has-text("Sicherungskopie mit Datum")')]);
 const datum = new Date().toISOString().slice(0, 10);
-console.log('Kopie:', dl.suggestedFilename(), '| Datum im Namen:', dl.suggestedFilename() === `Meine Notfalldaten ${datum}.notfall.json`);
+console.log('Kopie:', dl.suggestedFilename(), '| Datum im Namen:', dl.suggestedFilename() === `Mein Vorsorgeordner ${datum}.notfall.json`);
 console.log('Meldung:', await p.textContent('#dialogTitel'));
 await p.click('dialog button:has-text("Verstanden")');
 console.log('Dateiname unverändert:', (await p.evaluate(() => zustand.dateiname)) === vorher, '| Inhalt gültig:', JSON.parse(fs.readFileSync(await dl.path(), 'utf8')).format === 'klarordner');
