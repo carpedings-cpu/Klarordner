@@ -1,0 +1,31 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Musterfrau;Thomas;;;
+FN:Thomas Musterfrau
+TEL;type=HOME:01234 000001
+EMAIL;type=INTERNET:thomas@example.org
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Nachbarin;Gisela;;;
+FN:Gisela Nachbarin
+item1.TEL;type=CELL;type=pref:+49 170 0000002
+item2.ADR;type=HOME:;;Lindenweg 6;Beispielstadt;;12345;Deutschland
+NOTE:Hat einen Schlüssel\, bitte zuerst anrufen
+END:VCARD
+BEGIN:VCARD
+VERSION:2.1
+N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:M=C3=BCller;J=C3=BCrgen;;;
+FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:J=C3=BCrgen M=C3=BCller
+TEL;CELL:0171 1234567
+TEL;WORK:0661 999
+ADR;HOME;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:;;Gartenstra=
+ =C3=9Fe 1;Fulda;;36037;
+END:VCARD
+BEGIN:VCARD
+VERSION:4.0
+FN:Pfarramt St. Maria
+TEL;VALUE=uri;TYPE=work:tel:+49-661-555
+EMAIL:pfarramt@example.org
+ADR;TYPE=work:;;Kirchplatz 2;Fulda;;36037;Deutschland
+END:VCARD

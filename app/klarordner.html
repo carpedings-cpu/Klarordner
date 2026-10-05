@@ -425,6 +425,8 @@ dialog .knopfreihe .btn { width: 100%; }
 </div>
 
 <input type="file" id="dateiwahl" accept=".json,application/json" hidden>
+<input type="file" id="vcfwahl" accept=".vcf,text/vcard,text/x-vcard" hidden>
+<input type="file" id="csvwahl" accept=".csv,text/csv,text/comma-separated-values" hidden>
 
 <div id="druck" aria-hidden="true"></div>
 <style id="druckSeiten"></style>
@@ -1212,6 +1214,9 @@ function tresorInhalt() {
         tresor.aendern ? null : el("button", { type: "button", class: "btn", text: t("Passwort ändern"), onclick: () => { tresor.aendern = true; inhaltZeigen(); } }))),
     tresor.aendern ? passwortAendern() : null,
     hinweis("Bitte tragen Sie hier keine Bank-PIN, keine TAN und keine Zugänge zum Online-Banking ein. Ihre Angehörigen bekommen mit Vollmacht oder Erbschein über die Bank Zugang zu Ihren Konten."),
+    gruppe("Passwörter aus einer Datei übernehmen", "Apple Passwörter, Chrome, Edge, Firefox und viele Passwort-Manager können Ihre gespeicherten Passwörter als Datei exportieren (Endung .csv). Klarordner übernimmt sie verschlüsselt. Bankzugänge werden ausgelassen.",
+      el("div", { class: "knopfreihe breit" },
+        el("button", { type: "button", class: "btn", text: t("Passwort-Datei auswählen"), onclick: () => { $("csvwahl").value = ""; $("csvwahl").click(); } }))),
     zugangsListe()
   ].filter(Boolean);
 }
@@ -1654,6 +1659,9 @@ const FORMULARE = {
   ],
 
   kontakte: () => [
+    druck ? null : gruppe("Aus der Kontakte-App übernehmen", "Auf dem iPad: In der Kontakte-App einen Kontakt öffnen, „Kontakt teilen“ und „In Dateien sichern“ wählen. Mehrere Kontakte auf einmal: eine Liste lange antippen und „Exportieren“ wählen. Dann hier die Datei auswählen.",
+      el("div", { class: "knopfreihe breit" },
+        el("button", { type: "button", class: "btn", text: t("Kontakte-Datei auswählen"), onclick: () => { $("vcfwahl").value = ""; $("vcfwahl").click(); } }))),
     gruppe("Wer soll benachrichtigt werden?", "Familie, Erben, Bevollmächtigte, Freunde, Verein oder Gemeinde. Die wichtigste Person zuerst.",
       liste("kontakte", {
         einzahl: "Ansprechpartner",
@@ -2330,6 +2338,177 @@ function briefeDrucken(auswahl) {
   window.print();
 }
 
+/* ---------- Import aus Kontakte-App und Passwort-Export ---------- */
+
+/* OHNE-TEXTE-START */
+// vCard 2.1 bis 4.0: gefaltete Zeilen, Quoted-Printable, maskierte Zeichen.
+function vcardLesen(text) {
+  const zeilen = text.replace(/\r\n/g, "\n").replace(/=\n/g, "=\u0000").replace(/\n[ \t]/g, "").split("\n").map(z => z.replace(/=\u0000/g, "=\n"));
+  const karten = [];
+  let k = null;
+  const qp = s => {
+    const bytes = [];
+    s = s.replace(/=\n[ \t]?/g, "");
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] === "=" && /^[0-9A-F]{2}$/i.test(s.substr(i + 1, 2))) { bytes.push(parseInt(s.substr(i + 1, 2), 16)); i += 2; }
+      else bytes.push(s.charCodeAt(i));
+    }
+    return new TextDecoder().decode(new Uint8Array(bytes));
+  };
+  const unmask = s => s.replace(/\\n/gi, "\n").replace(/\\([,;\\])/g, "$1");
+  for (const roh of zeilen) {
+    const zeile = roh.trim();
+    if (/^BEGIN:VCARD/i.test(zeile)) { k = { tel: [], mobil: [], email: [], adr: "", fn: "", n: "" }; continue; }
+    if (/^END:VCARD/i.test(zeile)) { if (k) karten.push(k); k = null; continue; }
+    if (!k) continue;
+    const pos = zeile.indexOf(":");
+    if (pos < 0) continue;
+    const kopf = zeile.slice(0, pos).toUpperCase();
+    let wert = zeile.slice(pos + 1);
+    if (kopf.includes("QUOTED-PRINTABLE")) wert = qp(wert);
+    const name = kopf.split(";")[0].replace(/^ITEM\d+\./, "");
+    if (name === "FN") k.fn = unmask(wert).trim();
+    else if (name === "N") k.n = wert.split(";").slice(0, 2).reverse().map(unmask).filter(Boolean).join(" ").trim();
+    else if (name === "TEL") (/CELL|MOBILE|IPHONE/.test(kopf) ? k.mobil : k.tel).push(wert.replace(/^tel:/i, "").trim());
+    else if (name === "EMAIL") k.email.push(wert.trim());
+    else if (name === "ADR" && !k.adr) {
+      const t3 = wert.split(";").map(unmask);
+      k.adr = [t3[2], [t3[5], t3[3]].filter(Boolean).join(" ")].map(s => (s || "").replace(/\n/g, ", ").trim()).filter(Boolean).join(", ");
+    }
+  }
+  return karten.map(k => ({ name: k.fn || k.n, beziehung: "", rolle: "", telefon: k.tel[0] || "", mobil: k.mobil[0] || (k.tel[1] || ""), email: k.email[0] || "", anschrift: k.adr, notiz: "" }))
+    .filter(k => k.name || k.telefon || k.mobil);
+}
+
+/* OHNE-TEXTE-ENDE */
+
+async function kontakteImportieren(datei) {
+  let neu;
+  try {
+    neu = vcardLesen(await datei.text());
+  } catch {
+    neu = [];
+  }
+  if (!neu.length) { melden("Keine Kontakte gefunden", "Die Datei enthält keine lesbaren Kontakte. Bitte wählen Sie eine Kontakte-Datei mit der Endung .vcf."); return; }
+  const schluessel = k => (k.name || "").toLowerCase().trim() + "|" + (k.telefon || k.mobil || "").replace(/\D/g, "");
+  const vorhanden = new Set(zustand.daten.kontakte.map(schluessel));
+  const dazu = neu.filter(k => !vorhanden.has(schluessel(k)));
+  zustand.daten.kontakte.push(...dazu);
+  if (dazu.length) geaendert();
+  inhaltZeigen();
+  melden("Kontakte übernommen",
+    t("{n} von {gesamt} Kontakten übernommen.", { n: dazu.length, gesamt: neu.length }) + (neu.length > dazu.length ? " " + t("Die übrigen standen schon in der Liste.") : ""),
+    "Bitte ergänzen Sie bei jedem Kontakt die Beziehung zu Ihnen und die Rolle.");
+}
+
+/* OHNE-TEXTE-START */
+// CSV nach RFC 4180: Anführungszeichen, verdoppelte Anführungszeichen, Zeilenumbrüche im Feld.
+function csvLesen(text) {
+  text = text.replace(/^\uFEFF/, "");
+  const trenner = (text.split("\n")[0].match(/;/g) || []).length > (text.split("\n")[0].match(/,/g) || []).length ? ";" : ",";
+  const zeilen = [];
+  let feld = "", zeile = [], inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i + 1] === '"') { feld += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else feld += c;
+    } else if (c === '"') inQ = true;
+    else if (c === trenner) { zeile.push(feld); feld = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      zeile.push(feld); feld = "";
+      if (zeile.some(f => f !== "")) zeilen.push(zeile);
+      zeile = [];
+    } else feld += c;
+  }
+  zeile.push(feld);
+  if (zeile.some(f => f !== "")) zeilen.push(zeile);
+  return zeilen;
+}
+
+const BANKEN = ["sparkasse", "volksbank", "raiffeisen", "commerzbank", "deutsche-bank", "db.com", "postbank", "comdirect", "consorsbank", "dkb", "ing.de", "ing-diba", "n26", "hypovereinsbank", "santander", "targobank", "sparda", "psd-", "norisbank", "1822direkt", "c24", "tomorrow.one", "bunq", "gls-bank", "triodos", "apobank", "onlinebanking", "banking"];
+const ONLINE_ART = [[/mail|gmx|web\.de|t-online|outlook|hotmail|yahoo|freenet|posteo|mailbox|icloud/, "email"], [/paypal|klarna/, "bezahl"],
+  [/facebook|instagram|twitter|x\.com|linkedin|xing|tiktok|pinterest|stayfriends/, "sozial"], [/whatsapp|telegram|signal|threema|skype/, "messenger"],
+  [/netflix|spotify|disney|dazn|sky|rtl|joyn|youtube|audible|deezer|primevideo/, "streaming"], [/dropbox|onedrive|drive\.google|magentacloud|cloud/, "cloud"],
+  [/amazon|ebay|otto|zalando|kleinanzeigen|lidl|aldi|tchibo|ikea|mediamarkt|saturn|temu|shein|aliexpress/, "shop"]];
+
+function hostVon(u) {
+  try { return new URL(/^[a-z]+:\/\//i.test(u) ? u : "https://" + u).hostname.replace(/^www\./, ""); } catch { return ""; }
+}
+
+function passwoerterLesen(text) {
+  const zeilen = csvLesen(text);
+  if (zeilen.length < 2) return null;
+  const kopf = zeilen[0].map(s => s.trim().toLowerCase());
+  const spalte = (...namen) => kopf.findIndex(k => namen.includes(k));
+  const iUrl = spalte("url", "login_uri", "website", "web site", "adresse", "origin_url");
+  const iUser = spalte("username", "login_username", "user name", "benutzername", "login", "email", "e-mail");
+  const iPw = spalte("password", "login_password", "passwort", "kennwort");
+  const iName = spalte("title", "name", "titel", "account");
+  const iNote = spalte("note", "notes", "notiz", "notizen", "extra");
+  if (iPw < 0 || (iUrl < 0 && iName < 0)) return null;
+  return zeilen.slice(1).map(z => {
+    const url = iUrl >= 0 ? (z[iUrl] || "").trim() : "";
+    let titel = iName >= 0 ? (z[iName] || "").trim() : "";
+    // App-Zugänge aus Chrome: android://…@com.whatsapp wird zu whatsapp.com
+    const app = /^android:\/\/[^@]*@([^/]+)/i.exec(url) || /^android:\/\/[^@]*@([^/]+)/i.exec(titel);
+    const host = app ? app[1].split(".").reverse().join(".") : hostVon(url);
+    if (app && /^android:/i.test(titel)) titel = host;
+    return { host, titel: titel && !/^https?:/i.test(titel) ? titel : host || titel, benutzer: iUser >= 0 ? (z[iUser] || "").trim() : "", passwort: (z[iPw] || "").trim(), notiz: iNote >= 0 ? (z[iNote] || "").trim() : "" };
+  }).filter(e => e.passwort && (e.titel || e.host));
+}
+
+/* OHNE-TEXTE-ENDE */
+
+async function passwoerterImportieren(datei) {
+  if (!tresor.schluessel) return;
+  const alle = passwoerterLesen(await datei.text());
+  if (!alle || !alle.length) { melden("Keine Passwörter gefunden", "Die Datei hat nicht das erwartete Format. Bitte wählen Sie die Exportdatei Ihres Browsers oder Passwort-Managers mit der Endung .csv."); return; }
+  const istBank = e => BANKEN.some(b => (e.host + " " + e.titel).toLowerCase().includes(b));
+  const banken = alle.filter(istBank);
+  const rest = alle.filter(e => !istBank(e));
+  const schl = (a, b) => a.toLowerCase() + "|" + b.toLowerCase();
+  // Doppelte erkennen am Anbieter, nicht am Namen: „Netflix“ aus Chrome und „netflix.com“ aus Firefox sind dasselbe Konto.
+  const kennung = (name, host) => { const a = anbieterFinden(name) || anbieterFinden(host || ""); return a ? a.id : (host || hostVon(name.split(" ")[0]) || name); };
+  const da = new Set(tresor.inhalt.eintraege.map(e => schl(kennung(e.bezeichnung), e.benutzer)));
+  const neu = [];
+  for (const e of rest) {
+    const k = schl(kennung(e.titel, e.host), e.benutzer);
+    if (da.has(k)) continue;
+    da.add(k);
+    const art = ONLINE_ART.find(([re]) => re.test(e.host + " " + e.titel.toLowerCase()));
+    neu.push({ art: art && art[1] === "email" ? "email" : "online", bezeichnung: e.titel, benutzer: e.benutzer, passwort: e.passwort, notiz: e.notiz });
+  }
+  // Im Digitalen Nachlass nur Konten, die Angehörige kennen sollten: bekannte Anbieter und erkannte Arten.
+  const dk = zustand.daten.digital.konten;
+  const daDigital = new Set(dk.map(k => schl(k.anbieter, k.benutzername)));
+  const digital = [];
+  for (const e of neu) {
+    const a = anbieterFinden(e.bezeichnung) || anbieterFinden(e.host || "");
+    const art = ONLINE_ART.find(([re]) => re.test((e.bezeichnung + " ").toLowerCase()));
+    if (!a && !art) continue;
+    const anbieter = a ? a.name : e.bezeichnung;
+    if (daDigital.has(schl(anbieter, e.benutzer))) continue;
+    daDigital.add(schl(anbieter, e.benutzer));
+    digital.push({ kategorie: art ? art[1] : "sonstiges", anbieter, benutzername: e.benutzer, wunsch: "", uebertragenAn: "", notiz: "" });
+  }
+  const ok = await fragen("Passwörter übernehmen?",
+    [t("Gefunden: {n} Zugänge. Neu für Ihre Zugangsdaten: {neu}. Davon kommen {digital} bekannte Online-Konten ohne Passwort zusätzlich in den Digitalen Nachlass.", { n: alle.length, neu: neu.length, digital: digital.length }),
+     banken.length ? t("{n} Bankzugänge werden ausgelassen.", { n: banken.length }) : null].filter(Boolean),
+    [{ text: "Übernehmen", wert: true, primaer: true }, { text: "Abbrechen", wert: false }]);
+  if (!ok) return;
+  tresor.inhalt.eintraege.push(...neu);
+  dk.push(...digital);
+  if (neu.length) tresorGeaendert();
+  if (digital.length) geaendert();
+  inhaltZeigen();
+  await melden("Bitte löschen Sie jetzt die Exportdatei",
+    t("{n} Zugänge sind jetzt verschlüsselt in Klarordner gespeichert.", { n: neu.length }),
+    "Die Exportdatei enthält alle Ihre Passwörter unverschlüsselt. Löschen Sie sie jetzt, auch aus dem Download-Ordner und dem Papierkorb. Auf dem iPad: in der Dateien-App lange antippen, „Löschen“ und danach unter „Zuletzt gelöscht“ endgültig löschen.");
+}
+
 /* ---------- Sprache ---------- */
 
 function statischeTexte() {
@@ -2404,6 +2583,8 @@ window.addEventListener("beforeprint", () => {
   if (zustand.daten && !$("druck").firstChild) druckErzeugen(BEREICHE.map(b => b.id).filter(id => id !== "zugang"), true);
 });
 window.addEventListener("afterprint", druckLeeren);
+$("vcfwahl").addEventListener("change", e => { const d = e.target.files[0]; if (d && zustand.daten) kontakteImportieren(d); });
+$("csvwahl").addEventListener("change", e => { const d = e.target.files[0]; if (d && zustand.daten) passwoerterImportieren(d); });
 $("dateiwahl").addEventListener("change", e => {
   const datei = e.target.files[0];
   if (datei) laden(datei, null);

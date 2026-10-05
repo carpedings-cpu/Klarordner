@@ -33,7 +33,7 @@ NIE = {"Klarordner", "Klarordner-Datei", "AbortError", "NotAllowedError", "PBKDF
        "1", "2", "3", "4", "5", "0+", "0-", "A+", "A-", "B+", "B-", "AB+", "AB-", "Depot", "Streaming",
        "Messenger", "Computer", "Deutsch", "English", "Türkçe", "Русский", "Українська", "Polski", "Română",
        "Italiano", "Ελληνικά", "Hrvatski", "Български", "Čeština", "Español", "Français",
-       "T12:00:00", "input:checked", "Renten Service der Deutschen Post", "‹ ", "☐", "☒", "KLARORDNER"}
+       "T12:00:00", "input:checked", "|", "Renten Service der Deutschen Post", "‹ ", "☐", "☒", "KLARORDNER"}
 
 
 def texte():
@@ -43,6 +43,8 @@ def texte():
     # Briefe an deutsche Stellen werden nicht übersetzt.
     if "NUR-DEUTSCH-START" in js:
         js = js[:js.index("/* NUR-DEUTSCH-START")] + js[js.index("/* NUR-DEUTSCH-ENDE */"):]
+    # Lesefunktionen für Importe enthalten nur technische Zeichenketten.
+    js = re.sub(r"/\* OHNE-TEXTE-START \*/.*?/\* OHNE-TEXTE-ENDE \*/", "", js, flags=re.S)
     funde = set(re.findall(r'data-t="([^"]+)"', html))
     for roh in re.findall(r'"((?:[^"\\\n]|\\.)*)"', js):
         s = roh.encode().decode("unicode_escape").encode("latin-1").decode("utf-8") if "\\" in roh else roh

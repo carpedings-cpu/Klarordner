@@ -1,0 +1,8 @@
+name,url,username,password,note
+Netflix,https://www.netflix.com/login,erika@example.org,N3tfl1x!,
+Amazon,https://www.amazon.de/ap/signin,erika@example.org,"pa,ss""wort",
+Sparkasse Fulda,https://www.sparkasse-fulda.de,erika123,Geheim123,
+"Forum Gartenfreunde",https://forum-garten.de,erika_g,blume42,"Zeile1
+Zeile2"
+GMX,https://www.gmx.net,erika@gmx.de,gmx-pw,
+android://abc@com.whatsapp/,android://abc@com.whatsapp/,+491700000,wa-pw,

@@ -1,0 +1,4 @@
+"url","username","password","httpRealm","formActionOrigin","guid","timeCreated","timeLastUsed","timePasswordChanged"
+"https://www.paypal.com","erika@example.org","PayPal-pw",,"https://www.paypal.com","{1}","1","1","1"
+"https://banking.dkb.de","erika","dkb-pw",,"https://banking.dkb.de","{2}","1","1","1"
+"https://www.netflix.com","erika@example.org","N3tfl1x!",,"","{3}","1","1","1"

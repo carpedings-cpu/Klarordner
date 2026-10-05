@@ -45,6 +45,7 @@ node test/test-sprache.mjs     # Spracherkennung, Sprachwahl, Umwandlung alter D
 node test/test-druck.mjs       # Druckauswahl, PDF mit Kopf- und Fußzeilen, Formular, Zugangsdaten
 node test/test-schritt5.mjs    # Aktualitätshinweis, Fortschritt, Sicherungskopie mit Datum
 node test/test-schreiben.mjs   # vorausgefüllte Schreiben für den Todesfall als PDF
+node test/test-import.mjs      # Kontakte aus vCard, Passwörter aus CSV-Exporten
 ```
 
 ## Veröffentlichen
