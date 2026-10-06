@@ -33,7 +33,7 @@ NIE = {"Klarordner", "Klarordner-Datei", "AbortError", "NotAllowedError", "PBKDF
        "1", "2", "3", "4", "5", "0+", "0-", "A+", "A-", "B+", "B-", "AB+", "AB-", "Depot", "Streaming",
        "Messenger", "Computer", "Deutsch", "English", "Türkçe", "Русский", "Українська", "Polski", "Română",
        "Italiano", "Ελληνικά", "Hrvatski", "Български", "Čeština", "Español", "Français",
-       "T12:00:00", "input:checked", "|", "Renten Service der Deutschen Post", "‹ ", "☐", "☒", "KLARORDNER"}
+       "T12:00:00", "input:checked", "|", ", ", "__andere", "Renten Service der Deutschen Post", "‹ ", "☐", "☒", "KLARORDNER"}
 
 
 def texte():

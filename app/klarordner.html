@@ -287,6 +287,8 @@ dialog .knopfreihe .btn { width: 100%; }
 /* Druckansicht: auf dem Bildschirm unsichtbar, beim Drucken das Einzige */
 #druck { display: none; }
 .schreibliste { display: grid; gap: .6rem; }
+.gesellschaft { display: grid; gap: 1.1rem; }
+.hilfe.anschrift { margin: .45rem 0 0; color: #1b6e33; }
 .schreibzeile { background: var(--grund); border-radius: 16px; padding: .8rem 1rem; }
 .schreibkopf { display: flex; align-items: flex-start; gap: .8rem; }
 .schreibkopf input { width: 1.5rem; height: 1.5rem; margin: .2rem 0 0; flex: none; accent-color: var(--blau); }
@@ -1646,7 +1648,7 @@ const FORMULARE = {
     gruppe("Wichtige Nummern", "Diese Nummern fragen Rentenversicherung, Finanzamt und Krankenkasse nach einem Todesfall ab.",
       feld("persoenlich.steuerId", "Steuer-Identifikationsnummer", { hilfe: "11 Ziffern, steht auf jedem Steuerbescheid.", eingabemodus: "numeric" }),
       feld("persoenlich.rentenversicherungsnummer", "Rentenversicherungsnummer", { hilfe: "Steht auf dem Rentenbescheid oder dem Sozialversicherungsausweis.", gross: true }),
-      feld("persoenlich.krankenkasse.name", "Krankenkasse"),
+      gesellschaftsWahl("persoenlich.krankenkasse.name", "Krankenkasse", "krankenkasse"),
       feld("persoenlich.krankenkasse.versichertennummer", "Versichertennummer", { hilfe: "Steht auf der Gesundheitskarte.", gross: true }),
       feld("persoenlich.postrentennummer", "Postrentennummer", { hilfe: "Nur wer schon Rente bekommt. Steht auf Schreiben des Renten Service der Deutschen Post, zum Beispiel der jährlichen Rentenanpassung." })),
     gruppe("Wo liegen Ihre Dokumente?", "Beschreiben Sie den Ort so, dass ihn jemand Fremdes findet.",
@@ -1757,9 +1759,10 @@ const FORMULARE = {
             return [
               feld(p + ".art", "Art", { typ: "auswahl", optionen: "versicherung",
                 beiAenderung: w => { frist.hidden = !eilig.includes(w); } }),
-              feld(p + ".gesellschaft", "Versicherungsgesellschaft"),
+              gesellschaftsWahl(p + ".gesellschaft", "Versicherungsgesellschaft", "versicherung",
+                { hilfe: "Wählen Sie Ihre Gesellschaft aus der Liste. Die Anschrift kommt dann automatisch in das Schreiben für Ihre Angehörigen." }),
               frist,
-              feld(p + ".vertragsnummer", "Vertragsnummer", { gross: true }),
+              feld(p + ".vertragsnummer", "Versicherungsnummer", { gross: true }),
               feld(p + ".beguenstigt", "Wer ist begünstigt?", { hilfe: "Nur bei Lebens- und Sterbegeldversicherungen." }),
               feld(p + ".ablage", "Wo liegt die Police?", { breit: true }),
               feld(p + ".notiz", "Hinweis", { breit: true })
@@ -2096,10 +2099,55 @@ function pdfTipp() {
 
 const klein = s => String(s || "").toLowerCase().replace(/[^a-z0-9äöüß+.]/g, "");
 
-function anbieterFinden(text) {
+// typ: "dienst" (Online-Dienste, Telefon, Rundfunk, Rente), "versicherung" oder "krankenkasse"
+function anbieterFinden(text, typ) {
   const k = klein(text);
   if (!k) return null;
-  return ANBIETER.find(a => [a.name, ...(a.alias || [])].some(n => k.includes(klein(n)))) || null;
+  const woerter = String(text).toLowerCase().split(/[^a-z0-9äöüß+]+/).filter(Boolean);
+  // Kurze Kürzel wie „TK“ oder „SV“ treffen nur als ganzes Wort.
+  const passt = n => { const kn = klein(n); return kn.length <= 3 ? woerter.includes(String(n).toLowerCase()) || k === kn : k.includes(kn); };
+  return ANBIETER.find(a => (!typ || (a.typ || "dienst") === typ) && [a.name, ...(a.alias || [])].some(passt)) || null;
+}
+
+const anbieterVomTyp = typ => ANBIETER.filter(a => (a.typ || "dienst") === typ).sort((a, b) => a.name.localeCompare(b.name, "de"));
+
+// Auswahl aus bekannten Versicherern oder Krankenkassen, mit freiem Feld für alle anderen.
+function gesellschaftsWahl(pfad, beschriftung, typ, opt = {}) {
+  if (druck) return feld(pfad, beschriftung, opt);
+  const liste = anbieterVomTyp(typ);
+  const wert = pfadLesen(pfad) || "";
+  const treffer = anbieterFinden(wert, typ);
+  const id = neueId();
+  const auswahl = el("select", { id },
+    el("option", { value: "", text: t("Bitte wählen") }),
+    ...liste.map(a => el("option", { value: a.id, text: a.name })),
+    el("option", { value: "__andere", text: t("Andere, selbst eintragen") }));
+  const freiId = neueId();
+  const frei = el("input", { id: freiId, type: "text", autocomplete: "off" });
+  const freiFeld = el("div", { class: "feld breit" }, el("label", { for: freiId, text: t("Name der Gesellschaft") }), frei);
+  const anschrift = el("p", { class: "hilfe anschrift" });
+  const zeigen = () => {
+    const a = anbieterFinden(pfadLesen(pfad) || "", typ);
+    anschrift.textContent = a && a.adresse ? t("Anschrift für Schreiben: {adresse}", { adresse: a.adresse.split("\n").join(", ") }) : "";
+    anschrift.hidden = !anschrift.textContent;
+  };
+  auswahl.value = treffer ? treffer.id : (wert ? "__andere" : "");
+  frei.value = treffer ? "" : wert;
+  freiFeld.hidden = auswahl.value !== "__andere";
+  auswahl.addEventListener("change", () => {
+    const a = liste.find(x => x.id === auswahl.value);
+    freiFeld.hidden = auswahl.value !== "__andere";
+    pfadSchreiben(pfad, a ? a.name : (auswahl.value === "__andere" ? frei.value : ""));
+    if (auswahl.value === "__andere") frei.focus();
+    zeigen();
+    if (opt.beiAenderung) opt.beiAenderung();
+  });
+  frei.addEventListener("input", () => { pfadSchreiben(pfad, frei.value); zeigen(); });
+  zeigen();
+  return el("div", { class: "breit gesellschaft" },
+    el("div", { class: "feld" }, el("label", { for: id, text: t(beschriftung) }),
+      opt.hilfe ? el("p", { class: "hilfe", text: t(opt.hilfe) }) : null, auswahl, anschrift),
+    freiFeld);
 }
 
 function anbieterListe() {
@@ -2108,7 +2156,7 @@ function anbieterListe() {
     liste = el("datalist", { id: "anbieterListe" });
     document.body.append(liste);
   }
-  liste.replaceChildren(...ANBIETER.filter(a => a.id !== "rentenservice" && a.id !== "rundfunk").map(a => el("option", { value: a.name })));
+  liste.replaceChildren(...anbieterVomTyp("dienst").filter(a => a.id !== "rentenservice" && a.id !== "rundfunk").map(a => el("option", { value: a.name })));
 }
 
 // Stellt aus den Angaben im Ordner zusammen, welche Schreiben nach dem Tod nötig sind.
@@ -2116,11 +2164,13 @@ function schreibenListe() {
   const d = zustand.daten;
   const liste = [];
   const eilig = ["leben", "sterbegeld", "unfall", "rente"];
+  const sach = ["haftpflicht", "hausrat", "gebaeude", "kfz", "rechtsschutz", "unfall"];
   const rs = ANBIETER.find(a => a.id === "rentenservice");
   liste.push({ id: "rente", art: "rente", titel: "Renten Service der Deutschen Post", gruppe: "Mitteilungen", adresse: rs && rs.adresse, anbieter: rs,
     hinweis: "Wichtig für Ehe- und Lebenspartner: Den Vorschuss für das Sterbevierteljahr innerhalb von 30 Tagen beantragen. Die Anleitung wird mitgedruckt." });
   if (voll(d.persoenlich.krankenkasse.name)) {
-    liste.push({ id: "krankenkasse", art: "krankenkasse", titel: d.persoenlich.krankenkasse.name, gruppe: "Mitteilungen", adresse: d.persoenlich.krankenkasse.name });
+    const kk = anbieterFinden(d.persoenlich.krankenkasse.name, "krankenkasse");
+    liste.push({ id: "krankenkasse", art: "krankenkasse", titel: d.persoenlich.krankenkasse.name, gruppe: "Mitteilungen", adresse: (kk && kk.adresse) || d.persoenlich.krankenkasse.name, anbieter: kk, notiz: kk && kk.hinweis });
   }
   const banken = [...new Set(d.finanzen.konten.map(k => k.bank.trim()).filter(Boolean))];
   for (const bank of banken) {
@@ -2129,7 +2179,10 @@ function schreibenListe() {
   d.versicherungen.forEach((v, i) => {
     if (!voll(v.gesellschaft) && !voll(v.art)) return;
     const art = normWert(v.art, "versicherung");
-    liste.push({ id: "vers:" + i, art: eilig.includes(art) ? "versMeldung" : "versEnde", titel: [optText("versicherung", v.art), v.gesellschaft].filter(Boolean).join(" · "), gruppe: "Mitteilungen", adresse: v.gesellschaft, vertrag: v });
+    const ges = anbieterFinden(v.gesellschaft, "versicherung");
+    // Sachversicherungen laufen bei vielen Gesellschaften über eine eigene Anschrift.
+    const anschrift = ges && ((sach.includes(art) && ges.adresseSach) || ges.adresse);
+    liste.push({ id: "vers:" + i, art: eilig.includes(art) ? "versMeldung" : "versEnde", titel: [optText("versicherung", v.art), v.gesellschaft].filter(Boolean).join(" · "), gruppe: "Mitteilungen", adresse: anschrift || v.gesellschaft, anbieter: ges, notiz: ges && ges.hinweis, vertrag: v });
   });
   if (normWert(d.wohnen.wohnform, "wohnform") === "miete" || d.vertraege.some(v => normWert(v.art, "vertrag") === "miete")) {
     liste.push({ id: "vermieter", art: "vermieter", titel: t("Vermieter"), gruppe: "Kündigungen", adresse: d.wohnen.hausverwaltung || d.wohnen.vermieter,
@@ -2139,15 +2192,17 @@ function schreibenListe() {
   const rfVertrag = d.vertraege.find(v => normWert(v.art, "vertrag") === "rundfunk");
   liste.push({ id: "rundfunk", art: "rundfunk", titel: t("Rundfunkbeitrag"), gruppe: "Kündigungen", adresse: rf && rf.adresse, anbieter: rf, vertrag: rfVertrag,
     hinweis: "Schneller geht es mit dem Online-Formular „Wohnung abmelden“ auf rundfunkbeitrag.de. Der Brief ist der Weg ohne Internet." });
+  liste.push({ id: "vorlage", art: "leer", titel: t("Leere Kündigungsvorlage für weitere Verträge"), gruppe: "Kündigungen", adresse: "", aus: true,
+    hinweis: "Für Verträge, die erst später auftauchen, zum Beispiel eine Zeitung oder eine Mitgliedschaft. Empfänger und Kundennummer werden von Hand eingetragen." });
   d.vertraege.forEach((v, i) => {
     const art = normWert(v.art, "vertrag");
     if (art === "miete" || art === "rundfunk" || (!voll(v.anbieter) && !voll(v.art))) return;
-    const a = anbieterFinden(v.anbieter);
+    const a = anbieterFinden(v.anbieter, "dienst");
     liste.push({ id: "vertrag:" + i, art: a && a.weg === "online" ? "anleitung" : "kuendigung", titel: [optText("vertrag", v.art), v.anbieter].filter(Boolean).join(" · "), gruppe: "Kündigungen", adresse: (a && a.adresse) || v.anbieter, anbieter: a, vertrag: v });
   });
   d.digital.konten.forEach((k, i) => {
     if (!voll(k.anbieter)) return;
-    const a = anbieterFinden(k.anbieter);
+    const a = anbieterFinden(k.anbieter, "dienst");
     const wunsch = normWert(k.wunsch, "wunsch");
     const nurOnline = (a && a.weg === "online") || wunsch === "gedenken";
     liste.push({ id: "online:" + i, art: nurOnline ? "anleitung" : (wunsch === "uebertragen" ? "uebertragen" : "loeschen"), titel: k.anbieter, gruppe: "Online-Konten", adresse: (a && a.adresse) || k.anbieter, anbieter: a, konto: k });
@@ -2220,6 +2275,10 @@ function briefInhalt(s) {
       return { betreff: mit("Konto einer verstorbenen Person", voll(s.konto.benutzername) && `Konto ${s.konto.benutzername.trim()}`),
         absaetze: [tot, ich, `Die verstorbene Person hat gewünscht, dass ihr Konto${voll(s.konto.uebertragenAn) ? ` an ${s.konto.uebertragenAn.trim()}` : ""} übertragen wird. Bitte teilen Sie mir mit, ob und wie das möglich ist. Andernfalls bitte ich darum, das Konto zu schließen und die gespeicherten Daten zu löschen.`, bestaetigung],
         anlagen: ["Kopie der Sterbeurkunde"] };
+    case "leer":
+      return { betreff: `Kündigung wegen Todesfalls, Kunden- oder Vertragsnummer ${LUECKE}`,
+        absaetze: [tot, ich, "Hiermit kündige ich den oben genannten Vertrag zum nächstmöglichen Zeitpunkt, hilfsweise außerordentlich wegen des Todesfalls. Bitte stellen Sie alle Abbuchungen ein und erstatten Sie zu viel gezahlte Beträge.", bestaetigung],
+        anlagen: ["Kopie der Sterbeurkunde"] };
     default: {
       const konto = s.konto && voll(s.konto.benutzername) ? `Konto ${s.konto.benutzername.trim()}` : (nr ? `Kunden- oder Vertragsnummer ${nr}` : "");
       return { betreff: mit("Kündigung wegen Todesfalls", konto),
@@ -2262,6 +2321,7 @@ function anleitungSeite(s) {
     voll(k.wunsch) ? el("p", {}, el("strong", { text: "Wunsch der verstorbenen Person: " }), optText("wunsch", k.wunsch) + (voll(k.uebertragenAn) ? ` (${k.uebertragenAn})` : "")) : null,
     a && a.schritte && a.schritte.length ? el("ol", {}, ...a.schritte.map(x => el("li", { text: x }))) : el("p", { text: "Dieser Anbieter nimmt Kündigungen im Todesfall nur über ein eigenes Online-Formular oder den Kundenservice an. Suchen Sie auf der Webseite des Anbieters nach „Konto einer verstorbenen Person“." }),
     a && a.unterlagen && a.unterlagen.length ? el("p", {}, el("strong", { text: "Benötigte Unterlagen: " }), a.unterlagen.join(", ")) : null,
+    a && a.telefon ? el("p", {}, el("strong", { text: "Telefon: " }), a.telefon) : null,
     a && a.url ? el("p", {}, el("strong", { text: "Webseite: " }), a.url) : null,
     a && a.hinweis ? el("p", { text: a.hinweis }) : null,
     a && a.stand ? el("p", { class: "bstand", text: a.sicher
@@ -2276,7 +2336,7 @@ function schreibenAnsicht() {
   const art = s => s.art === "anleitung" ? t("Anleitung für den Online-Antrag") : (s.anbieter && s.anbieter.schritte ? t("Brief mit Anleitung") : t("Brief"));
   const eintrag = s => {
     const id = neueId();
-    const box = el("input", { type: "checkbox", id, value: s.id, checked: true });
+    const box = el("input", { type: "checkbox", id, value: s.id, checked: !s.aus });
     const empfId = neueId();
     const empf = el("textarea", { id: empfId, rows: 4 });
     empf.value = zustand.daten.schreiben.empfaenger[s.id] || s.adresse || "";
@@ -2285,6 +2345,7 @@ function schreibenAnsicht() {
       el("div", { class: "schreibkopf" }, box,
         el("label", { for: id }, el("strong", { text: s.titel }), el("span", { class: "schreibart", text: art(s) + (s.anbieter && s.anbieter.stand ? " · " + t("Adresse hinterlegt") : "") }))),
       s.hinweis ? el("p", { class: "hilfe", text: t(s.hinweis) }) : null,
+      s.notiz ? el("p", { class: "hilfe", text: s.notiz }) : null,
       s.art === "anleitung" ? null : el("details", {},
         el("summary", { text: t("Empfänger ansehen oder ändern") }),
         el("div", { class: "feld" }, el("label", { for: empfId, text: t("Anschrift des Empfängers") }), empf)));
@@ -2486,7 +2547,7 @@ async function passwoerterImportieren(datei) {
   const daDigital = new Set(dk.map(k => schl(k.anbieter, k.benutzername)));
   const digital = [];
   for (const e of neu) {
-    const a = anbieterFinden(e.bezeichnung) || anbieterFinden(e.host || "");
+    const a = anbieterFinden(e.bezeichnung, "dienst") || anbieterFinden(e.host || "", "dienst");
     const art = ONLINE_ART.find(([re]) => re.test((e.bezeichnung + " ").toLowerCase()));
     if (!a && !art) continue;
     const anbieter = a ? a.name : e.bezeichnung;
