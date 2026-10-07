@@ -71,6 +71,8 @@ p { margin: 0; }
 .btn:active { transform: scale(.97); }
 .btn.primaer { background: var(--blau); color: #fff; }
 .btn.primaer:hover { background: var(--blau-dunkel); }
+.neueversion { position: fixed; left: 50%; bottom: max(1rem, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(40rem, calc(100% - 2rem)); display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--karte); border-radius: var(--rund); padding: 1rem 1.2rem; box-shadow: 0 8px 30px rgba(0,0,0,.18); z-index: 50; }
+@media print { .neueversion { display: none; } }
 .btn.riesig { min-height: 64px; font-size: 1.15rem; padding: .6em 1.7em; }
 .btn[aria-pressed="true"] { background: var(--blau); color: #fff; }
 .btn.flach { background: transparent; padding-left: .4em; padding-right: .6em; }
@@ -2724,7 +2726,27 @@ if (location.protocol === "https:" || location.hostname === "localhost") {
   document.head.append(
     el("link", { rel: "manifest", href: "manifest.webmanifest" }),
     el("link", { rel: "apple-touch-icon", href: "icons/icon-180.png" }));
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if ("serviceWorker" in navigator) {
+    // Eine neue Version wird im Hintergrund geladen. Sobald sie bereitsteht, bietet die App das Neuladen an.
+    const hatteVersion = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (hatteVersion) neueVersionMelden(); });
+    navigator.serviceWorker.register("sw.js").then(reg => {
+      // Auf dem iPad bleibt die App oft tagelang geöffnet, deshalb auch beim Zurückkehren nachsehen.
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+    }).catch(() => {});
+  }
+}
+
+function neueVersionMelden() {
+  if ($("neueVersion")) return;
+  const knopf = el("button", { type: "button", class: "btn primaer", text: t("Jetzt neu laden") });
+  knopf.addEventListener("click", async () => {
+    knopf.disabled = true;
+    if (speicherTimer) await imGeraetSpeichern();
+    location.reload();
+  });
+  document.body.append(el("div", { class: "neueversion", id: "neueVersion", role: "status" },
+    el("span", { text: t("Eine neue Version von Klarordner ist da. Ihre Eingaben bleiben erhalten.") }), knopf));
 }
 
 async function starten() {

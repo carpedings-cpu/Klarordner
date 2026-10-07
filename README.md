@@ -39,6 +39,7 @@ Setzt die Übersetzungen ein und erzeugt `docs/` für die Web-App mit neuer Cach
 ```
 node test/test-formulare.mjs   # alle Bereiche, Einträge, Speichern
 node test/test-webapp.mjs      # Installation, Offline-Betrieb, Speichern über Teilen
+node test/test-update.mjs      # neue Version erkennen, Hinweis, Neuladen ohne Datenverlust
 node test/test-geraet.mjs      # Speichern im Gerät, Sicherung als Datei, Löschen
 node test/test-tresor.mjs      # Verschlüsselung der Zugangsdaten, Sperre, Passwortwechsel
 node test/test-sprache.mjs     # Spracherkennung, Sprachwahl, Umwandlung alter Dateien, deutsche Reste
