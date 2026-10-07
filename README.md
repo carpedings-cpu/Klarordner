@@ -42,6 +42,7 @@ node test/test-formulare.mjs   # alle Bereiche, Einträge, Speichern
 node test/test-webapp.mjs      # Installation, Offline-Betrieb, Speichern über Teilen
 node test/test-update.mjs      # neue Version erkennen, Hinweis, Neuladen ohne Datenverlust
 node test/test-scan.mjs        # Angaben aus fotografierten Dokumenten übernehmen, auch offline
+node test/test-datum.mjs       # Geburtsdatum als Ziffern eingeben
 node test/test-einzeln.mjs     # einzelnes Schreiben als Brief, E-Mail oder Webseite öffnen
 node test/test-video.mjs       # Videonachricht aufnehmen, abspielen, sichern, löschen
 node test/test-geraet.mjs      # Speichern im Gerät, Sicherung als Datei, Löschen

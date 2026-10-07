@@ -297,6 +297,8 @@ dialog .knopfreihe .btn { width: 100%; }
 #druck { display: none; }
 .schreibliste { display: grid; gap: .6rem; }
 .gesellschaft { display: grid; gap: 1.1rem; }
+.hilfe.fehler { color: #c0392b; font-weight: 600; }
+.datumfeld { max-width: 12rem; letter-spacing: .04em; }
 .hilfe.anschrift { margin: .45rem 0 0; color: #1b6e33; }
 .schreibzeile { background: var(--grund); border-radius: 16px; padding: .8rem 1rem; }
 .schreibkopf { display: flex; align-items: flex-start; gap: .8rem; }
@@ -1479,7 +1481,7 @@ function druckFeld(pfad, beschriftung, opt) {
       return el("div", { class: "dfeld dwahl breit" }, el("span", { class: "dl", text: t(beschriftung) }), ...inhalt);
     }
     inhalt = druckWert(optText(opt.optionen, roh));
-  } else if (typ === "date") {
+  } else if (typ === "date" || typ === "datum") {
     inhalt = druckWert(roh ? new Date(roh + "T12:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "");
   } else if (typ === "mehrzeilig") {
     inhalt = druckWert(roh, Math.min(Math.max(opt.zeilen || 3, 2), 14));
@@ -1505,11 +1507,32 @@ function feld(pfad, beschriftung, opt = {}) {
       el("option", { value: "", text: t("Bitte wählen") }),
       ...Object.keys(werte).map(k => el("option", { value: k, text: t(werte[k]) })),
       aktuell && !(aktuell in werte) ? el("option", { value: aktuell, text: aktuell }) : null);
+  } else if (typ === "datum") {
+    // Für Daten weit in der Vergangenheit: Ziffern tippen statt im Kalender jahrzehntelang zurückblättern.
+    eingabe = el("input", { id, type: "text", inputmode: "numeric", autocomplete: opt.autocomplete || "off", maxlength: 10, class: "datumfeld" });
   } else {
     eingabe = el("input", { id, type: typ, autocomplete: "off", inputmode: opt.eingabemodus, autocapitalize: opt.gross ? "characters" : null, list: opt.vorschlaege ? "anbieterListe" : null });
   }
-  eingabe.value = typ === "auswahl" ? normWert(wert, opt.optionen) : wert;
-  eingabe.addEventListener(typ === "auswahl" ? "change" : "input", () => {
+  eingabe.value = typ === "auswahl" ? normWert(wert, opt.optionen) : typ === "datum" ? datumAnzeige(wert) : wert;
+  const fehler = typ === "datum" ? el("p", { class: "hilfe fehler", hidden: true, text: t("Bitte als Tag, Monat und Jahr eingeben, zum Beispiel 17.03.1952.") }) : null;
+  if (typ === "datum") {
+    // Tippt jemand selbst Punkte, bleiben sie, sonst werden sie nach Tag und Monat eingefügt.
+    let eigenePunkte = /\./.test(eingabe.value) && !/^\d{2}\.\d{2}\.\d{4}$/.test(eingabe.value);
+    eingabe.addEventListener("input", e => {
+      if (e.data === ".") eigenePunkte = true;
+      if (!eingabe.value) eigenePunkte = false;
+      let z = eingabe.value.replace(/[^\d.]/g, "");
+      if (!eigenePunkte && !String(e.inputType).startsWith("delete")) {
+        z = z.replace(/\D/g, "");
+        const d = z.slice(0, 8);
+        z = d.slice(0, 2) + (d.length > 2 ? "." + d.slice(2, 4) : "") + (d.length > 4 ? "." + d.slice(4) : "");
+      }
+      eingabe.value = z;
+      const iso = datumLesen(z);
+      if (iso || !z) { pfadSchreiben(pfad, iso || ""); fehler.hidden = true; }
+    });
+    eingabe.addEventListener("change", () => { fehler.hidden = !eingabe.value || !!datumLesen(eingabe.value); });
+  } else eingabe.addEventListener(typ === "auswahl" ? "change" : "input", () => {
     pfadSchreiben(pfad, eingabe.value);
     if (opt.beiAenderung) opt.beiAenderung(eingabe.value);
   });
@@ -1519,7 +1542,18 @@ function feld(pfad, beschriftung, opt = {}) {
     eingabe.setAttribute("aria-describedby", id + "h");
   }
   return el("div", { class: "feld" + (opt.breit || typ === "mehrzeilig" ? " breit" : "") },
-    el("label", { for: id, text: t(beschriftung) }), hilfe, typ === "password" ? geheimZeile(eingabe) : eingabe);
+    el("label", { for: id, text: t(beschriftung) }), hilfe, typ === "password" ? geheimZeile(eingabe) : eingabe, fehler);
+}
+
+// Gespeichert wird als JJJJ-MM-TT, angezeigt und getippt als TT.MM.JJJJ.
+const datumAnzeige = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso || "") ? iso.split("-").reverse().join(".") : (iso || "");
+function datumLesen(text) {
+  const m = String(text).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!m) return "";
+  const [tag, monat, jahr] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const d = new Date(Date.UTC(jahr, monat - 1, tag));
+  if (d.getUTCDate() !== tag || d.getUTCMonth() !== monat - 1 || jahr < 1900 || jahr > new Date().getFullYear() + 1) return "";
+  return `${jahr}-${String(monat).padStart(2, "0")}-${String(tag).padStart(2, "0")}`;
 }
 
 function geheimZeile(eingabe) {
@@ -1675,7 +1709,7 @@ const FORMULARE = {
       feld("persoenlich.vorname", "Vorname(n)"),
       feld("persoenlich.nachname", "Nachname"),
       feld("persoenlich.geburtsname", "Geburtsname", { hilfe: "Falls anders als der heutige Nachname." }),
-      feld("persoenlich.geburtsdatum", "Geburtsdatum", { typ: "date" }),
+      feld("persoenlich.geburtsdatum", "Geburtsdatum", { typ: "datum", autocomplete: "bday", hilfe: "Tag, Monat und Jahr, zum Beispiel 17.03.1952" }),
       feld("persoenlich.geburtsort", "Geburtsort"),
       feld("persoenlich.staatsangehoerigkeit", "Staatsangehörigkeit"),
       feld("persoenlich.familienstand", "Familienstand", { typ: "auswahl", optionen: "familienstand" })),
