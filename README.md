@@ -9,7 +9,7 @@ Persönlicher Notfall- und Vorsorgeordner, der komplett im Browser läuft. Kein 
 | `app/klarordner.html` | Die App. Eine Datei mit HTML, CSS und JavaScript, läuft auch direkt per Doppelklick. |
 | `app/sw.js` | Service Worker, legt die App für den Offline-Betrieb im Gerät ab. Nutzerdaten laufen nie hindurch. |
 | `app/manifest.webmanifest`, `app/icons/` | Angaben und Symbole für die Installation auf dem Home-Bildschirm. |
-| `app/anbieter.json` | Steckbriefe für die Schreiben im Todesfall: 32 Online-Dienste, Versorger, Vereine und Fitnessstudios, 34 Versicherer (typ "versicherung", optional adresseSach für Sachversicherungen) und 8 Krankenkassen (typ "krankenkasse"): Adresse, Verfahren, Unterlagen, Quellen, Prüfstand. Jährlich prüfen. |
+| `app/anbieter.json` | Steckbriefe für die Schreiben im Todesfall: 32 Online-Dienste, Versorger, Vereine und Fitnessstudios, 34 Versicherer (typ "versicherung", optional adresseSach für Sachversicherungen) und 8 Krankenkassen (typ "krankenkasse"): Adresse, optional E-Mail (nur offiziell belegte), Verfahren, Unterlagen, Quellen, Prüfstand. Jährlich prüfen. |
 | `app/ocr/` | Texterkennung für „Dokument fotografieren“ (tesseract.js 7 mit deutschem Sprachpaket, Apache-Lizenz, Hinweise in `LIZENZEN.txt`). Wird erst beim ersten Scannen geladen und dann im Gerät abgelegt. |
 | `app/sprachen/xx.json` | Übersetzungen. Schlüssel ist der deutsche Text, Wert die Übersetzung. `_texte.json` listet alle Anzeigetexte und wird erzeugt. |
 | `docs/` | Erzeugt, wird über GitHub Pages veröffentlicht. Nicht von Hand ändern. |
@@ -42,6 +42,7 @@ node test/test-formulare.mjs   # alle Bereiche, Einträge, Speichern
 node test/test-webapp.mjs      # Installation, Offline-Betrieb, Speichern über Teilen
 node test/test-update.mjs      # neue Version erkennen, Hinweis, Neuladen ohne Datenverlust
 node test/test-scan.mjs        # Angaben aus fotografierten Dokumenten übernehmen, auch offline
+node test/test-einzeln.mjs     # einzelnes Schreiben als Brief, E-Mail oder Webseite öffnen
 node test/test-video.mjs       # Videonachricht aufnehmen, abspielen, sichern, löschen
 node test/test-geraet.mjs      # Speichern im Gerät, Sicherung als Datei, Löschen
 node test/test-tresor.mjs      # Verschlüsselung der Zugangsdaten, Sperre, Passwortwechsel

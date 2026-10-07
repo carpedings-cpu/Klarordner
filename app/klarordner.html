@@ -194,6 +194,9 @@ p { margin: 0; }
 .kachel .stufe.leer { background: var(--grund); color: var(--leise); }
 .formkarte.aktuell { background: var(--gelb-hell); box-shadow: inset 0 0 0 2px var(--gelb-rand), var(--schatten); margin-bottom: 1.25rem; }
 .formkarte.aktuell .knopfreihe { margin-top: 1rem; }
+.formkarte.kuendigung { background: #eef2fa; box-shadow: inset 0 0 0 2px #c9d4ea, var(--schatten); margin-bottom: 1.25rem; }
+.kuendigungkopf { display: flex; gap: 1rem; align-items: flex-start; }
+.formkarte.kuendigung .knopfreihe { margin-top: 1rem; }
 @media (prefers-reduced-motion: reduce) { .ring > svg .wert { transition: none; } }
 
 .formkarte { background: var(--karte); border-radius: var(--rund); box-shadow: var(--schatten); padding: 1.4rem; }
@@ -301,6 +304,12 @@ dialog .knopfreihe .btn { width: 100%; }
 .schreibkopf label { display: flex; flex-direction: column; cursor: pointer; }
 .schreibart { font-size: .85rem; color: var(--leise); }
 .schreibzeile .hilfe { margin: .4rem 0 0 2.3rem; }
+.schreibaktionen { margin: .6rem 0 0 2.3rem; }
+.schreibaktionen .btn { min-height: 44px; }
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+.briefvorschau { background: #fff; color: #1c1c1e; border-radius: 12px; box-shadow: inset 0 0 0 1px #d8d8de; padding: 1.2rem 1.4rem; max-height: 55vh; overflow: auto; text-align: left; font-size: 1rem; line-height: 1.45; }
+.briefvorschau p + p { margin-top: .7rem; }
+.briefvorschau .vbetreff { font-weight: 700; margin-top: 1.2rem; }
 .schreibzeile details { margin: .5rem 0 0 2.3rem; }
 .schreibzeile summary { cursor: pointer; color: var(--blau); font-weight: 600; min-height: 44px; display: flex; align-items: center; }
 .schreibzeile textarea { background: var(--karte); }
@@ -428,6 +437,7 @@ dialog .knopfreihe .btn { width: 100%; }
   <nav class="navigation" id="navigation" aria-label="Bereiche">
     <ul class="navgruppe" id="navStart"></ul>
     <ul class="navgruppe" id="navliste"></ul>
+    <ul class="navgruppe" id="navExtra"></ul>
   </nav>
   <main class="inhalt" id="inhalt"></main>
 </div>
@@ -1287,9 +1297,11 @@ function navZeigen() {
     }, symbol(sym, "klein", farbe), el("span", { text: t(titel) })));
   $("navStart").replaceChildren(punkt("uebersicht", "Übersicht", "raster", "#0a64c8"));
   $("navliste").replaceChildren(...BEREICHE.map(b => punkt(b.id, b.titel, b.symbol, b.farbe)));
+  $("navExtra").replaceChildren(punkt("schreiben", "Kündigungen und Schreiben", "brief", "#6a7fa6"));
 }
 
 function wechseln(id) {
+  if (id === "schreiben" && zustand.ansicht !== "schreiben") zustand.vonWo = zustand.ansicht;
   zustand.ansicht = id;
   navZeigen();
   inhaltZeigen();
@@ -1319,7 +1331,7 @@ function inhaltZeigen() {
         el("p", { text: t(b.text) })))
   ];
   const form = FORMULARE[b.id];
-  if (form) kinder.push(el("div", { class: "bereichinhalt" }, ...form()));
+  if (form) kinder.push(el("div", { class: "bereichinhalt" }, ...form(), ["versicherungen", "vertraege", "digital"].includes(b.id) ? kuendigungsKarte() : null));
   kinder.push(blaettern(nr));
   ziel.replaceChildren(...kinder);
 }
@@ -1378,6 +1390,19 @@ function aktualitaetsKarte() {
       el("button", { type: "button", class: "btn primaer", text: t("Alles ist noch aktuell"), onclick: alsAktuellMarkieren })));
 }
 
+// Weg zu den vorbereiteten Kündigungen, auf der Übersicht und in den Bereichen mit Verträgen.
+function kuendigungsKarte() {
+  const liste = schreibenListe().filter(s => !s.aus);
+  const kuendigungen = liste.filter(s => s.gruppe !== "Mitteilungen").length;
+  return el("section", { class: "formkarte kuendigung" },
+    el("div", { class: "kuendigungkopf" }, symbol("brief", "mittel", "#6a7fa6"),
+      el("div", {},
+        el("h3", { text: t("Kündigungen und Schreiben") }),
+        el("p", { class: "kartenhilfe", text: t("{n} Schreiben sind mit Ihren Angaben vorbereitet, davon {k} Kündigungen. Ihre Angehörigen drucken sie aus, unterschreiben und schicken sie ab.", { n: liste.length, k: kuendigungen }) }))),
+    el("div", { class: "knopfreihe" },
+      el("button", { type: "button", class: "btn primaer", text: t("Kündigungen ansehen"), onclick: () => wechseln("schreiben") })));
+}
+
 function sicherungsKarte() {
   const tage = zustand.gesichertAm ? Math.floor((Date.now() - new Date(zustand.gesichertAm)) / 864e5) : null;
   // Erinnern erst, wenn eine vorhandene Sicherung veraltet ist. Beim ersten Ausfüllen wird nicht gedrängelt.
@@ -1410,6 +1435,7 @@ function uebersicht() {
           el("p", { class: "stand" }, t("Zuletzt geändert:") + " ", el("strong", { text: datumText(zustand.daten.lastModified) }))));
     })(),
     aktualitaetsKarte(),
+    kuendigungsKarte(),
     el("ul", { class: "kacheln" },
       ...BEREICHE.map(b => {
         const f = fortschritt(b.id);
@@ -2373,6 +2399,42 @@ function briefSeite(s) {
     el("p", { class: "banlagen" }, el("strong", { text: "Anlagen: " }), ((s.anbieter && s.anbieter.anlagen) || inhalt.anlagen).join(", ")));
 }
 
+// Derselbe Text wie im Brief, als E-Mail. Die Sterbeurkunde hängen die Angehörigen in der Mail-App an.
+function mailText(s) {
+  const w = zustand.daten.schreiben;
+  const vorher = sprache;
+  sprache = "de";
+  try {
+    const inhalt = briefInhalt(s);
+    const gruss = [w.absender, ...String(w.anschrift || "").split("\n")].map(z => z.trim()).filter(Boolean);
+    const anlagen = (s.anbieter && s.anbieter.anlagen) || inhalt.anlagen;
+    return { betreff: inhalt.betreff, text: ["Sehr geehrte Damen und Herren,", ...inhalt.absaetze.filter(Boolean),
+      ["Mit freundlichen Grüßen", ...gruss].join("\n"), anlagen.length ? "Anlage: " + anlagen.join(", ") : null].filter(Boolean).join("\n\n") };
+  } finally {
+    sprache = vorher;
+  }
+}
+
+// Vorschau eines einzelnen Briefs auf dem Bildschirm, gedruckt wird er über das Druckfenster.
+function briefVorschau(s) {
+  const w = zustand.daten.schreiben;
+  const vorher = sprache;
+  sprache = "de";
+  try {
+    const inhalt = briefInhalt(s);
+    const empf = String(w.empfaenger[s.id] || s.adresse || "").split("\n").map(z => z.trim()).filter(Boolean);
+    return el("div", { class: "briefvorschau" },
+      el("p", { class: "vempf" }, ...(empf.length ? empf : ["____________________"]).flatMap((z, i) => i ? [el("br"), z] : [z])),
+      el("p", { class: "vbetreff", text: inhalt.betreff }),
+      el("p", { text: "Sehr geehrte Damen und Herren," }),
+      ...inhalt.absaetze.filter(Boolean).map(a => el("p", { text: a })),
+      el("p", { text: "Mit freundlichen Grüßen" }),
+      el("p", { text: voll(w.absender) ? w.absender.trim() : "____________________" }));
+  } finally {
+    sprache = vorher;
+  }
+}
+
 function anleitungSeite(s) {
   const a = s.anbieter;
   const k = s.konto || {};
@@ -2392,10 +2454,63 @@ function anleitungSeite(s) {
 }
 /* NUR-DEUTSCH-ENDE */
 
+// E-Mail-Adresse für ein Schreiben: vom Nutzer beim Vertrag notiert oder beim Anbieter hinterlegt.
+function mailAdresse(s) {
+  const notiert = [s.vertrag && s.vertrag.kuendigung, s.vertrag && s.vertrag.notiz, s.konto && s.konto.notiz].filter(Boolean).join(" ").match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/);
+  if (notiert) return notiert[0];
+  return s.art !== "leer" && s.anbieter && s.anbieter.email ? s.anbieter.email : "";
+}
+
+async function angabenVollstaendig() {
+  const w = zustand.daten.schreiben;
+  if (voll(w.absender) && voll(w.anschrift) && voll(w.sterbedatum)) return true;
+  return await fragen("Es fehlen noch Angaben", ["Bitte tragen Sie oben unter „Absender“ zuerst Ihren Namen, Ihre Anschrift und das Sterbedatum ein. Sonst fehlen diese Angaben im Schreiben."],
+    [{ text: t("Angaben eintragen"), wert: false, primaer: true }, { text: t("Trotzdem öffnen"), wert: true }]);
+}
+
+async function mailOeffnen(s, adresse) {
+  if (!(await angabenVollstaendig())) { $("inhalt").querySelector(".formkarte input")?.focus(); return; }
+  const weiter = await fragen("E-Mail öffnen", [t("Gleich öffnet sich Ihre Mail-App mit dem fertigen Text an {adresse}.", { adresse }),
+    "Hängen Sie dort noch ein Foto oder eine Kopie der Sterbeurkunde an. Dann tippen Sie auf „Senden“."],
+    [{ text: t("Mail-App öffnen"), wert: true, primaer: true }, { text: t("Abbrechen"), wert: false }]);
+  if (!weiter) return;
+  const m = mailText(s);
+  const a = el("a", { href: `mailto:${adresse}?subject=${encodeURIComponent(m.betreff)}&body=${encodeURIComponent(m.text)}` });
+  document.body.append(a);
+  a.click();
+  a.remove();
+}
+
+async function briefOeffnen(s) {
+  if (!(await angabenVollstaendig())) { $("inhalt").querySelector(".formkarte input")?.focus(); return; }
+  const dlg = $("dialog");
+  $("dialogTitel").textContent = s.titel;
+  $("dialogText").replaceChildren(briefVorschau(s),
+    el("p", { class: "hilfe", text: t("Ausdrucken, unterschreiben, eine Kopie der Sterbeurkunde beilegen und abschicken. Im Druckfenster können Sie den Brief auch als PDF sichern.") }));
+  const antwort = await new Promise(resolve => {
+    $("dialogKnoepfe").replaceChildren(
+      el("button", { type: "button", class: "btn primaer", text: t("Drucken oder als PDF sichern"), onclick: () => { dlg.close(); resolve(true); } }),
+      el("button", { type: "button", class: "btn", text: t("Schließen"), onclick: () => { dlg.close(); resolve(false); } }));
+    dlg.onclose = () => { if (!dlg.open) resolve(false); };
+    dlg.showModal();
+  });
+  if (antwort) briefeDrucken([s]);
+}
+
 function schreibenAnsicht() {
   const liste = schreibenListe();
   const gruppen = ["Mitteilungen", "Kündigungen", "Online-Konten"];
   const art = s => s.art === "anleitung" ? t("Anleitung für den Online-Antrag") : (s.anbieter && s.anbieter.schritte ? t("Brief mit Anleitung") : t("Brief"));
+  const aktionen = s => {
+    const mail = mailAdresse(s);
+    const knoepfe = [];
+    if (mail) knoepfe.push(el("button", { type: "button", class: "btn primaer", text: t("E-Mail öffnen"), onclick: () => mailOeffnen(s, mail) }));
+    if (s.art === "anleitung") {
+      if (s.anbieter && s.anbieter.url) knoepfe.push(el("a", { class: "btn" + (mail ? "" : " primaer"), href: s.anbieter.url, target: "_blank", rel: "noopener noreferrer", text: t("Webseite öffnen") }));
+      knoepfe.push(el("button", { type: "button", class: "btn", text: t("Anleitung öffnen"), onclick: () => briefeDrucken([s]) }));
+    } else knoepfe.push(el("button", { type: "button", class: "btn" + (mail ? "" : " primaer"), text: t("Brief öffnen"), onclick: () => briefOeffnen(s) }));
+    return el("div", { class: "knopfreihe schreibaktionen" }, ...knoepfe);
+  };
   const eintrag = s => {
     const id = neueId();
     const box = el("input", { type: "checkbox", id, value: s.id, checked: !s.aus });
@@ -2405,19 +2520,23 @@ function schreibenAnsicht() {
     empf.addEventListener("input", () => { zustand.daten.schreiben.empfaenger[s.id] = empf.value; geaendert(); });
     return el("div", { class: "schreibzeile" },
       el("div", { class: "schreibkopf" }, box,
-        el("label", { for: id }, el("strong", { text: s.titel }), el("span", { class: "schreibart", text: art(s) + (s.anbieter && s.anbieter.stand ? " · " + t("Adresse hinterlegt") : "") }))),
+        el("label", { for: id }, el("strong", { text: s.titel }), el("span", { class: "schreibart", text: art(s) + (mailAdresse(s) ? " · " + t("auch per E-Mail") : (s.anbieter && s.anbieter.stand ? " · " + t("Adresse hinterlegt") : "")) }))),
       s.hinweis ? el("p", { class: "hilfe", text: t(s.hinweis) }) : null,
       s.notiz ? el("p", { class: "hilfe", text: s.notiz }) : null,
+      aktionen(s),
       s.art === "anleitung" ? null : el("details", {},
         el("summary", { text: t("Empfänger ansehen oder ändern") }),
         el("div", { class: "feld" }, el("label", { for: empfId, text: t("Anschrift des Empfängers") }), empf)));
   };
   return [
-    el("button", { type: "button", class: "btn flach zurueck-oben", onclick: () => wechseln("sterbefall"), text: "‹ " + t("Für den Sterbefall") }),
+    (() => {
+      const zurueck = BEREICHE.find(b => b.id === zustand.vonWo);
+      return el("button", { type: "button", class: "btn flach zurueck-oben", onclick: () => wechseln(zurueck ? zurueck.id : "uebersicht"), text: "‹ " + t(zurueck ? zurueck.titel : "Übersicht") });
+    })(),
     el("div", { class: "seitenkopf" },
       symbol("brief", "gross", "#6a7fa6"),
       el("div", {},
-        el("h2", { tabindex: "-1", text: t("Schreiben für den Todesfall") }),
+        el("h2", { tabindex: "-1", text: t("Kündigungen und Schreiben") }),
         el("p", { text: t("Vorausgefüllte Kündigungen und Mitteilungen für Ihre Angehörigen.") }))),
     el("div", { class: "bereichinhalt" },
       hinweis(["Diese Schreiben verschicken Ihre Angehörigen nach Ihrem Tod. Ihre Angaben aus dem Ordner sind schon eingesetzt.",
