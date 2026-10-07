@@ -1,6 +1,6 @@
 // Legt die App beim ersten Aufruf im Gerät ab, danach läuft sie ohne Verbindung.
 // Nutzerdaten gehen hier nie durch, sie liegen ausschließlich in der Datei des Nutzers.
-const CACHE = "klarordner-080936a1ed";
+const CACHE = "klarordner-209c1770f2";
 const DATEIEN = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {

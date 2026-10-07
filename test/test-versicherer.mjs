@@ -58,6 +58,23 @@ await kk.locator('select').selectOption('tk');
 const tk = await p.evaluate(() => ANBIETER.find(a => a.id === 'tk'));
 pruef('Krankenkasse übernommen', await p.evaluate(() => zustand.daten.persoenlich.krankenkasse.name) === tk.name);
 
+// Verträge: Zählernummer nur bei Strom, Gas, Wasser
+await p.click('#navliste button[data-id=vertraege]');
+await p.click('text=+ Vertrag hinzufügen');
+const vt = p.locator('.eintrag').last();
+const zfeld = vt.locator('.feld', { hasText: 'Zählernummer' });
+pruef('Zählernummer zunächst verborgen', !(await zfeld.isVisible()));
+await vt.locator('select').first().selectOption('Strom');
+pruef('Zählernummer bei Strom sichtbar', await zfeld.isVisible());
+await vt.locator('.feld', { hasText: 'Anbieter' }).locator('input').fill('Stadtwerke Beispielstadt');
+await vt.locator('.feld', { hasText: 'Kundennummer' }).locator('input').fill('ST-1001');
+await zfeld.locator('input').fill('1ESY1160123456');
+await p.evaluate(() => {
+  const v = (art, anbieter, nr) => ({ art, anbieter, vertragsnummer: nr, kosten: '', kuendigung: '', notiz: '' });
+  zustand.daten.vertraege.push(v('zeitung', 'Beispiel-Tageblatt', 'AB-77'), v('verein', 'Turnverein Beispielstadt', 'M-512'), v('fitness', 'Fitnessclub Mitte', 'F-9'), v('handy', 'Beispiel-Mobilfunk', 'H-33'), v('telefon', '1&1 DSL', 'K-1234'), v('strom', 'EnBW', 'E-55'));
+});
+pruef('Zählernummer gespeichert', await p.evaluate(() => zustand.daten.vertraege.some(v => v.zaehler === '1ESY1160123456')));
+
 // Schreiben
 await p.click('#navliste button[data-id=sterbefall]');
 await p.click('button:has-text("Schreiben vorbereiten")');
@@ -79,6 +96,13 @@ pruef('Lebensversicherung als Meldung', text.includes('Meldung eines Todesfalls,
 pruef('Brief an AXA Köln mit Nummer', text.includes('51171 Köln') && text.includes('Tod der versicherten Person, Versicherungsnummer HR 12-345'));
 pruef('Krankenkasse im Brief', text.includes(tk.adresse.split('\n').pop()));
 pruef('Leere Vorlage mit Lücken', text.includes('Kündigung wegen Todesfalls') && /_{8,}/.test(text));
+pruef('Strom: Kündigung mit Zählernummer und Lücke für den Stand', text.includes('Kündigung des Liefervertrags wegen Todesfalls, Kunden- oder Vertragsnummer ST-1001') && text.includes('Zählernummer: 1ESY1160123456 Zählerstand:') && text.includes('abgelesen am') && text.includes('Schlussrechnung'));
+pruef('Zeitung: Abonnement', text.includes('Kündigung des Abonnements wegen Todesfalls, Kunden- oder Vertragsnummer AB-77') && text.includes('Lieferung sofort ein'));
+pruef('Verein: Mitgliedschaft endet', text.includes('Ende der Mitgliedschaft wegen Todesfalls, Mitgliedsnummer M-512') && text.includes('sofern Ihre Satzung nichts anderes bestimmt'));
+pruef('Fitness: außerordentlich', text.includes('Kündigung der Mitgliedschaft wegen Todesfalls, Mitgliedsnummer F-9') && text.includes('§ 314 BGB'));
+pruef('1&1: Brief nach Montabaur', text.includes('56410 Montabaur') && text.includes('Kunden- oder Vertragsnummer K-1234'));
+pruef('EnBW: nur Anleitung, kein Brief', text.includes('Strom · EnBW: Was ist zu tun?') && !text.includes('Kunden- oder Vertragsnummer E-55'));
+pruef('Handy: Rufnummer abschalten', text.includes('Kunden- oder Vertragsnummer H-33') && text.includes('Rufnummer ab'));
 await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
 console.log('Fehler:', fehler);
 await browser.close();

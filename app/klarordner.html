@@ -1777,16 +1777,21 @@ const FORMULARE = {
     gruppe("Laufende Verträge und Abos", null,
       liste("vertraege", {
         einzahl: "Vertrag",
-        neu: () => ({ art: "", anbieter: "", vertragsnummer: "", kosten: "", kuendigung: "", notiz: "" }),
+        neu: () => ({ art: "", anbieter: "", vertragsnummer: "", zaehler: "", kosten: "", kuendigung: "", notiz: "" }),
         kopf: v => [optText("vertrag", v.art), v.anbieter].filter(Boolean).join(" · "),
-        felder: p => [
-          feld(p + ".art", "Art", { typ: "auswahl", optionen: "vertrag" }),
+        felder: (p, v) => {
+          const zaehler = bedingt(ZAEHLER.includes(normWert(v.art, "vertrag")),
+            el("div", { class: "felder" }, feld(p + ".zaehler", "Zählernummer", { gross: true, hilfe: "Steht auf dem Zähler und auf der Jahresrechnung." })));
+          return [
+          feld(p + ".art", "Art", { typ: "auswahl", optionen: "vertrag", beiAenderung: w => { zaehler.hidden = !ZAEHLER.includes(w); } }),
           feld(p + ".anbieter", "Anbieter", { vorschlaege: true }),
           feld(p + ".vertragsnummer", "Vertrags- oder Kundennummer", { gross: true }),
+          zaehler,
           feld(p + ".kosten", "Kosten", { hilfe: "Zum Beispiel: 12,99 € im Monat" }),
           feld(p + ".kuendigung", "Wie wird gekündigt?", { breit: true, hilfe: "Kündigungsfrist, Adresse oder Telefonnummer" }),
           feld(p + ".notiz", "Hinweis", { breit: true })
-        ]
+          ];
+        }
       }))
   ],
 
@@ -2097,7 +2102,10 @@ function pdfTipp() {
     : t("Als PDF speichern: Im Druckfenster statt eines Druckers „Als PDF speichern“ wählen.");
 }
 
-const klein = s => String(s || "").toLowerCase().replace(/[^a-z0-9äöüß+.]/g, "");
+// Verträge mit Zähler: Der Brief fragt nach Zählerstand und Schlussrechnung.
+const ZAEHLER = ["strom", "gas", "wasser"];
+
+const klein = s => String(s || "").toLowerCase().replace(/&/g, "und").replace(/[^a-z0-9äöüß+.]/g, "");
 
 // typ: "dienst" (Online-Dienste, Telefon, Rundfunk, Rente), "versicherung" oder "krankenkasse"
 function anbieterFinden(text, typ) {
@@ -2198,7 +2206,8 @@ function schreibenListe() {
     const art = normWert(v.art, "vertrag");
     if (art === "miete" || art === "rundfunk" || (!voll(v.anbieter) && !voll(v.art))) return;
     const a = anbieterFinden(v.anbieter, "dienst");
-    liste.push({ id: "vertrag:" + i, art: a && a.weg === "online" ? "anleitung" : "kuendigung", titel: [optText("vertrag", v.art), v.anbieter].filter(Boolean).join(" · "), gruppe: "Kündigungen", adresse: (a && a.adresse) || v.anbieter, anbieter: a, vertrag: v });
+    liste.push({ id: "vertrag:" + i, art: a && a.weg === "online" ? "anleitung" : "kuendigung", titel: [optText("vertrag", v.art), v.anbieter].filter(Boolean).join(" · "), gruppe: "Kündigungen", adresse: (a && a.adresse) || v.anbieter, anbieter: a, notiz: a && a.hinweis, vertrag: v,
+      hinweis: ZAEHLER.includes(art) ? "Wohnt noch jemand in der Wohnung, kann der Vertrag auf diese Person umgeschrieben werden. Dann wird dieser Brief nicht gebraucht. Sonst den Zählerstand am Tag der Wohnungsübergabe ablesen und im Brief eintragen." : null });
   });
   d.digital.konten.forEach((k, i) => {
     if (!voll(k.anbieter)) return;
@@ -2280,7 +2289,42 @@ function briefInhalt(s) {
         absaetze: [tot, ich, "Hiermit kündige ich den oben genannten Vertrag zum nächstmöglichen Zeitpunkt, hilfsweise außerordentlich wegen des Todesfalls. Bitte stellen Sie alle Abbuchungen ein und erstatten Sie zu viel gezahlte Beträge.", bestaetigung],
         anlagen: ["Kopie der Sterbeurkunde"] };
     default: {
-      const konto = s.konto && voll(s.konto.benutzername) ? `Konto ${s.konto.benutzername.trim()}` : (nr ? `Kunden- oder Vertragsnummer ${nr}` : "");
+      const vart = s.vertrag ? normWert(s.vertrag.art, "vertrag") : "";
+      const erstatten = "Bitte stellen Sie alle Abbuchungen ein und erstatten Sie zu viel gezahlte Beträge.";
+      const kuendigen = "Hiermit kündige ich den oben genannten Vertrag zum nächstmöglichen Zeitpunkt, hilfsweise außerordentlich wegen des Todesfalls.";
+      const kunde = nr ? `Kunden- oder Vertragsnummer ${nr}` : "";
+      if (ZAEHLER.includes(vart)) {
+        const zaehler = voll(s.vertrag.zaehler) ? s.vertrag.zaehler.trim() : LUECKE;
+        return { betreff: mit(vart === "wasser" ? "Abmeldung wegen Todesfalls" : "Kündigung des Liefervertrags wegen Todesfalls", kunde),
+          absaetze: [tot, ich,
+            `Hiermit kündige ich den Vertrag für die Abnahmestelle ${adresse} zum nächstmöglichen Zeitpunkt, hilfsweise außerordentlich wegen des Todesfalls.`,
+            `Zählernummer: ${zaehler}`,
+            `Zählerstand: ${"_".repeat(14)} abgelesen am ${"_".repeat(12)}`,
+            "Bitte erstellen Sie die Schlussrechnung auf Grundlage dieses Zählerstands und senden Sie sie an mich. Ein Guthaben erstatten Sie bitte nach Rücksprache mit mir.", bestaetigung],
+          anlagen: ["Kopie der Sterbeurkunde"] };
+      }
+      if (vart === "zeitung") {
+        return { betreff: mit("Kündigung des Abonnements wegen Todesfalls", kunde),
+          absaetze: [tot, ich, "Hiermit kündige ich das Abonnement zum nächstmöglichen Zeitpunkt, hilfsweise außerordentlich wegen des Todesfalls. Bitte stellen Sie die Lieferung sofort ein und erstatten Sie im Voraus gezahlte Beträge anteilig.", bestaetigung],
+          anlagen: ["Kopie der Sterbeurkunde"] };
+      }
+      if (vart === "verein") {
+        return { betreff: mit("Ende der Mitgliedschaft wegen Todesfalls", nr && `Mitgliedsnummer ${nr}`),
+          absaetze: [tot, ich, "Die Mitgliedschaft endet mit dem Tod, sofern Ihre Satzung nichts anderes bestimmt. Bitte tragen Sie die verstorbene Person zum Todestag aus und ziehen Sie keine Beiträge mehr ein. Im Voraus gezahlte Beiträge erstatten Sie bitte, soweit Ihre Satzung das vorsieht.",
+            "Sollte die Mitgliedschaft nach Ihrer Satzung nicht von selbst enden, kündige ich sie hiermit zum nächstmöglichen Zeitpunkt.", bestaetigung],
+          anlagen: ["Kopie der Sterbeurkunde"] };
+      }
+      if (vart === "fitness") {
+        return { betreff: mit("Kündigung der Mitgliedschaft wegen Todesfalls", nr && `Mitgliedsnummer ${nr}`),
+          absaetze: [tot, ich, "Das Mitglied kann die vereinbarten Leistungen nicht mehr in Anspruch nehmen. Ich kündige den Vertrag deshalb außerordentlich aus wichtigem Grund nach § 314 BGB mit sofortiger Wirkung, hilfsweise zum nächstmöglichen Zeitpunkt.", erstatten, bestaetigung],
+          anlagen: ["Kopie der Sterbeurkunde"] };
+      }
+      if (vart === "telefon" || vart === "handy") {
+        return { betreff: mit("Kündigung wegen Todesfalls", kunde),
+          absaetze: [tot, ich, kuendigen, "Bitte schalten Sie die Rufnummer ab und teilen Sie mir mit, ob geliehene Geräte wie ein Router zurückgeschickt werden müssen.", erstatten, bestaetigung],
+          anlagen: ["Kopie der Sterbeurkunde"] };
+      }
+      const konto = s.konto && voll(s.konto.benutzername) ? `Konto ${s.konto.benutzername.trim()}` : kunde;
       return { betreff: mit("Kündigung wegen Todesfalls", konto),
         absaetze: [tot, ich, "Hiermit kündige ich den oben genannten Vertrag zum nächstmöglichen Zeitpunkt, hilfsweise außerordentlich wegen des Todesfalls. Bitte stellen Sie alle Abbuchungen ein und erstatten Sie zu viel gezahlte Beträge.",
           s.konto ? "Bitte schließen Sie das Kundenkonto und löschen Sie alle dazu gespeicherten Daten." : null, bestaetigung],

@@ -9,7 +9,7 @@ Persönlicher Notfall- und Vorsorgeordner, der komplett im Browser läuft. Kein 
 | `app/klarordner.html` | Die App. Eine Datei mit HTML, CSS und JavaScript, läuft auch direkt per Doppelklick. |
 | `app/sw.js` | Service Worker, legt die App für den Offline-Betrieb im Gerät ab. Nutzerdaten laufen nie hindurch. |
 | `app/manifest.webmanifest`, `app/icons/` | Angaben und Symbole für die Installation auf dem Home-Bildschirm. |
-| `app/anbieter.json` | Steckbriefe für die Schreiben im Todesfall: 23 Online-Dienste und Versorger, 34 Versicherer (typ "versicherung", optional adresseSach für Sachversicherungen) und 8 Krankenkassen (typ "krankenkasse"): Adresse, Verfahren, Unterlagen, Quellen, Prüfstand. Jährlich prüfen. |
+| `app/anbieter.json` | Steckbriefe für die Schreiben im Todesfall: 32 Online-Dienste, Versorger, Vereine und Fitnessstudios, 34 Versicherer (typ "versicherung", optional adresseSach für Sachversicherungen) und 8 Krankenkassen (typ "krankenkasse"): Adresse, Verfahren, Unterlagen, Quellen, Prüfstand. Jährlich prüfen. |
 | `app/sprachen/xx.json` | Übersetzungen. Schlüssel ist der deutsche Text, Wert die Übersetzung. `_texte.json` listet alle Anzeigetexte und wird erzeugt. |
 | `docs/` | Erzeugt, wird über GitHub Pages veröffentlicht. Nicht von Hand ändern. |
 | `test/` | Browsertests und erfundene Testdaten. Wird nicht ausgeliefert. |
