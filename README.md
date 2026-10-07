@@ -42,6 +42,7 @@ node test/test-formulare.mjs   # alle Bereiche, Einträge, Speichern
 node test/test-webapp.mjs      # Installation, Offline-Betrieb, Speichern über Teilen
 node test/test-update.mjs      # neue Version erkennen, Hinweis, Neuladen ohne Datenverlust
 node test/test-scan.mjs        # Angaben aus fotografierten Dokumenten übernehmen, auch offline
+node test/test-video.mjs       # Videonachricht aufnehmen, abspielen, sichern, löschen
 node test/test-geraet.mjs      # Speichern im Gerät, Sicherung als Datei, Löschen
 node test/test-tresor.mjs      # Verschlüsselung der Zugangsdaten, Sperre, Passwortwechsel
 node test/test-sprache.mjs     # Spracherkennung, Sprachwahl, Umwandlung alter Dateien, deutsche Reste
@@ -58,4 +59,4 @@ GitHub Pages auf den Branch `main`, Ordner `/docs` stellen. Die App ist danach u
 
 ## Sicherheit
 
-Die Content-Security-Policy erlaubt nur Dateien der eigenen Adresse (App, Service Worker, Manifest, Symbole). Verbindungen aus der App heraus (`connect-src`) sind vollständig gesperrt. Es gibt keine Statistik, kein Tracking und keine Fehlerberichte. Nutzerdaten liegen ausschließlich in der IndexedDB des Geräts und in der vom Nutzer gesicherten Datei, nie im Cache des Service Workers. Der Bereich Zugangsdaten wird auch dort nur verschlüsselt abgelegt. Fotos von Dokumenten werden nur im Arbeitsspeicher ausgelesen und weder gespeichert noch übertragen. Die Texterkennung läuft in einem Worker der eigenen Adresse und lädt ihre Dateien ebenfalls nur von dort. Über „Von diesem Gerät löschen“ entfernt der Nutzer seinen Ordner vollständig.
+Die Content-Security-Policy erlaubt nur Dateien der eigenen Adresse (App, Service Worker, Manifest, Symbole). Verbindungen aus der App heraus (`connect-src`) sind vollständig gesperrt. Es gibt keine Statistik, kein Tracking und keine Fehlerberichte. Nutzerdaten liegen ausschließlich in der IndexedDB des Geräts und in der vom Nutzer gesicherten Datei, nie im Cache des Service Workers. Der Bereich Zugangsdaten wird auch dort nur verschlüsselt abgelegt. Eine Videonachricht liegt als eigener Eintrag in der IndexedDB, nicht in der Sicherungsdatei, und wird über „Video sichern“ separat exportiert. Für das Abspielen erlaubt die Content-Security-Policy `media-src blob:`, also nur lokal erzeugte Adressen. Fotos von Dokumenten werden nur im Arbeitsspeicher ausgelesen und weder gespeichert noch übertragen. Die Texterkennung läuft in einem Worker der eigenen Adresse und lädt ihre Dateien ebenfalls nur von dort. Über „Von diesem Gerät löschen“ entfernt der Nutzer seinen Ordner vollständig.
