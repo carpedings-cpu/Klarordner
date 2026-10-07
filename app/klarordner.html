@@ -71,6 +71,8 @@ p { margin: 0; }
 .btn:active { transform: scale(.97); }
 .btn.primaer { background: var(--blau); color: #fff; }
 .btn.primaer:hover { background: var(--blau-dunkel); }
+.scanfelder { display: grid; gap: 1rem; margin: 1rem 0; }
+#dialog progress { width: 100%; height: 1rem; margin-top: .8rem; }
 .neueversion { position: fixed; left: 50%; bottom: max(1rem, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(40rem, calc(100% - 2rem)); display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--karte); border-radius: var(--rund); padding: 1rem 1.2rem; box-shadow: 0 8px 30px rgba(0,0,0,.18); z-index: 50; }
 @media print { .neueversion { display: none; } }
 .btn.riesig { min-height: 64px; font-size: 1.15rem; padding: .6em 1.7em; }
@@ -430,6 +432,7 @@ dialog .knopfreihe .btn { width: 100%; }
 
 <input type="file" id="dateiwahl" accept=".json,application/json" hidden>
 <input type="file" id="vcfwahl" accept=".vcf,text/vcard,text/x-vcard" hidden>
+<input type="file" id="scanwahl" accept="image/*" hidden>
 <input type="file" id="csvwahl" accept=".csv,text/csv,text/comma-separated-values" hidden>
 
 <div id="druck" aria-hidden="true"></div>
@@ -1633,6 +1636,7 @@ const JA_NEIN = "jaNein";
 
 const FORMULARE = {
   persoenlich: () => [
+    scanKnopf("persoenlich"),
     gruppe("Zur Person", null,
       feld("persoenlich.vorname", "Vorname(n)"),
       feld("persoenlich.nachname", "Nachname"),
@@ -1725,6 +1729,7 @@ const FORMULARE = {
   finanzen: () => [
     hinweis(["Bitte tragen Sie hier keine PIN, kein Online-Banking-Passwort und keine TAN ein. Diese Daten weiterzugeben verstößt gegen die Bedingungen Ihrer Bank.",
       "Ihre Angehörigen brauchen sie auch nicht: Mit Vollmacht, Sterbeurkunde oder Erbschein bekommen sie bei der Bank Zugang zu Ihren Konten."], "gelb", "Keine Geheimzahlen"),
+    scanKnopf("finanzen"),
     gruppe("Konten und Depots", null,
       liste("finanzen.konten", {
         einzahl: "Konto",
@@ -1750,6 +1755,7 @@ const FORMULARE = {
   versicherungen: () => {
     const eilig = ["leben", "sterbegeld", "unfall"];
     return [
+      scanKnopf("versicherungen"),
       gruppe("Ihre Versicherungen", null,
         liste("versicherungen", {
           einzahl: "Versicherung",
@@ -1776,6 +1782,7 @@ const FORMULARE = {
 
   vertraege: () => [
     hinweis("Verträge laufen nach einem Todesfall meist weiter, bis jemand sie kündigt. Oft reicht dafür eine Kopie der Sterbeurkunde. Den Mietvertrag können Erben mit verkürzter Frist kündigen, müssen das aber innerhalb eines Monats tun."),
+    scanKnopf("vertraege"),
     gruppe("Laufende Verträge und Abos", null,
       liste("vertraege", {
         einzahl: "Vertrag",
@@ -2489,6 +2496,214 @@ function vcardLesen(text) {
 
 /* OHNE-TEXTE-ENDE */
 
+/* ---------- Dokument scannen ---------- */
+// Die Texterkennung läuft auf dem Gerät. Das Foto wird nur gelesen und weder gespeichert noch weitergegeben.
+const scanMoeglich = () => location.protocol !== "file:" && "Worker" in window && typeof WebAssembly === "object";
+let ocrArbeiter = null;
+let ocrMelden = () => {};
+
+function skriptLaden(src) {
+  return new Promise((ok, fehler) => { const s = el("script", { src }); s.onload = ok; s.onerror = fehler; document.head.append(s); });
+}
+
+async function texterkennung() {
+  if (ocrArbeiter) return ocrArbeiter;
+  const basis = new URL("ocr/", location.href).href;
+  if (!window.Tesseract) await skriptLaden(basis + "tesseract.min.js");
+  ocrArbeiter = await Tesseract.createWorker("deu", 1, {
+    workerPath: basis + "worker.min.js", corePath: basis, langPath: basis,
+    workerBlobURL: false, cacheMethod: "none", gzip: true,
+    logger: m => ocrMelden(m)
+  });
+  return ocrArbeiter;
+}
+
+// Verkleinert große Kamerafotos, das macht die Erkennung schneller und kaum schlechter.
+async function bildVorbereiten(datei) {
+  const bild = await createImageBitmap(datei);
+  const f = Math.min(1, 2400 / Math.max(bild.width, bild.height));
+  const c = el("canvas");
+  c.width = Math.round(bild.width * f);
+  c.height = Math.round(bild.height * f);
+  c.getContext("2d").drawImage(bild, 0, 0, c.width, c.height);
+  bild.close();
+  return c;
+}
+
+/* OHNE-TEXTE-START */
+const ibanGueltig = iban => {
+  const z = (iban.slice(4) + iban.slice(0, 4)).replace(/[A-Z]/g, b => b.charCodeAt(0) - 55);
+  let rest = 0;
+  for (const ziffer of z) rest = (rest * 10 + Number(ziffer)) % 97;
+  return rest === 1;
+};
+
+// Sucht im erkannten Text nach den Angaben, die Klarordner braucht. Alles Gefundene wird vor dem Übernehmen angezeigt.
+function dokumentAuswerten(roh) {
+  const text = roh.replace(/[|]/g, " ").replace(/[ \t]+/g, " ");
+  const zeilen = text.split("\n").map(z => z.trim()).filter(Boolean);
+  const nachMarke = marke => {
+    for (let i = 0; i < zeilen.length; i++) {
+      const m = zeilen[i].match(marke);
+      if (!m) continue;
+      let rest = zeilen[i].slice(m.index + m[0].length).replace(/^[\s:.#-]+/, "");
+      if (!/\d/.test(rest) && zeilen[i + 1]) rest = zeilen[i + 1];
+      const teile = [];
+      for (const w of rest.split(" ")) {
+        if (/\d/.test(w) || (!teile.length && /^[A-Z]{1,4}$/.test(w))) teile.push(w.replace(/[,;]$/, ""));
+        else break;
+      }
+      const wert = teile.join(" ");
+      if (/\d/.test(wert) && wert.replace(/\W/g, "").length >= 4) return wert;
+    }
+    return "";
+  };
+  const finde = paare => (paare.find(([muster]) => muster.test(text)) || [])[1] || "";
+  const erg = {};
+  const rv = text.match(/\b(\d{2}) ?(\d{6}) ?([A-Z]) ?(\d{3})\b/);
+  if (rv) erg.rentenversicherungsnummer = `${rv[1]} ${rv[2]} ${rv[3]} ${rv[4]}`;
+  erg.versicherungsnummer = nachMarke(/(versicherungs(schein)?[\s-]*(nummer|nr\.?)|vers\.?[\s-]*nr\.?|polic[ey]n?[\s-]*(nummer|nr\.?)|vertrags[\s-]*(nummer|nr\.?))/i);
+  if (rv && erg.versicherungsnummer.replace(/\W/g, "") === erg.rentenversicherungsnummer.replace(/\W/g, "")) erg.versicherungsnummer = "";
+  erg.kundennummer = nachMarke(/(kunden|vertrags|mitglieds|abo(nnement)?s?)[\s-]*(nummer|nr\.?)/i) || erg.versicherungsnummer;
+  erg.zaehler = nachMarke(/z[äa]hler[\s-]*(nummer|nr\.?)/i);
+  const vn = nachMarke(/versicherten[\s-]*(nummer|nr\.?)/i).replace(/\s/g, "");
+  erg.versichertennummer = /^[A-Z]\d{9}$/.test(vn) ? vn : ((text.match(/\b[A-Z]\d{9}\b/) || [])[0] || vn);
+  const st = text.match(/(steuer[\s-]*(liche[\s-]*)?id(entifikationsnummer)?|identifikationsnummer|idnr)[^\d]{0,30}((\d ?){11})/i);
+  if (st) erg.steuerId = st[4].replace(/\D/g, "").replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3 $4");
+  for (const m of text.toUpperCase().matchAll(/\bD[EF] ?\d{2}(?: ?[0-9O]{4}){4} ?[0-9O]{2}\b/g)) {
+    const iban = m[0].replace(/ /g, "").replace(/^DF/, "DE").replace(/O/g, "0");
+    if (ibanGueltig(iban)) { erg.iban = iban.replace(/(.{4})/g, "$1 ").trim(); break; }
+  }
+  erg.bank = ((text.match(/(Sparkasse[^\n,]{0,30}|Volksbank[^\n,]{0,30}|Raiffeisenbank[^\n,]{0,30}|Sparda-Bank[^\n,]{0,20}|PSD Bank[^\n,]{0,20}|Postbank|Commerzbank|Deutsche Bank|Consorsbank|comdirect|Targobank|HypoVereinsbank|Santander|\bING\b|\bDKB\b|\bN26\b)/i) || [])[0] || "").trim();
+  // Absender aus dem Briefkopf, falls der Anbieter nicht in der Liste steht.
+  erg.absender = (zeilen.slice(0, 8).find(z => /(GmbH|\bAG\b|\bSE\b|e\. ?V\.|\bKG\b|\bVVaG\b|\ba\. ?G\.|Stadtwerke|Versicherung|Verlag|Verein|Sparkasse|Bank)/.test(z) && (z.match(/\d/g) || []).length < 3) || "").replace(/[^\wäöüÄÖÜß&.,+ -]/g, "").trim();
+  erg.kontoart = finde([[/girokonto/i, "giro"], [/tagesgeld/i, "tagesgeld"], [/festgeld/i, "festgeld"], [/sparkonto|sparbuch|spareinlage/i, "spar"], [/depot/i, "depot"], [/bauspar/i, "bauspar"], [/kreditkarte/i, "kreditkarte"], [/darlehen|kredit/i, "kredit"]]);
+  erg.gesellschaft = anbieterFinden(text, "versicherung");
+  erg.kasse = anbieterFinden(text, "krankenkasse");
+  erg.dienst = anbieterFinden(text, "dienst");
+  erg.versArt = finde([[/sterbegeld/i, "sterbegeld"], [/risikoleben|lebensversicherung/i, "leben"], [/berufsunf[äa]hig/i, "bu"], [/unfallversicherung/i, "unfall"],
+    [/pflege(zusatz|tagegeld|renten)/i, "pflege"], [/kranken(zusatz)?versicherung|zahnzusatz/i, "kranken"], [/rechtsschutz/i, "rechtsschutz"], [/wohngeb[äa]ude/i, "gebaeude"],
+    [/hausrat/i, "hausrat"], [/haftpflicht/i, "haftpflicht"], [/kraftfahrt|kfz|fahrzeug/i, "kfz"], [/private? rente|rentenversicherung/i, "rente"]]);
+  erg.vertragArt = finde([[/erdgas|\bgas(liefer|vertrag|tarif)/i, "gas"], [/strom/i, "strom"], [/trinkwasser|wasserversorgung/i, "wasser"], [/mobilfunk|handy|sim-karte/i, "handy"],
+    [/dsl|glasfaser|internet|festnetz|telefon/i, "telefon"], [/abonnement|zeitung|zeitschrift|leserservice/i, "zeitung"], [/fitness|studio/i, "fitness"], [/verein|beitrittserkl|mitgliedsbeitrag/i, "verein"]]);
+  return erg;
+}
+/* OHNE-TEXTE-ENDE */
+
+// Was je Bereich vorgeschlagen und wie es übernommen wird.
+const SCAN_ZIELE = {
+  versicherungen: {
+    felder: e => [
+      { name: "art", label: "Art", optionen: "versicherung", wert: e.versArt },
+      { name: "gesellschaft", label: "Versicherungsgesellschaft", wert: e.gesellschaft ? e.gesellschaft.name : e.absender },
+      { name: "vertragsnummer", label: "Versicherungsnummer", wert: e.versicherungsnummer }],
+    uebernehmen: w => zustand.daten.versicherungen.push({ art: w.art, gesellschaft: w.gesellschaft, vertragsnummer: w.vertragsnummer, beguenstigt: "", ablage: "", notiz: "" })
+  },
+  vertraege: {
+    felder: e => [
+      { name: "art", label: "Art", optionen: "vertrag", wert: e.vertragArt },
+      { name: "anbieter", label: "Anbieter", wert: e.dienst ? e.dienst.name : e.absender },
+      { name: "vertragsnummer", label: "Vertrags- oder Kundennummer", wert: e.kundennummer },
+      { name: "zaehler", label: "Zählernummer", wert: e.zaehler }],
+    uebernehmen: w => zustand.daten.vertraege.push({ art: w.art, anbieter: w.anbieter, vertragsnummer: w.vertragsnummer, zaehler: w.zaehler, kosten: "", kuendigung: "", notiz: "" })
+  },
+  finanzen: {
+    felder: e => [
+      { name: "bank", label: "Bank", wert: e.bank },
+      { name: "kontoart", label: "Art", optionen: "kontoart", wert: e.kontoart },
+      { name: "iban", label: "IBAN", wert: e.iban }],
+    uebernehmen: w => zustand.daten.finanzen.konten.push({ bank: w.bank, kontoart: w.kontoart, iban: w.iban, ansprechpartner: "", telefon: "", vollmachtUeberTod: "", bevollmaechtigt: "", notiz: "" })
+  },
+  persoenlich: {
+    felder: e => [
+      { name: "krankenkasse.name", label: "Krankenkasse", wert: e.kasse ? e.kasse.name : "" },
+      { name: "krankenkasse.versichertennummer", label: "Versichertennummer", wert: e.kasse || /versicherten/i.test(e.text) ? e.versichertennummer : "" },
+      { name: "steuerId", label: "Steuer-Identifikationsnummer", wert: e.steuerId },
+      { name: "rentenversicherungsnummer", label: "Rentenversicherungsnummer", wert: e.rentenversicherungsnummer }].filter(f => f.wert),
+    uebernehmen: w => { for (const [k, v] of Object.entries(w)) if (voll(v)) pfadSchreiben("persoenlich." + k, v.trim()); }
+  }
+};
+
+function scanKnopf(bereich) {
+  if (druck || !scanMoeglich()) return null;
+  return gruppe("Aus einem Dokument übernehmen", "Fotografieren Sie zum Beispiel den Versicherungsschein, eine Rechnung oder einen Kontoauszug. Klarordner liest die Angaben auf diesem Gerät aus und zeigt sie Ihnen zum Prüfen. Das Foto wird nicht gespeichert.",
+    el("div", { class: "knopfreihe breit" },
+      el("button", { type: "button", class: "btn", text: t("Dokument fotografieren"), onclick: () => { const w = $("scanwahl"); w.value = ""; w.dataset.bereich = bereich; w.click(); } })));
+}
+
+function scanFortschritt() {
+  const dlg = $("dialog");
+  const balken = el("progress", { max: 100, value: 0 });
+  const zeile = el("p", { text: t("Das Dokument wird gelesen. Das dauert einen Moment.") });
+  $("dialogTitel").textContent = t("Dokument wird gelesen");
+  $("dialogText").replaceChildren(zeile, balken);
+  $("dialogKnoepfe").replaceChildren();
+  dlg.onclose = null;
+  dlg.showModal();
+  ocrMelden = m => {
+    if (m.status === "recognizing text") { zeile.textContent = t("Das Dokument wird gelesen. Das dauert einen Moment."); balken.value = Math.round(m.progress * 100); }
+    else if (!ocrArbeiter) zeile.textContent = t("Beim ersten Mal wird die Texterkennung auf dieses Gerät geladen.");
+  };
+  return () => { ocrMelden = () => {}; if (dlg.open) dlg.close(); };
+}
+
+function scanVorschlag(felder, text) {
+  const dlg = $("dialog");
+  const eingaben = felder.map(f => {
+    const id = neueId();
+    let feldEl;
+    if (f.optionen) {
+      feldEl = el("select", { id }, el("option", { value: "", text: t("Bitte wählen") }),
+        ...Object.keys(OPTIONEN[f.optionen]).map(k => el("option", { value: k, text: optText(f.optionen, k) })));
+    } else feldEl = el("input", { id, type: "text", autocomplete: "off" });
+    feldEl.value = f.wert || "";
+    return { f, feldEl, box: el("div", { class: "feld" }, el("label", { for: id, text: t(f.label) }), feldEl) };
+  });
+  const roh = el("textarea", { rows: 6, readonly: true });
+  roh.value = text.trim();
+  $("dialogTitel").textContent = t("Gefundene Angaben prüfen");
+  $("dialogText").replaceChildren(
+    el("p", { text: t("Bitte vergleichen Sie die Angaben mit dem Dokument und korrigieren Sie sie bei Bedarf. Leere Felder können Sie später ergänzen.") }),
+    el("div", { class: "scanfelder" }, ...eingaben.map(e => e.box)),
+    el("details", {}, el("summary", { text: t("Erkannten Text ansehen") }), roh));
+  return new Promise(resolve => {
+    $("dialogKnoepfe").replaceChildren(
+      el("button", { type: "button", class: "btn", text: t("Abbrechen"), onclick: () => { dlg.close(); resolve(null); } }),
+      el("button", { type: "button", class: "btn primaer", text: t("Übernehmen"), onclick: () => {
+        dlg.close();
+        resolve(Object.fromEntries(eingaben.map(e => [e.f.name, e.feldEl.value])));
+      } }));
+    dlg.onclose = () => { if (!dlg.open) resolve(null); };
+    dlg.showModal();
+  });
+}
+
+async function dokumentScannen(datei, bereich) {
+  const ziel = SCAN_ZIELE[bereich];
+  const schliessen = scanFortschritt();
+  let text = "";
+  try {
+    const bild = await bildVorbereiten(datei);
+    const arbeiter = await texterkennung();
+    text = (await arbeiter.recognize(bild)).data.text || "";
+  } catch {
+    schliessen();
+    melden("Das Dokument konnte nicht gelesen werden", "Bitte versuchen Sie es noch einmal. Beim ersten Mal braucht Klarordner dafür eine Internetverbindung, danach nicht mehr.");
+    return;
+  }
+  schliessen();
+  const felder = ziel.felder({ ...dokumentAuswerten(text), text });
+  if (!felder.some(f => voll(f.wert))) {
+    melden("Keine passenden Angaben gefunden", "Fotografieren Sie die Seite mit der Nummer möglichst gerade, bei gutem Licht und ohne Schatten. Die ganze Seite sollte zu sehen sein.");
+    return;
+  }
+  const werte = await scanVorschlag(felder, text);
+  if (!werte || !Object.values(werte).some(voll)) return;
+  ziel.uebernehmen(werte);
+  geaendert();
+  inhaltZeigen();
+}
+
 async function kontakteImportieren(datei) {
   let neu;
   try {
@@ -2691,6 +2906,7 @@ window.addEventListener("beforeprint", () => {
 });
 window.addEventListener("afterprint", druckLeeren);
 $("vcfwahl").addEventListener("change", e => { const d = e.target.files[0]; if (d && zustand.daten) kontakteImportieren(d); });
+$("scanwahl").addEventListener("change", e => { const d = e.target.files[0]; if (d && zustand.daten) dokumentScannen(d, e.target.dataset.bereich); });
 $("csvwahl").addEventListener("change", e => { const d = e.target.files[0]; if (d && zustand.daten) passwoerterImportieren(d); });
 $("dateiwahl").addEventListener("change", e => {
   const datei = e.target.files[0];

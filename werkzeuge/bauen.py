@@ -30,6 +30,10 @@ docs.mkdir()
 shutil.copy(app / "manifest.webmanifest", docs / "manifest.webmanifest")
 for icon in (app / "icons").glob("*.png"):
     shutil.copy(icon, docs / "icons" / icon.name)
+shutil.copytree(app / "ocr", docs / "ocr")
+ocr = hashlib.sha256()
+for datei in sorted((app / "ocr").iterdir()):
+    ocr.update(datei.read_bytes())
 
 # Neue Version, sobald sich eine Datei ändert, damit installierte Apps das Update laden.
 pruef = hashlib.sha256()
@@ -37,7 +41,7 @@ for datei in sorted(docs.rglob("*")):
     if datei.is_file():
         pruef.update(datei.read_bytes())
 version = pruef.hexdigest()[:10]
-(docs / "sw.js").write_text((app / "sw.js").read_text(encoding="utf-8").replace("__VERSION__", version), encoding="utf-8")
+(docs / "sw.js").write_text((app / "sw.js").read_text(encoding="utf-8").replace("__VERSION__", version).replace("__OCRVERSION__", ocr.hexdigest()[:10]), encoding="utf-8")
 (docs / ".nojekyll").write_text("")
 
 dist.mkdir(exist_ok=True)

@@ -28,7 +28,7 @@ TECHNISCH = re.compile(r"""
   | ^[0-9 ]+$|^2-digit$|^[a-z]{2}-[A-Z]{2}$
 """, re.X)
 IMMER = {"von", "ledig", "verheiratet", "geschieden", "verwitwet", "beantragt", "unbekannt", "noch nie"}
-NIE = {"Klarordner", "Klarordner-Datei", "AbortError", "NotAllowedError", "PBKDF2", "SHA-256", "AES-GCM",
+NIE = {"Klarordner", "2d", "Worker", "ocr/", "Klarordner-Datei", "AbortError", "NotAllowedError", "PBKDF2", "SHA-256", "AES-GCM",
        "AES-GCM-256", "PBKDF2-SHA-256", "Abgebrochen", "SuperGeheim", "IBAN", "WLAN", "Kfz", "E-Mail",
        "1", "2", "3", "4", "5", "0+", "0-", "A+", "A-", "B+", "B-", "AB+", "AB-", "Depot", "Streaming",
        "Messenger", "Computer", "Deutsch", "English", "Türkçe", "Русский", "Українська", "Polski", "Română",
