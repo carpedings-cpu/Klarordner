@@ -1505,14 +1505,16 @@ function sicherungsKarte() {
   const dringend = zustand.geaendert && tage !== null && tage >= 30;
   const stand = zustand.gesichertAm ? t("Letzte Sicherung: {datum}", { datum: datumText(zustand.gesichertAm) }) : t("Noch nicht als Datei gesichert");
   return el("section", { class: "formkarte sicherung" + (dringend ? " dringend" : "") },
-    el("h3", { text: t("Sicherung als Datei") }),
+    el("h3", { text: t("Sichern und weitergeben") }),
     el("p", { class: "kartenhilfe", text: t(zustand.geraetOk
       ? "Ihre Eingaben bleiben auf diesem Gerät gespeichert, Sie können jederzeit weitermachen. Wenn Sie fertig sind oder etwas Wichtiges geändert haben, sichern Sie Ihren Ordner als Datei, zum Beispiel für einen USB-Stick oder für Ihre Angehörigen."
       : "Dieser Browser kann Ihre Eingaben nicht auf dem Gerät behalten. Bitte sichern Sie Ihren Ordner als Datei, bevor Sie die App schließen.") }),
+    el("p", { class: "kartenhilfe", text: t("Zwei Dateien, zwei Zwecke: Die Datei mit der Endung .notfall.json ist für Klarordner selbst, sie enthält alle Eingaben und die geschützten Zugangsdaten und lässt sich hier wieder öffnen. Das PDF ist zum Lesen und Ausdrucken für Ihre Angehörigen, ohne App.") }),
     el("p", { class: "sicherungsstand" }, el("strong", { text: stand }),
       zustand.gesichertAm && zustand.geaendert ? " · " + t("seitdem geändert") : null),
     el("div", { class: "knopfreihe" },
       el("button", { type: "button", class: "btn primaer", onclick: () => sichern(), text: t("Als Datei sichern") }),
+      el("button", { type: "button", class: "btn", onclick: pdfFuerAngehoerige, text: t("PDF für Angehörige") }),
       el("button", { type: "button", class: "btn", onclick: () => sichern(true), text: t("Sicherungskopie mit Datum") }),
       zustand.geraetOk ? el("button", { type: "button", class: "btn flach loeschen", onclick: vomGeraetLoeschen, text: t("Von diesem Gerät löschen") }) : null));
 }
@@ -1532,7 +1534,9 @@ function uebersicht() {
     ? el("section", { class: "formkarte uebergabe" },
         el("h3", { text: t("Dieser Ordner ist für die Angehörigen von {name}", { name: personName() }) }),
         el("p", { class: "kartenhilfe", text: t("Die Texte richten sich an Sie als Leserin oder Leser. Angaben lassen sich weiterhin ändern, zum Beispiel wenn eine Kündigung erledigt ist.") }),
-        el("div", { class: "knopfreihe" }, el("button", { type: "button", class: "btn", text: t("Zurück zur Bearbeitung"), onclick: () => ansprecheUmstellen(false) })))
+        el("div", { class: "knopfreihe" },
+          el("button", { type: "button", class: "btn primaer", text: t("PDF für Angehörige"), onclick: pdfFuerAngehoerige }),
+          el("button", { type: "button", class: "btn", text: t("Zurück zur Bearbeitung"), onclick: () => ansprecheUmstellen(false) })))
     : el("section", { class: "formkarte uebergabe" },
         el("h3", { text: t("Ist Ihr Ordner fertig?") }),
         el("p", { class: "kartenhilfe", text: t("Dann stellen Sie ihn auf Ihre Angehörigen um. Alle Texte sprechen danach die Menschen an, die den Ordner später lesen, und der Ausdruck ist für die Übergabe gedacht. Sie können jederzeit zurück.") }),
@@ -2329,6 +2333,16 @@ async function druckenStarten() {
 }
 
 /* ---------- Schreiben für den Todesfall ---------- */
+
+async function pdfFuerAngehoerige() {
+  if (!zustand.daten) return;
+  const weiter = await fragen("PDF für Ihre Angehörigen", ["Gleich öffnet sich das Druckfenster mit dem fertigen Ordner: Deckblatt, alle Bereiche, Texte an die Angehörigen gerichtet. Die geschützten Zugangsdaten sind nicht enthalten.",
+    pdfTipp(), "Die PDF-Datei lässt sich ohne Klarordner öffnen, zum Beispiel auf jedem Computer oder ausgedruckt im Ordner zum Testament."],
+    [{ text: t("Druckfenster öffnen"), wert: true, primaer: true }, { text: t("Abbrechen"), wert: false }]);
+  if (!weiter) return;
+  druckErzeugen(BEREICHE.map(b => b.id), true, true);
+  window.print();
+}
 
 function pdfTipp() {
   return kannTeilen

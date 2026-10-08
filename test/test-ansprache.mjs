@@ -42,6 +42,14 @@ await p.click('dialog button:has-text("Drucken")');
 const druck = await p.textContent('#druck');
 pruef('Ausdruck: Deckblatt für die Angehörigen', druck.includes('Vorsorgeordner für die Angehörigen') && druck.includes('Wo die Dokumente liegen') && !druck.includes('Wo liegen Ihre Dokumente?'));
 await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+// PDF für Angehörige: alles, Deckblatt, Ansprache an die Angehörigen, ohne Zugangsdaten
+await p.click('#navStart button');
+await p.click('button:has-text("PDF für Angehörige")');
+pruef('PDF-Hinweis', (await p.textContent('#dialogTitel')).includes('PDF'));
+await p.click('dialog button:has-text("Druckfenster öffnen")');
+const pdfText = await p.textContent('#druck');
+pruef('PDF: alle Bereiche, Deckblatt, Angehörigen-Texte, keine Passwörter', (await p.evaluate(() => document.querySelectorAll('#druck .dbereich').length)) === 10 && pdfText.includes('Vorsorgeordner für die Angehörigen') && pdfText.includes('Checkliste für Sie') && !pdfText.includes('Vertraulich'));
+await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
 // In der Datei gespeichert
 const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
 await p.click('dialog[open] button:has-text("Verstanden")').catch(() => {});
