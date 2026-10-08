@@ -638,7 +638,7 @@ function leereDaten() {
       trauerfeier: "", traueranzeige: "", fotoTrauer: "", wuensche: ""
     },
     nachricht: { text: "", video: { aufgenommen: "", groesse: 0 }, videoAblage: "" },
-    schreiben: { absender: "", anschrift: "", beziehung: "", sterbedatum: "", ort: "", empfaenger: {} }
+    schreiben: { absender: "", anschrift: "", beziehung: "", sterbedatum: "", ort: "", empfaenger: {}, email: {} }
   };
 }
 
@@ -2605,6 +2605,8 @@ function anleitungSeite(s) {
 
 // E-Mail-Adresse für ein Schreiben: vom Nutzer beim Vertrag notiert oder beim Anbieter hinterlegt.
 function mailAdresse(s) {
+  const eigene = (zustand.daten.schreiben.email || {})[s.id];
+  if (eigene && eigene.trim()) return eigene.trim();
   const notiert = [s.vertrag && s.vertrag.kuendigung, s.vertrag && s.vertrag.notiz, s.konto && s.konto.notiz].filter(Boolean).join(" ").match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/);
   if (notiert) return notiert[0];
   return s.art !== "leer" && s.anbieter && s.anbieter.email ? s.anbieter.email : "";
@@ -2619,7 +2621,8 @@ async function angabenVollstaendig() {
 
 async function mailOeffnen(s, adresse) {
   if (!(await angabenVollstaendig())) { $("inhalt").querySelector(".formkarte input")?.focus(); return; }
-  const weiter = await fragen("E-Mail öffnen", [t("Gleich öffnet sich Ihre Mail-App mit dem fertigen Text an {adresse}.", { adresse }),
+  const weiter = await fragen("E-Mail öffnen", [adresse ? t("Gleich öffnet sich Ihre Mail-App mit dem fertigen Text an {adresse}.", { adresse })
+      : t("Gleich öffnet sich Ihre Mail-App mit dem fertigen Text. Die E-Mail-Adresse des Empfängers tragen Sie dort oben bei „An“ ein. Sie steht meist auf der Webseite des Anbieters unter Kontakt."),
     "Hängen Sie dort noch ein Foto oder eine Kopie der Sterbeurkunde an. Dann tippen Sie auf „Senden“."],
     [{ text: t("Mail-App öffnen"), wert: true, primaer: true }, { text: t("Abbrechen"), wert: false }]);
   if (!weiter) return;
@@ -2653,11 +2656,11 @@ function schreibenAnsicht() {
   const aktionen = s => {
     const mail = mailAdresse(s);
     const knoepfe = [];
-    if (mail) knoepfe.push(el("button", { type: "button", class: "btn primaer", text: t("E-Mail öffnen"), onclick: () => mailOeffnen(s, mail) }));
+    if (mail || (s.art !== "anleitung" && s.art !== "leer")) knoepfe.push(el("button", { type: "button", class: "btn" + (mail ? " primaer" : ""), text: t("E-Mail öffnen"), onclick: () => mailOeffnen(s, mailAdresse(s)) }));
     if (s.art === "anleitung") {
       if (s.anbieter && s.anbieter.url) knoepfe.push(el("a", { class: "btn" + (mail ? "" : " primaer"), href: s.anbieter.url, target: "_blank", rel: "noopener noreferrer", text: t("Webseite öffnen") }));
       knoepfe.push(el("button", { type: "button", class: "btn", text: t("Anleitung öffnen"), onclick: () => briefeDrucken([s]) }));
-    } else knoepfe.push(el("button", { type: "button", class: "btn" + (mail ? "" : " primaer"), text: t("Brief öffnen"), onclick: () => briefOeffnen(s) }));
+    } else knoepfe.unshift(el("button", { type: "button", class: "btn" + (mail ? "" : " primaer"), text: t("Brief öffnen"), onclick: () => briefOeffnen(s) }));
     return el("div", { class: "knopfreihe schreibaktionen" }, ...knoepfe);
   };
   const eintrag = s => {
@@ -2675,7 +2678,15 @@ function schreibenAnsicht() {
       aktionen(s),
       s.art === "anleitung" ? null : el("details", {},
         el("summary", { text: t("Empfänger ansehen oder ändern") }),
-        el("div", { class: "feld" }, el("label", { for: empfId, text: t("Anschrift des Empfängers") }), empf)));
+        el("div", { class: "feld" }, el("label", { for: empfId, text: t("Anschrift des Empfängers") }), empf),
+        (() => {
+          const mailId = neueId();
+          const mailFeld = el("input", { id: mailId, type: "email", autocomplete: "off", inputmode: "email", placeholder: s.anbieter && s.anbieter.email && !(zustand.daten.schreiben.email || {})[s.id] ? s.anbieter.email : null });
+          mailFeld.value = (zustand.daten.schreiben.email || {})[s.id] || "";
+          mailFeld.addEventListener("input", () => { zustand.daten.schreiben.email = zustand.daten.schreiben.email || {}; zustand.daten.schreiben.email[s.id] = mailFeld.value; geaendert(); });
+          return el("div", { class: "feld" }, el("label", { for: mailId, text: t("E-Mail-Adresse für die Kündigung") }),
+            el("p", { class: "hilfe", text: t("Wenn der Anbieter Kündigungen per E-Mail annimmt. Steht oft auf der Webseite unter Kontakt oder Impressum.") }), mailFeld);
+        })()));
   };
   return [
     (() => {

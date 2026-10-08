@@ -76,7 +76,7 @@ await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
 const gesp = await p.evaluate(() => ({ s: zustand.daten.schreiben.absender, e: Object.keys(zustand.daten.schreiben.empfaenger).length }));
 console.log('Absender und Empfänger im Ordner gespeichert:', gesp.s === 'Thomas Musterfrau' && gesp.e === 1);
 // Nichts ausgewählt
-for (const b of await p.locator('.schreibliste input').all()) await b.uncheck();
+for (const b of await p.locator('.schreibliste input[type=checkbox]').all()) await b.uncheck();
 await p.click('button:has-text("Print selected letters")');
 console.log('Ohne Auswahl:', await p.textContent('#dialogTitel'));
 console.log('Fehler:', fehler);

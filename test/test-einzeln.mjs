@@ -74,6 +74,19 @@ await p.click('dialog button:has-text("Mail-App öffnen")');
 const mail2 = await p.evaluate(() => window.__mail);
 pruef('Allianz: Mail an hinterlegte Adresse mit Versicherungsnummer', mail2.startsWith('mailto:lebensversicherung@allianz.de?') && decodeURIComponent(mail2).includes('Versicherungsnummer LV-1234'));
 
+// Ohne bekannte Adresse: Mail-App mit leerem Empfänger, eigene Adresse eintragen
+const bank = zeile('Beispielbank');
+pruef('Bank: E-Mail-Knopf auch ohne Adresse', await bank.locator('button:has-text("E-Mail öffnen")').count() === 1);
+await bank.locator('button:has-text("E-Mail öffnen")').click();
+pruef('Hinweis zum Eintragen der Adresse', (await p.textContent('#dialogText')).includes('bei „An“'));
+await p.click('dialog button:has-text("Mail-App öffnen")');
+pruef('Mail ohne Empfänger geöffnet', (await p.evaluate(() => window.__mail)).startsWith('mailto:?subject='));
+await bank.locator('summary').click();
+await bank.locator('input[type=email]').fill('nachlass@beispielbank.de');
+await zeile('Beispielbank').locator('button:has-text("E-Mail öffnen")').click();
+await p.click('dialog button:has-text("Mail-App öffnen")');
+pruef('Eigene Adresse wird verwendet und gespeichert', (await p.evaluate(() => window.__mail)).startsWith('mailto:nachlass@beispielbank.de?') && await p.evaluate(() => zustand.daten.schreiben.email['bank:Beispielbank'] === 'nachlass@beispielbank.de'));
+
 // Online-Verfahren: Webseite des Anbieters
 const netflix = zeile('Netflix');
 const link = netflix.locator('a:has-text("Webseite öffnen")');
