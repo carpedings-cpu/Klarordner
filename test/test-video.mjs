@@ -39,7 +39,7 @@ try {
   await p.waitForFunction(() => document.querySelector('.videobereich .hilfe')?.textContent.includes('Zuletzt gesichert'));
   pruef('Sicherungsdatum angezeigt', true);
   await p.fill('#inhalt input[type=text] >> nth=-1', 'USB-Stick im Ordner Testament');
-  const [ordner] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
+  const [ordner] = await Promise.all([p.waitForEvent('download'), p.click('#btnMehr').then(() => p.click('#btnSpeichern'))]);
   await p.click('dialog[open] button:has-text("Verstanden")').catch(() => {});
   const json = fs.readFileSync(await ordner.path(), 'utf8');
   const d = JSON.parse(json);
@@ -62,7 +62,7 @@ try {
   await w2.setFiles(video);
   await p.waitForSelector('video.videonachricht');
   await p.click('#navStart button');
-  await p.click('.sicherung button:has-text("Von diesem Gerät löschen")');
+  await p.click('#btnMehr').then(() => p.click('#btnLoeschen'));
   pruef('Löschdialog erwähnt das Video', await p.isVisible('dialog >> text=Auch die Videonachricht'));
   await p.click('dialog button:has-text("Endgültig löschen")');
   await p.waitForSelector('#startseite:not([hidden])');

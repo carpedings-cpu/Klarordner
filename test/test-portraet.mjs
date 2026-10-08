@@ -69,7 +69,7 @@ pruef('Deckblatt im PDF vollständig gezeichnet', unten > 200);
 await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
 
 // Sicherungsdatei enthält das verkleinerte Foto
-const [datei] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
+const [datei] = await Promise.all([p.waitForEvent('download'), p.click('#btnMehr').then(() => p.click('#btnSpeichern'))]);
 await p.click('dialog[open] button:has-text("Verstanden")').catch(() => {});
 const json = JSON.parse(fs.readFileSync(await datei.path(), 'utf8'));
 pruef('Foto in der Sicherungsdatei', json.persoenlich.foto === foto && json.sterbefall.fotoTrauer === 'ja');

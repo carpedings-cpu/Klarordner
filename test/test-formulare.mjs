@@ -71,7 +71,7 @@ console.log('Anonym:', await grabarten());
 console.log('Meer gespeichert:', await p.evaluate(() => zustand.daten.sterbefall.meer));
 console.log('Checkliste ohne Eingabefelder:', await p.locator('.checkpunkt').count(), 'Punkte,', await p.locator('.checkpunkt input').count(), 'Felder');
 // Speichern und prüfen
-const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
+const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnMehr').then(() => p.click('#btnSpeichern'))]);
 const d = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
 console.log('Gespeichert: Kontakte', d.kontakte.map(k => k.name), '| Testament', JSON.stringify(d.testament.testament),
   '| Vers.art', d.versicherungen[0].art, '| Wünsche', JSON.stringify(d.sterbefall.wuensche), '| Urkunden', d.persoenlich.ablageUrkunden, '| Gesundheit weg:', !('gesundheit' in d), '| Version', d.schemaVersion);

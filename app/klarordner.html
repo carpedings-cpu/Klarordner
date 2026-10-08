@@ -218,8 +218,11 @@ p { margin: 0; }
 .fotowunsch { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; }
 .formkarte.aktuell { background: var(--gelb-hell); box-shadow: inset 0 0 0 2px var(--gelb-rand), var(--schatten); margin-bottom: 1.25rem; }
 .formkarte.aktuell .knopfreihe { margin-top: 1rem; }
-.sicherung.schlank { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; margin-top: 1.5rem; font-size: .9rem; color: var(--leise); }
-.sicherung.schlank .btn { min-height: 44px; font-size: .9rem; }
+.mehr { position: relative; }
+.mehrmenue { position: absolute; right: 0; top: calc(100% + .4rem); z-index: 20; min-width: 17rem; background: var(--karte); border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: .6rem; display: grid; gap: .1rem; }
+.mehrmenue .btn { justify-content: flex-start; width: 100%; }
+.mehrmenue .sicherungsstand { font-size: .85rem; color: var(--leise); padding: .4rem .6rem .5rem; border-bottom: 1px solid var(--linie); margin-bottom: .3rem; }
+.sprachknopf { padding-left: .8em; padding-right: .9em; }
 .formkarte.uebergabe { margin-bottom: 1.25rem; background: #e9efe8; box-shadow: inset 0 0 0 2px #c9d9c8, var(--schatten); }
 .formkarte.uebergabe .knopfreihe { margin-top: 1rem; }
 .formkarte.kuendigung { background: #f3f7f2; box-shadow: inset 0 0 0 2px #c9d9c8, var(--schatten); margin-bottom: 1.25rem; }
@@ -436,11 +439,19 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; }
   <div class="marke"><img class="logo" id="logoKlein" alt="">Klarordner</div>
   <div class="dateistatus" id="dateistatus" aria-live="polite"></div>
   <div class="aktionen">
-    <button type="button" class="btn" id="btnSpeichern" data-t="Als Datei sichern" hidden>Als Datei sichern</button>
     <button type="button" class="btn" id="btnDrucken" data-t="Drucken" hidden>Drucken</button>
-    <button type="button" class="btn" id="btnOeffnen" data-t="Öffnen" hidden>Öffnen</button>
     <button type="button" class="btn" id="btnSchrift" data-t="Schrift größer" aria-pressed="false">Schrift größer</button>
     <button type="button" class="btn sprachknopf" id="btnSprache"></button>
+    <div class="mehr" id="mehrBereich" hidden>
+      <button type="button" class="btn" id="btnMehr" aria-haspopup="true" aria-expanded="false" data-t="Datei">Datei</button>
+      <div class="mehrmenue" id="mehrMenue" hidden>
+        <p class="sicherungsstand" id="sicherungsstand"></p>
+        <button type="button" class="btn flach" id="btnSpeichern" data-t="Als Datei sichern">Als Datei sichern</button>
+        <button type="button" class="btn flach" id="btnKopie" data-t="Sicherungskopie mit Datum">Sicherungskopie mit Datum</button>
+        <button type="button" class="btn flach" id="btnOeffnen" data-t="Datei öffnen">Datei öffnen</button>
+        <button type="button" class="btn flach loeschen" id="btnLoeschen" data-t="Von diesem Gerät löschen">Von diesem Gerät löschen</button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -1501,13 +1512,6 @@ async function ansprecheUmstellen(an) {
   inhaltZeigen();
 }
 
-function sicherungsZeile() {
-  const stand = zustand.gesichertAm ? t("Letzte Sicherung: {datum}", { datum: datumText(zustand.gesichertAm) }) : t("Noch nicht als Datei gesichert");
-  return el("div", { class: "sicherung schlank" },
-    el("span", { class: "sicherungsstand" }, el("strong", { text: stand }), zustand.gesichertAm && zustand.geaendert ? " · " + t("seitdem geändert") : null),
-    el("button", { type: "button", class: "btn flach", onclick: () => sichern(true), text: t("Sicherungskopie mit Datum") }),
-    zustand.geraetOk ? el("button", { type: "button", class: "btn flach loeschen", onclick: vomGeraetLoeschen, text: t("Von diesem Gerät löschen") }) : null);
-}
 
 function uebersicht() {
   const d = zustand.daten;
@@ -1549,7 +1553,6 @@ function uebersicht() {
         : el("p", { class: "kartenhilfe", text: t("Alle Bereiche sind ausgefüllt. Schauen Sie einmal im Jahr hinein, ob noch alles stimmt.") }),
       fuerAngehoerige ? null : el("div", { class: "knopfreihe" },
         el("button", { type: "button", class: "btn primaer riesig weiter", text: zustand.zuletzt ? t("Weiter, wo ich aufgehört habe") : fertig ? t("Weiter ausfüllen") : t("Mit dem Ausfüllen beginnen"), onclick: () => wechseln(ziel.id) }))),
-    kuendigungsKarte(),
     uebergabe,
     el("h3", { class: "kachelueberschrift", text: t("Alle Bereiche") }),
     el("ul", { class: "kacheln" },
@@ -1560,7 +1563,6 @@ function uebersicht() {
             el("span", { class: "name", text: t(b.titel) }),
             el("span", { class: "unter", text: t(b.text) }),
             el("span", { class: "stufe " + f.stufe, text: t(STUFENTEXT[f.stufe]) })))))),
-    sicherungsZeile(),
     el("p", { class: "kleingedruckt", text: t("Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form. Die Inhalte beziehen sich auf deutsches Recht.") })
   ];
 }
@@ -2149,9 +2151,8 @@ function alles() {
   const offen = !!zustand.daten;
   $("startseite").hidden = offen;
   $("arbeitsbereich").hidden = !offen;
-  $("btnSpeichern").hidden = !offen;
+  $("mehrBereich").hidden = !offen;
   $("btnDrucken").hidden = !offen;
-  $("btnOeffnen").hidden = !offen;
   statusZeigen();
   if (offen) {
     navZeigen();
@@ -3387,7 +3388,7 @@ function statischeTexte() {
   document.documentElement.lang = sprache;
   for (const knoten of document.querySelectorAll("[data-t]")) knoten.textContent = t(knoten.dataset.t);
   $("navigation").setAttribute("aria-label", t("Bereiche"));
-  $("btnSprache").replaceChildren(el("span", { "aria-hidden": "true" }), SPRACHEN[sprache]);
+  $("btnSprache").replaceChildren(el("span", { "aria-hidden": "true" }), sprache.toUpperCase());
   $("btnSprache").firstChild.innerHTML = `<svg viewBox="0 0 24 24">${SYMBOLE.globus}</svg>`;
   $("btnSprache").setAttribute("aria-label", t("Sprache wählen") + ": " + SPRACHEN[sprache]);
 }
@@ -3444,8 +3445,21 @@ try {
 $("hinweisBrowser").hidden = hatFsa;
 $("btnNeu").addEventListener("click", neuAnlegen);
 $("btnStartOeffnen").addEventListener("click", oeffnen);
-$("btnOeffnen").addEventListener("click", oeffnen);
-$("btnSpeichern").addEventListener("click", sichern);
+$("btnOeffnen").addEventListener("click", () => { mehrZu(); oeffnen(); });
+$("btnSpeichern").addEventListener("click", () => { mehrZu(); sichern(); });
+$("btnKopie").addEventListener("click", () => { mehrZu(); sichern(true); });
+$("btnLoeschen").addEventListener("click", () => { mehrZu(); vomGeraetLoeschen(); });
+$("btnMehr").addEventListener("click", () => {
+  const offen = $("mehrMenue").hidden;
+  $("mehrMenue").hidden = !offen;
+  $("btnMehr").setAttribute("aria-expanded", String(offen));
+  if (offen) {
+    $("sicherungsstand").textContent = (zustand.gesichertAm ? t("Letzte Sicherung: {datum}", { datum: datumText(zustand.gesichertAm) }) : t("Noch nicht als Datei gesichert")) + (zustand.gesichertAm && zustand.geaendert ? " · " + t("seitdem geändert") : "");
+    $("btnLoeschen").hidden = !zustand.geraetOk;
+  }
+});
+function mehrZu() { $("mehrMenue").hidden = true; $("btnMehr").setAttribute("aria-expanded", "false"); }
+document.addEventListener("click", e => { if (!$("mehrMenue").hidden && !e.target.closest("#mehrBereich")) mehrZu(); });
 $("btnSchrift").addEventListener("click", schriftUmschalten);
 $("btnSprache").addEventListener("click", spracheWaehlen);
 $("btnDrucken").addEventListener("click", druckenStarten);

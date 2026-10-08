@@ -45,14 +45,14 @@ try {
   await q.waitForSelector('.kacheln');
   await q.click('.kachel:has-text("Persönliche Nachricht")');
   await q.fill('textarea', 'Gespeichert über Teilen');
-  await q.click('#btnSpeichern');
+  await q.click('#btnMehr').then(() => q.click('#btnSpeichern'));
   console.log('Dialog vor dem Teilen:', await q.textContent('#dialogTitel'));
   await q.click('dialog button:has-text("Weiter")');
   await q.waitForFunction(() => window.__geteilt);
   const g = await q.evaluate(() => window.__geteilt);
   console.log('Geteilt:', g.name, '| Text drin:', JSON.parse(g.text).nachricht.text, '| Status:', await q.textContent('#dateistatus'));
   await q.fill('textarea', 'Zweites Speichern');
-  await q.click('#btnSpeichern');
+  await q.click('#btnMehr').then(() => q.click('#btnSpeichern'));
   await q.waitForFunction(() => window.__geteilt && window.__geteilt.text.includes('Zweites'));
   console.log('Zweites Speichern ohne erneuten Hinweis: ok, Dialog offen:', await q.isVisible('dialog[open]'));
 } finally {

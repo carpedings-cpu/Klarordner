@@ -26,7 +26,7 @@ await p.evaluate(() => {
   zustand.daten.versicherungen.push({ art: 'leben', gesellschaft: 'Allianz', vertragsnummer: 'LV-1234', beguenstigt: '', ablage: '', notiz: '' });
   inhaltZeigen();
 });
-pruef('Karte auf der Übersicht', await p.isVisible('.formkarte.kuendigung'));
+pruef('Keine Kündigungskarte auf der Übersicht', !(await p.isVisible('.formkarte.kuendigung')));
 pruef('Eigener Punkt in der Seitenleiste', await p.isVisible('#navExtra button[data-id=schreiben]'));
 await p.click('#navliste button[data-id=vertraege]');
 pruef('Karte im Bereich Verträge', await p.isVisible('.bereichinhalt .formkarte.kuendigung'));

@@ -17,7 +17,7 @@ const neueSeite = async (ctx) => {
   return p;
 };
 const sichern = async (p) => {
-  const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
+  const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnMehr').then(() => p.click('#btnSpeichern'))]);
   if (await p.waitForSelector('dialog[open]', { timeout: 1500 }).catch(() => null)) await p.click('dialog button:has-text("Verstanden")');
   return fs.readFileSync(await dl.path(), 'utf8');
 };

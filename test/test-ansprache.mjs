@@ -51,7 +51,7 @@ const pdfText = await p.textContent('#druck');
 pruef('PDF: alle Bereiche, Deckblatt, Angehörigen-Texte, keine Passwörter', (await p.evaluate(() => document.querySelectorAll('#druck .dbereich').length)) === 10 && pdfText.includes('Vorsorgeordner für die Angehörigen') && pdfText.includes('Checkliste für Sie') && !pdfText.includes('Vertraulich'));
 await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
 // In der Datei gespeichert
-const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
+const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnMehr').then(() => p.click('#btnSpeichern'))]);
 await p.click('dialog[open] button:has-text("Verstanden")').catch(() => {});
 pruef('Umstellung in der Datei', JSON.parse(fs.readFileSync(await dl.path(), 'utf8')).fuerAngehoerige === true);
 // Zurück

@@ -25,16 +25,20 @@ await p.waitForFunction(() => document.querySelector('#dateistatus').textContent
 console.log('Nach kurzer Pause:', await p.textContent('#dateistatus'));
 await p.reload();
 await p.waitForSelector('.kacheln');
-console.log('Nach Neustart direkt im Ordner, Sicherungskarte:', (await p.textContent('.sicherung .sicherungsstand')).trim(), '| gelb markiert:', await p.locator('.sicherung.dringend').count() === 1);
+await p.click('#btnMehr');
+console.log('Nach Neustart direkt im Ordner, Menü:', (await p.textContent('#sicherungsstand')).trim());
+await p.click('#btnMehr');
 await p.click('.kachel:has-text("Persönliche Daten")');
 console.log('Vorname nach Neustart:', await p.inputValue('#inhalt input >> nth=0'));
 await p.click('#navStart button');
-const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
+const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnMehr').then(() => p.click('#btnSpeichern'))]);
 const d = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
 await p.click('dialog button:has-text("Verstanden")');
-console.log('Gesichert:', dl.suggestedFilename(), d.persoenlich.vorname, '| Karte:', (await p.textContent('.sicherung .sicherungsstand')).trim(), '| gelb markiert:', await p.locator('.sicherung.dringend').count() === 1);
+await p.click('#btnMehr');
+console.log('Gesichert:', dl.suggestedFilename(), d.persoenlich.vorname, '| Menü:', (await p.textContent('#sicherungsstand')).trim());
+await p.click('#btnMehr');
 // Datei öffnen ersetzt den Ordner nach Rückfrage
-await p.click('#btnOeffnen');
+await p.click('#btnMehr').then(() => p.click('#btnOeffnen'));
 console.log('Rückfrage:', await p.textContent('#dialogTitel'));
 await p.click('dialog button:has-text("Ersetzen")');
 await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
@@ -48,7 +52,7 @@ await p.click('.kachel:has-text("Persönliche Daten")');
 console.log('Nach Öffnen und Neustart:', await p.inputValue('#inhalt input >> nth=1'));
 // Löschen vom Gerät
 await p.click('#navStart button');
-await p.click('.sicherung button:has-text("Von diesem Gerät löschen")');
+await p.click('#btnMehr').then(() => p.click('#btnLoeschen'));
 await p.click('dialog button:has-text("Endgültig löschen")');
 await p.waitForSelector('#startseite:not([hidden])', { timeout: 3000 }).catch(() => {});
 console.log('Nach Löschen Startseite sichtbar:', await p.isVisible('#startseite'));

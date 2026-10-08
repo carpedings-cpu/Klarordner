@@ -31,7 +31,7 @@ const ringBreite = await p.locator('.kachel .ring .wert').first().evaluate(c => 
 console.log('Ringanteil 1 von 7:', ringBreite);
 
 // Testdatei: älter als ein Jahr
-await p.click('#btnOeffnen');
+await p.click('#btnMehr').then(() => p.click('#btnOeffnen'));
 await p.click('dialog button:has-text("Ersetzen")');
 await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
 await p.waitForSelector('dialog[open]');
@@ -55,7 +55,7 @@ console.log('Durchsehen öffnet:', await p.textContent('#inhalt h2'));
 // Sicherungskopie mit Datum, ohne den gemerkten Dateinamen zu ändern
 await p.click('#navStart button');
 const vorher = await p.evaluate(() => zustand.dateiname);
-const [dl] = await Promise.all([p.waitForEvent('download'), p.click('.sicherung button:has-text("Sicherungskopie mit Datum")')]);
+const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnMehr').then(() => p.click('#btnKopie'))]);
 const datum = new Date().toISOString().slice(0, 10);
 console.log('Kopie:', dl.suggestedFilename(), '| Datum im Namen:', dl.suggestedFilename() === `Mein Vorsorgeordner ${datum}.notfall.json`);
 console.log('Meldung:', await p.textContent('#dialogTitel'));
@@ -75,12 +75,12 @@ await q.addInitScript(() => {
 });
 await q.goto(url);
 await q.click('#btnNeu');
-await q.click('#btnSpeichern');
+await q.click('#btnMehr').then(() => q.click('#btnSpeichern'));
 await q.waitForFunction(() => Object.keys(window.__dateien).length === 1);
-await q.click('.sicherung button:has-text("Sicherungskopie mit Datum")');
+await q.click('#btnMehr').then(() => q.click('#btnKopie'));
 await q.waitForFunction(() => Object.keys(window.__dateien).length === 2);
 console.log('Chrome-Weg Dateien:', await q.evaluate(() => Object.keys(window.__dateien).join(' + ')));
-await q.click('#btnSpeichern');
+await q.click('#btnMehr').then(() => q.click('#btnSpeichern'));
 await q.waitForTimeout(300);
 console.log('Normales Sichern schreibt wieder in die erste Datei:', await q.evaluate(() => window.__vorschlaege.length === 2));
 

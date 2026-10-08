@@ -58,7 +58,7 @@ for (let i = 0; i <= 9; i++) {
 console.log('Deutsche Reste in der englischen Oberfläche:', [...reste]);
 
 // Gespeicherte Datei ist Version 2 mit neutralen Schlüsseln
-const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
+const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnMehr').then(() => p.click('#btnSpeichern'))]);
 const d = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
 console.log('Dateiname:', dl.suggestedFilename(), '| Version:', d.schemaVersion, '| Werte:', d.persoenlich.familienstand, d.sterbefall.organspende, d.testament.vorsorgevollmacht.vorhanden, d.persoenlich.krankenkasse.name, d.sterbefall.hausarzt.name, d.kontakte.length, d.versicherungen[0].art, d.wohnen.wohnform, d.digital.konten[0].wunsch, d.sterbefall.bestattungsart);
 console.log('Fehler:', fehler);
