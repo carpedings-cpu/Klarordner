@@ -1,0 +1,61 @@
+// Prüft die Umstellung auf die Angehörigen: Texte in der dritten Person, Hilfen fürs Ausfüllen weg, Druck für die Übergabe, zurück.
+import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+import fs from 'fs';
+import path from 'path';
+const hier = path.dirname(new URL(import.meta.url).pathname);
+const url = 'file://' + path.join(hier, '../dist/klarordner.html');
+const spaeter = async (s) => { const d = s.locator('dialog[open]'); await d.waitFor({ timeout: 3000 }).catch(() => {}); if (await d.isVisible()) await s.click('dialog[open] #dialogKnoepfe button:last-child'); };
+const pruef = (was, ja) => console.log(`  ${ja ? 'ok ' : 'FEHLT'} ${was}`);
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const fehler = [];
+const p = await (await browser.newContext({ locale: 'de-DE', viewport: { width: 1180, height: 900 }, acceptDownloads: true })).newPage();
+await p.addInitScript(() => { delete window.showOpenFilePicker; delete window.showSaveFilePicker; window.print = () => {}; });
+p.on('pageerror', e => fehler.push(e.message));
+p.on('console', m => { if (m.type() === 'error') fehler.push(m.text()); });
+await p.goto(url);
+await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
+await spaeter(p);
+const text = () => p.textContent('#inhalt');
+pruef('Karte „Ist Ihr Ordner fertig?“', (await text()).includes('Ist Ihr Ordner fertig?'));
+await p.click('#navliste button[data-id=kontakte]');
+pruef('Vorher: „Beziehung zu Ihnen“', (await text()).includes('Beziehung zu Ihnen') && await p.isVisible('text=Aus der Kontakte-App übernehmen'));
+await p.click('#navStart button');
+await p.click('button:has-text("Für meine Angehörigen umstellen")');
+await p.click('dialog button:has-text("Umstellen")');
+await p.waitForSelector('text=Dieser Ordner ist für die Angehörigen von Erika Musterfrau');
+pruef('Übersicht: keine Ausfüll-Knöpfe mehr', !(await text()).includes('Weiter, wo ich aufgehört habe') && !(await text()).includes('Zeit für einen Blick'));
+pruef('Übersicht: Titel für die Angehörigen', (await text()).includes('Vorsorgeordner für Thomas und Gisela') && (await text()).includes('Was festgehalten ist'));
+await p.click('#navliste button[data-id=kontakte]');
+pruef('Nachher: „Beziehung zu Erika Musterfrau“, Import weg', (await text()).includes('Beziehung zu Erika Musterfrau') && !(await p.isVisible('text=Aus der Kontakte-App übernehmen')));
+await p.click('#navliste button[data-id=persoenlich]');
+pruef('Persönlich: „Wo die Dokumente liegen“, kein Scan', (await text()).includes('Wo die Dokumente liegen') && !(await p.isVisible('button:has-text("Dokument fotografieren")')));
+await p.click('#navliste button[data-id=sterbefall]');
+pruef('Sterbefall: „Gewünschte Bestattung“ und „Checkliste für Sie“', (await text()).includes('Gewünschte Bestattung') && (await text()).includes('Checkliste für Sie'));
+await p.click('#navliste button[data-id=nachricht]');
+pruef('Nachricht von Erika Musterfrau', (await text()).includes('Nachricht von Erika Musterfrau'));
+pruef('Felder bleiben änderbar', await p.locator('#inhalt textarea').first().isEditable());
+// Druck für die Übergabe
+await p.click('#btnDrucken');
+pruef('Druckdialog: Angehörige vorausgewählt', await p.isChecked('.druckliste input[value=angehoerige]'));
+await p.click('dialog button:has-text("Drucken")');
+const druck = await p.textContent('#druck');
+pruef('Ausdruck: Deckblatt für die Angehörigen', druck.includes('Vorsorgeordner für die Angehörigen') && druck.includes('Wo die Dokumente liegen') && !druck.includes('Wo liegen Ihre Dokumente?'));
+await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+// In der Datei gespeichert
+const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
+await p.click('dialog[open] button:has-text("Verstanden")').catch(() => {});
+pruef('Umstellung in der Datei', JSON.parse(fs.readFileSync(await dl.path(), 'utf8')).fuerAngehoerige === true);
+// Zurück
+await p.click('#navStart button');
+await p.click('button:has-text("Zurück zur Bearbeitung")');
+await p.waitForSelector('text=Ist Ihr Ordner fertig?');
+await p.click('#navliste button[data-id=kontakte]');
+pruef('Zurück: wieder „Beziehung zu Ihnen“', (await text()).includes('Beziehung zu Ihnen'));
+// Ohne Umstellung: Druck wählbar, Vorgabe nach Füllstand
+await p.click('#btnDrucken');
+await p.uncheck('.druckliste input[value=angehoerige]');
+await p.click('dialog button:has-text("Drucken")');
+pruef('Ausdruck zum Ausfüllen spricht die Person an', (await p.textContent('#druck')).includes('Wo liegen Ihre Dokumente?'));
+await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+console.log('Fehler:', fehler);
+await browser.close();

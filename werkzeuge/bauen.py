@@ -32,7 +32,14 @@ for familie, datei, gewicht in [("Atkinson Hyperlegible", "atkinson-hyperlegible
         schriften.append(f'@font-face{{font-family:"{familie}";font-style:normal;font-weight:{gewicht};font-display:swap;src:url(data:font/woff2;base64,{daten}) format("woff2");unicode-range:{bereich}}}')
 assert "/*SCHRIFTEN*/" in fertig, "Marke für Schriften fehlt"
 fertig = fertig.replace("/*SCHRIFTEN*/", "\n".join(schriften))
+# Texte für die Angehörigen nach der Übergabe. Jeder Schlüssel muss ein Anzeigetext der App sein.
+ansprache = json.loads((app / "ansprache.json").read_text(encoding="utf-8"))
+assert "/*ANSPRACHE*/const ANGEHOERIGE = {};" in fertig, "Marke für Ansprache fehlt"
+fertig = fertig.replace("/*ANSPRACHE*/const ANGEHOERIGE = {};", "const ANGEHOERIGE = " + json.dumps(ansprache, ensure_ascii=False, separators=(",", ":")) + ";")
 subprocess.run([sys.executable, str(wurzel / "werkzeuge" / "texte.py")], check=True)
+bekannt = set(json.loads((app / "sprachen" / "_texte.json").read_text(encoding="utf-8")))
+unbekannt = [k for k in ansprache if k not in bekannt]
+assert not unbekannt, f"ansprache.json: kein Anzeigetext: {unbekannt}"
 
 shutil.rmtree(docs, ignore_errors=True)
 docs.mkdir()

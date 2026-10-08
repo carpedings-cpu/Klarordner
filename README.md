@@ -12,6 +12,7 @@ Vorsorgeordner für den Todesfall in neun Bereichen, der komplett im Browser lä
 | `app/anbieter.json` | Steckbriefe für die Schreiben im Todesfall: 32 Online-Dienste, Versorger, Vereine und Fitnessstudios, 34 Versicherer (typ "versicherung", optional adresseSach für Sachversicherungen) und 8 Krankenkassen (typ "krankenkasse"): Adresse, optional E-Mail (nur offiziell belegte), Verfahren, Unterlagen, Quellen, Prüfstand. Jährlich prüfen. |
 | `app/schriften/` | Atkinson Hyperlegible und Fraunces (SIL Open Font License, Hinweise in `LIZENZEN.txt`). Das Bauskript bettet sie in die App ein, es werden keine Schriften aus dem Netz geladen. |
 | `app/ocr/` | Texterkennung für „Dokument fotografieren“ (tesseract.js 7 mit deutschem Sprachpaket, Apache-Lizenz, Hinweise in `LIZENZEN.txt`). Wird erst beim ersten Scannen geladen und dann im Gerät abgelegt. |
+| `app/ansprache.json` | Texte nach der Übergabe an die Angehörigen: deutscher Anzeigetext → Fassung in der dritten Person mit `{name}`. Das Bauskript prüft, dass jeder Schlüssel ein echter Anzeigetext ist. |
 | `app/sprachen/xx.json` | Übersetzungen. Schlüssel ist der deutsche Text, Wert die Übersetzung. `_texte.json` listet alle Anzeigetexte und wird erzeugt. |
 | `docs/` | Erzeugt, wird über GitHub Pages veröffentlicht. Nicht von Hand ändern. |
 | `test/` | Browsertests und erfundene Testdaten. Wird nicht ausgeliefert. |
@@ -44,6 +45,7 @@ node test/test-webapp.mjs      # Installation, Offline-Betrieb, Speichern über 
 node test/test-update.mjs      # neue Version erkennen, Hinweis, Neuladen ohne Datenverlust
 node test/test-scan.mjs        # Angaben aus fotografierten Dokumenten übernehmen, auch offline
 node test/test-portraet.mjs    # Porträt auswählen, Original sichern, Traueranzeige, Deckblatt
+node test/test-ansprache.mjs   # Umstellung auf die Angehörigen: Texte, Druck, zurück
 node test/test-datum.mjs       # Geburtsdatum als Ziffern eingeben
 node test/test-einzeln.mjs     # einzelnes Schreiben als Brief, E-Mail oder Webseite öffnen
 node test/test-video.mjs       # Videonachricht aufnehmen, abspielen, sichern, löschen
