@@ -539,6 +539,9 @@ const OPTIONEN = {
   onlineArt: { email: "E-Mail", shop: "Online-Shop", bezahl: "Bezahldienst", sozial: "Soziales Netzwerk", messenger: "Messenger", cloud: "Cloud-Speicher", streaming: "Streaming", banking: "Online-Banking", sonstiges: "Sonstiges" },
   wunsch: { loeschen: "Löschen", gedenken: "In Gedenkzustand versetzen", uebertragen: "An jemanden übertragen" },
   bestattung: { erd: "Erdbestattung", urne: "Feuerbestattung mit Urnengrab", see: "Seebestattung", baum: "Baumbestattung", anonym: "Anonyme Bestattung", offen: "Noch nicht entschieden", sonstiges: "Sonstiges" },
+  grabart: { reihe: "Reihengrab", wahl: "Wahlgrab", familie: "Familiengrab, schon vorhanden", urnenwand: "Urnenwand", gemeinschaft: "Gemeinschaftsgrab mit Namen", rasen: "Rasengrab ohne Grabpflege", offen: "Noch nicht entschieden" },
+  meer: { nordsee: "Nordsee", ostsee: "Ostsee", mittelmeer: "Mittelmeer", atlantik: "Atlantik", anderes: "Anderes Gewässer" },
+  wald: { friedwald: "FriedWald", ruheforst: "RuheForst", anderer: "Anderer Bestattungswald" },
   zugangArt: { geraet: "Handy oder Tablet", computer: "Computer", email: "E-Mail", online: "Online-Konto", wlan: "WLAN", sonstiges: "Sonstiges" }
 };
 
@@ -635,6 +638,7 @@ function leereDaten() {
     sterbefall: {
       hausarzt: { name: "", telefon: "" }, organspende: "", ablageOrganspendeausweis: "",
       bestattungsart: "", bestatter: "", vorsorgevertrag: "", grabstelle: "",
+      grabart: "", sargUrne: "", meer: "", seeOrt: "", seeBegleitung: "", wald: "", waldOrt: "", baum: "", bestattungSonst: "",
       trauerfeier: "", traueranzeige: "", fotoTrauer: "", wuensche: ""
     },
     nachricht: { text: "", video: { aufgenommen: "", groesse: 0 }, videoAblage: "" },
@@ -2050,11 +2054,33 @@ const FORMULARE = {
           { beiAenderung: v => { ausweis.hidden = !spendet(v); } }),
         ausweis);
     })(),
-    gruppe("Bestattung", null,
-      feld("sterbefall.bestattungsart", "Wie möchten Sie bestattet werden?", { typ: "auswahl", optionen: "bestattung" }),
-      feld("sterbefall.bestatter", "Gewünschter Bestatter", { hilfe: "Name und Telefon" }),
-      feld("sterbefall.vorsorgevertrag", "Gibt es einen Bestattungsvorsorgevertrag? Wo liegt er?", { breit: true }),
-      feld("sterbefall.grabstelle", "Friedhof und Grabstelle", { breit: true, hilfe: "Zum Beispiel: Familiengrab auf dem Hauptfriedhof, Feld 12" })),
+    (() => {
+      // Je nach Bestattungsart die passenden Einzelheiten, damit die Angehörigen nicht raten müssen.
+      const art = normWert(pfadLesen("sterbefall.bestattungsart"), "bestattung");
+      const teil = (arten, ...felder) => { const b = bedingt(arten.includes(art), el("div", { class: "felder" }, ...felder)); b.dataset.arten = arten.join(" "); return b; };
+      const teile = [
+        teil(["erd", "urne", "anonym"],
+          feld("sterbefall.grabart", "Welche Grabart?", { typ: "auswahl", optionen: "grabart" }),
+          feld("sterbefall.grabstelle", "Friedhof und Grabstelle", { breit: true, hilfe: "Zum Beispiel: Familiengrab auf dem Hauptfriedhof, Feld 12, oder der gewünschte Friedhof" }),
+          feld("sterbefall.sargUrne", "Wünsche zu Sarg oder Urne", { breit: true, hilfe: "Zum Beispiel: schlichtes Holz, bestimmte Farbe, keine Blumen auf dem Sarg" })),
+        teil(["see"],
+          feld("sterbefall.meer", "In welchem Meer?", { typ: "auswahl", optionen: "meer" }),
+          feld("sterbefall.seeOrt", "Vor welcher Küste oder welchem Hafen?", { hilfe: "Zum Beispiel: vor Kiel, vor Sylt, vor Mallorca" }),
+          wahl("sterbefall.seeBegleitung", "Sollen Angehörige bei der Beisetzung an Bord sein?", JA_NEIN, { hilfe: "Ohne Begleitung ist die Beisetzung still, die Angehörigen bekommen die Seekarte mit der Position." })),
+        teil(["baum"],
+          feld("sterbefall.wald", "Welcher Anbieter?", { typ: "auswahl", optionen: "wald" }),
+          feld("sterbefall.waldOrt", "Welcher Wald, welcher Ort?", { hilfe: "Zum Beispiel: FriedWald Rhön bei Hilders" }),
+          feld("sterbefall.baum", "Welcher Baum?", { breit: true, hilfe: "Familienbaum, Gemeinschaftsbaum oder ein schon reservierter Baum mit Nummer" })),
+        teil(["sonstiges"],
+          feld("sterbefall.bestattungSonst", "Was wünschen Sie sich genau?", { typ: "mehrzeilig", zeilen: 3 }))
+      ];
+      return gruppe("Bestattung", null,
+        feld("sterbefall.bestattungsart", "Wie möchten Sie bestattet werden?", { typ: "auswahl", optionen: "bestattung",
+          beiAenderung: w => { for (const b of teile) b.hidden = !b.dataset.arten.split(" ").includes(w); } }),
+        feld("sterbefall.bestatter", "Gewünschter Bestatter", { hilfe: "Name und Telefon" }),
+        feld("sterbefall.vorsorgevertrag", "Gibt es einen Bestattungsvorsorgevertrag? Wo liegt er?", { breit: true }),
+        ...teile);
+    })(),
     gruppe("Trauerfeier und Wünsche", null,
       feld("sterbefall.trauerfeier", "Trauerfeier", { typ: "mehrzeilig", zeilen: 3, hilfe: "Ort, Musik, Redner, Blumen" }),
       feld("sterbefall.traueranzeige", "Traueranzeige", { typ: "mehrzeilig", zeilen: 2, hilfe: "In welcher Zeitung, welcher Spruch?" }),

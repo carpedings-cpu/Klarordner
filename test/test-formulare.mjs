@@ -52,6 +52,16 @@ await p.locator('.eintrag select').first().selectOption('Haftpflicht');
 console.log('Frist sichtbar (Haftpflicht):', await p.locator('.bedingt').first().isVisible());
 // Checkliste
 await p.click('#navliste button[data-id=sterbefall]');
+const bestattung = p.locator('.formkarte', { hasText: 'Wie möchten Sie bestattet werden?' });
+const sichtbarB = async () => Promise.all(['Welche Grabart?', 'In welchem Meer?', 'Welcher Baum?'].map(l => bestattung.locator('.feld', { hasText: l }).isVisible()));
+await bestattung.locator('select').first().selectOption('see');
+console.log('Seebestattung zeigt Meer:', JSON.stringify(await sichtbarB()));
+await bestattung.locator('.feld', { hasText: 'In welchem Meer?' }).locator('select').selectOption('ostsee');
+await bestattung.locator('select').first().selectOption('baum');
+console.log('Baumbestattung zeigt Baum:', JSON.stringify(await sichtbarB()));
+await bestattung.locator('select').first().selectOption('erd');
+console.log('Erdbestattung zeigt Grabart:', JSON.stringify(await sichtbarB()));
+console.log('Meer gespeichert:', await p.evaluate(() => zustand.daten.sterbefall.meer));
 console.log('Checkliste ohne Eingabefelder:', await p.locator('.checkpunkt').count(), 'Punkte,', await p.locator('.checkpunkt input').count(), 'Felder');
 // Speichern und prüfen
 const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
