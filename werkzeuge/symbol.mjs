@@ -1,14 +1,17 @@
+// Erzeugt die App-Symbole: Blasen in den Grüntönen der Bereiche, in der Mitte das K auf Salbei.
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+import fs from 'fs';
+const schrift = fs.readFileSync('app/schriften/fraunces-latin-600-normal.woff2').toString('base64');
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-const html = (s) => `<html><body style="margin:0"><div id="i" style="width:${s}px;height:${s}px;position:relative;overflow:hidden;
-background:linear-gradient(140deg,#3fb0ff 0%,#0a64c8 52%,#5b4fd8 100%)">
-<div style="position:absolute;width:${s*.55}px;height:${s*.55}px;border-radius:50%;left:${-s*.12}px;top:${-s*.16}px;background:rgba(255,255,255,.14)"></div>
-<div style="position:absolute;width:${s*.22}px;height:${s*.22}px;border-radius:50%;right:${s*.14}px;bottom:${s*.12}px;background:rgba(255,211,77,.9)"></div>
-<svg viewBox="0 0 24 24" style="position:absolute;left:${s*.2}px;top:${s*.2}px;width:${s*.6}px;height:${s*.6}px" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="rgba(255,255,255,.12)"/><path d="M8 13l3 3 5-5"/></svg></div></body></html>`;
+const html = (s) => `<html><head><style>@font-face{font-family:F;src:url(data:font/woff2;base64,${schrift}) format("woff2")}</style></head><body style="margin:0"><div id="i" style="width:${s}px;height:${s}px;position:relative;overflow:hidden;background:#ffffff">
+${[[.08, .1, .3, '#8a7a3a'], [.62, .06, .22, '#2f7a5c'], [.7, .6, .34, '#2b6f73'], [.05, .66, .22, '#6f8a4a'], [.42, .78, .14, '#5c6b3f'], [.78, .38, .12, '#3f7f6e']].map(([x, y, d, f]) => `<div style="position:absolute;left:${s * x}px;top:${s * y}px;width:${s * d}px;height:${s * d}px;border-radius:50%;background:${f};opacity:.85"></div>`).join('')}
+<div style="position:absolute;left:${s * .22}px;top:${s * .22}px;width:${s * .56}px;height:${s * .56}px;border-radius:50%;background:#4a6b55;display:flex;align-items:center;justify-content:center;box-shadow:0 ${s * .02}px ${s * .06}px rgba(74,107,85,.35)">
+<span style="font:600 ${s * .36}px F,Georgia,serif;color:#fff;margin-top:-${s * .02}px">K</span></div>
+</div></body></html>`;
 for (const [s, name] of [[180, 'app/icons/icon-180.png'], [192, 'app/icons/icon-192.png'], [512, 'app/icons/icon-512.png']]) {
   const p = await b.newPage({ viewport: { width: s, height: s } });
   await p.setContent(html(s));
+  await p.evaluate(() => document.fonts.ready);
   await p.locator('#i').screenshot({ path: name });
 }
 await b.close();
