@@ -18,7 +18,7 @@ await p.goto(url);
 await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
 await spaeter(p);
 await p.waitForSelector('.kacheln');
-const ids = ['persoenlich','kontakte','testament','finanzen','versicherungen','vertraege','wohnen','digital','zugang','sterbefall','nachricht'];
+const ids = ['persoenlich','kontakte','testament','finanzen','versicherungen','vertraege','digital','sterbefall','nachricht'];
 for (const [i, id] of ids.entries()) {
   await p.click(`#navliste button[data-id=${id}]`);
   const n = await p.locator('#inhalt input, #inhalt select, #inhalt textarea').count();
@@ -44,7 +44,7 @@ console.log('Testament/Erbvertrag/Vorsorge/Bank sichtbar:', await sichtbar());
 await p.locator('.formkarte', { hasText: 'Haben Sie ein Testament?' }).locator('label:has-text("Ja")').first().click();
 console.log('Nach Ja beim Testament:', await sichtbar());
 await p.locator('.formkarte', { hasText: 'Wie ist es errichtet?' }).locator('label:has-text("Beim Notar")').click();
-await p.locator('.formkarte', { hasText: 'Haben Sie ein Testament?' }).locator('input[type=text]').nth(1).fill('Schreibtisch, Mappe Testament');
+await p.locator('.formkarte', { hasText: 'Haben Sie ein Testament?' }).locator('input[type=text]').nth(0).fill('Schreibtisch, Mappe Testament');
 // Versicherung: Frist-Hinweis
 await p.click('#navliste button[data-id=versicherungen]');
 console.log('Frist sichtbar (Sterbegeld):', await p.locator('.bedingt').first().isVisible());
@@ -52,12 +52,12 @@ await p.locator('.eintrag select').first().selectOption('Haftpflicht');
 console.log('Frist sichtbar (Haftpflicht):', await p.locator('.bedingt').first().isVisible());
 // Checkliste
 await p.click('#navliste button[data-id=sterbefall]');
-await p.locator('.checkpunkt input').nth(0).fill('Hausarzt anrufen');
+console.log('Checkliste ohne Eingabefelder:', await p.locator('.checkpunkt').count(), 'Punkte,', await p.locator('.checkpunkt input').count(), 'Felder');
 // Speichern und prüfen
 const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
 const d = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
 console.log('Gespeichert: Kontakte', d.kontakte.map(k => k.name), '| Testament', JSON.stringify(d.testament.testament),
-  '| Vers.art', d.versicherungen[0].art, '| Checkliste', JSON.stringify(d.sterbefall.checkliste), '| Gesundheit weg:', !('gesundheit' in d), '| Version', d.schemaVersion);
+  '| Vers.art', d.versicherungen[0].art, '| Wünsche', JSON.stringify(d.sterbefall.wuensche), '| Urkunden', d.persoenlich.ablageUrkunden, '| Gesundheit weg:', !('gesundheit' in d), '| Version', d.schemaVersion);
 await p.click('dialog button:has-text("Verstanden")');
 // Bilder
 for (const n of ['persoenlich', 'kontakte', 'testament', 'sterbefall']) {

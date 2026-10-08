@@ -75,7 +75,7 @@ pruef('Kurze Auswahl als Kästchen', b.text.includes('☐ verheiratet'));
 execFileSync('pdftoppm', ['-r', '50', '-png', '-f', '2', '-l', '3', b.datei, path.join(erg, 'leer')]);
 
 // 3. Zugangsdaten: gesperrt nicht wählbar, offen mit Warnung
-await p.click('#navliste button[data-id=zugang]');
+await p.click('#navliste button[data-id=digital]');
 await p.locator('#inhalt input[type=password]').nth(0).fill('Mein Hund heisst Bello');
 await p.locator('#inhalt input[type=password]').nth(1).fill('Mein Hund heisst Bello');
 await p.check('.bestaetigung input');

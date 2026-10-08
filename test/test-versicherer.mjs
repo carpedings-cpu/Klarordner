@@ -61,7 +61,7 @@ pruef('Krankenkasse übernommen', await p.evaluate(() => zustand.daten.persoenli
 // Verträge: Zählernummer nur bei Strom, Gas, Wasser
 await p.click('#navliste button[data-id=vertraege]');
 await p.click('text=+ Vertrag hinzufügen');
-const vt = p.locator('.eintrag').last();
+const vt = p.locator('.formkarte', { hasText: 'Laufende Verträge' }).locator('.eintrag').last();
 const zfeld = vt.locator('.feld', { hasText: 'Zählernummer' });
 pruef('Zählernummer zunächst verborgen', !(await zfeld.isVisible()));
 await vt.locator('select').first().selectOption('Strom');

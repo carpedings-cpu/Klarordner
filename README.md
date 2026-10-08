@@ -1,6 +1,6 @@
 # Klarordner
 
-Persönlicher Notfall- und Vorsorgeordner, der komplett im Browser läuft. Kein Konto, keine Cloud, keine Verbindung nach außen. Eingaben bleiben automatisch auf dem Gerät des Nutzers gespeichert (IndexedDB). Als Sicherung und zur Weitergabe wird der Ordner in eine Datei `*.notfall.json` exportiert.
+Vorsorgeordner für den Todesfall in neun Bereichen, der komplett im Browser läuft. Kein Konto, keine Cloud, keine Verbindung nach außen. Eingaben bleiben automatisch auf dem Gerät des Nutzers gespeichert (IndexedDB). Als Sicherung und zur Weitergabe wird der Ordner in eine Datei `*.notfall.json` exportiert.
 
 ## Aufbau
 

@@ -35,7 +35,7 @@ pruef('Zweiter Import ohne Doppelte', (await p.textContent('#dialogText')).inclu
 await p.click('dialog button:has-text("Verstanden")');
 
 // Passwörter: nur im entsperrten Bereich
-await p.click('#navliste button[data-id=zugang]');
+await p.click('#navliste button[data-id=digital]');
 console.log('Import-Knopf gesperrt nicht sichtbar:', !(await p.isVisible('button:has-text("Passwort-Datei auswählen")')));
 await p.locator('#inhalt input[type=password]').nth(0).fill('Mein Hund heisst Bello');
 await p.locator('#inhalt input[type=password]').nth(1).fill('Mein Hund heisst Bello');

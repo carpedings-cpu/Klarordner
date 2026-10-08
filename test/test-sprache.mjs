@@ -44,7 +44,7 @@ console.log('Versicherung Kopf:', await p.locator('.eintrag h4').first().textCon
 
 // In jedem Bereich nach deutschen Resten suchen
 const reste = new Set();
-for (let i = 0; i <= 11; i++) {
+for (let i = 0; i <= 9; i++) {
   await p.click(i === 0 ? '#navStart button' : `#navliste li:nth-child(${i}) button`);
   const texte = await p.evaluate(() => {
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);

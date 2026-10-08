@@ -214,6 +214,7 @@ p { margin: 0; }
 .offenliste { display: flex; flex-wrap: wrap; gap: .5rem; }
 .offenliste .offen { font: inherit; font-size: .9rem; font-weight: 700; min-height: 44px; padding: .3em .95em; border: 0; border-radius: 999px; background: #efe9d2; color: #6b5a1e; cursor: pointer; }
 .kachelueberschrift { font-size: 1.3rem; margin: 1.8rem 0 .9rem; }
+.kartenhilfe.abschnitt { margin: -.4rem 0 .9rem; color: var(--leise); }
 .fotowunsch { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; }
 .formkarte.aktuell { background: var(--gelb-hell); box-shadow: inset 0 0 0 2px var(--gelb-rand), var(--schatten); margin-bottom: 1.25rem; }
 .formkarte.aktuell .knopfreihe { margin-top: 1rem; }
@@ -277,7 +278,7 @@ p { margin: 0; }
 .btn.sprung { min-height: 48px; }
 .checkpunkt { border-top: 1px solid var(--linie); padding-top: 1rem; }
 .checkpunkt:first-child { border-top: none; padding-top: 0; }
-.checkpunkt label { display: flex; align-items: center; gap: .65rem; margin-bottom: .3rem; }
+.checkpunkt > p:first-child { display: flex; align-items: center; gap: .65rem; margin-bottom: .3rem; }
 .checkpunkt .hilfe { margin: 0 0 .5rem 1.95rem; }
 .kaestchen { width: 1.3rem; height: 1.3rem; border: 2px solid var(--leise); border-radius: 6px; flex: none; }
 
@@ -488,7 +489,7 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 <script>
 "use strict";
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 const FORMAT = "klarordner";
 const standardName = () => t("Mein Vorsorgeordner") + ".notfall.json";
 
@@ -575,14 +576,10 @@ const BEREICHE = [
     text: t("Ihre Banken und wer darüber verfügen darf.") },
   { id: "versicherungen", titel: "Versicherungen", farbe: "#6f8a4a", symbol: "schild",
     text: t("Ihre Policen und wo die Unterlagen liegen.") },
-  { id: "vertraege", titel: "Verträge und Abos", farbe: "#3f7f6e", symbol: "kreislauf",
-    text: t("Was regelmäßig kostet und gekündigt werden muss.") },
-  { id: "wohnen", titel: "Wohnen", farbe: "#7a7a4a", symbol: "haus",
-    text: t("Wohnung, Schlüssel und Haustiere.") },
+  { id: "vertraege", titel: "Verträge und Wohnen", farbe: "#3f7f6e", symbol: "kreislauf",
+    text: t("Abos, Mietvertrag, Schlüssel und Haustiere.") },
   { id: "digital", titel: "Digitaler Nachlass", farbe: "#3d6b7a", symbol: "globus",
-    text: t("Ihre Konten im Internet und was damit geschieht.") },
-  { id: "zugang", titel: "Zugangsdaten", farbe: "#5b6b63", symbol: "schloss",
-    text: t("Passwörter und Codes, mit eigenem Passwort geschützt.") },
+    text: t("Ihre Konten im Internet und Ihre Passwörter, geschützt.") },
   { id: "sterbefall", titel: "Für den Sterbefall", farbe: "#6a7a86", symbol: "kerze",
     text: t("Ihre Wünsche und eine Checkliste für die Familie.") },
   { id: "nachricht", titel: "Persönliche Nachricht", farbe: "#8a7a3a", symbol: "brief",
@@ -598,16 +595,15 @@ function leereDaten() {
     persoenlich: {
       vorname: "", nachname: "", geburtsname: "", geburtsdatum: "", geburtsort: "",
       familienstand: "", staatsangehoerigkeit: "",
-      strasse: "", plz: "", ort: "", telefon: "", email: "",
+      strasse: "", plz: "", ort: "",
       steuerId: "", rentenversicherungsnummer: "", postrentennummer: "",
       krankenkasse: { name: "", versichertennummer: "" },
       foto: "", fotoId: "",
-      ablagePersonalausweis: "", ablageReisepass: "", ablageGeburtsurkunde: "",
-      ablageStammbuch: "", ablageHeiratsurkunde: "", notizen: ""
+      ablagePersonalausweis: "", ablageUrkunden: "", notizen: ""
     },
     kontakte: [],
     testament: {
-      testament: { vorhanden: "", art: "", datum: "", ablage: "", verwahrt: "", notar: "" },
+      testament: { vorhanden: "", art: "", ablage: "", verwahrt: "", notar: "" },
       erbvertrag: { vorhanden: "", ablage: "", notar: "" },
       vollstrecker: { name: "", kontakt: "" },
       vorsorgevollmacht: vollmacht(),
@@ -618,7 +614,7 @@ function leereDaten() {
     versicherungen: [],
     vertraege: [],
     wohnen: {
-      wohnform: "", vermieter: "", hausverwaltung: "", ablageMietvertrag: "", ablageGrundbuch: "",
+      wohnform: "", vermieter: "", ablageMietvertrag: "", ablageGrundbuch: "",
       schluessel: "", haustiere: [], notizen: ""
     },
     digital: { konten: [], passwortManager: "", notizen: "" },
@@ -626,7 +622,7 @@ function leereDaten() {
     sterbefall: {
       hausarzt: { name: "", telefon: "" }, organspende: "", ablageOrganspendeausweis: "",
       bestattungsart: "", bestatter: "", vorsorgevertrag: "", grabstelle: "",
-      trauerfeier: "", traueranzeige: "", fotoTrauer: "", wuensche: "", checkliste: {}
+      trauerfeier: "", traueranzeige: "", fotoTrauer: "", wuensche: ""
     },
     nachricht: { text: "", video: { aufgenommen: "", groesse: 0 }, videoAblage: "" },
     schreiben: { absender: "", anschrift: "", beziehung: "", sterbedatum: "", ort: "", empfaenger: {} }
@@ -676,6 +672,37 @@ const MIGRATIONEN = {
     }
     delete d.sterbefall.informieren;
     for (const k of d.kontakte) if (k.rolle === "betreuer") k.rolle = "sonstige";
+  },
+  // Version 4: nur noch, was Angehörige nach dem Tod wirklich brauchen. Gestrichene Angaben wandern in die Hinweise.
+  3: d => {
+    const text = v => typeof v === "string" ? v.trim() : "";
+    const sammeln = paare => paare.filter(([, v]) => text(v)).map(([n, v]) => `${n}: ${text(v)}`).join("; ");
+    const anhaengen = (obj, feldname, zusatz) => { if (zusatz) obj[feldname] = [text(obj[feldname]), zusatz].filter(Boolean).join("\n"); };
+    const p = d.persoenlich || {};
+    const urkunden = [["Geburtsurkunde", p.ablageGeburtsurkunde], ["Stammbuch", p.ablageStammbuch], ["Heiratsurkunde", p.ablageHeiratsurkunde]].filter(([, v]) => text(v));
+    p.ablageUrkunden = urkunden.length === 1 ? text(urkunden[0][1]) : urkunden.map(([n, v]) => `${n}: ${text(v)}`).join("; ");
+    anhaengen(p, "notizen", sammeln([["Telefon", p.telefon], ["E-Mail", p.email], ["Reisepass", p.ablageReisepass]]));
+    for (const k of ["telefon", "email", "ablageReisepass", "ablageGeburtsurkunde", "ablageStammbuch", "ablageHeiratsurkunde"]) delete p[k];
+    const tt = d.testament && d.testament.testament;
+    if (tt) { anhaengen(d.testament, "notizen", sammeln([["Datum des Testaments", tt.datum]])); delete tt.datum; }
+    for (const k of (d.finanzen && d.finanzen.konten) || []) {
+      anhaengen(k, "notiz", sammeln([["Ansprechpartner", k.ansprechpartner], ["Telefon", k.telefon]]));
+      delete k.ansprechpartner; delete k.telefon;
+    }
+    for (const v of d.vertraege || []) { anhaengen(v, "notiz", sammeln([["Kosten", v.kosten]])); delete v.kosten; }
+    const w = d.wohnen || {};
+    if (text(w.hausverwaltung)) w.vermieter = [text(w.vermieter), "Hausverwaltung: " + text(w.hausverwaltung)].filter(Boolean).join(" / ");
+    delete w.hausverwaltung;
+    for (const h of w.haustiere || []) {
+      h.tier = [text(h.tier), text(h.name)].filter(Boolean).join(" ");
+      anhaengen(h, "hinweis", sammeln([["Tierarzt", h.tierarzt]]));
+      delete h.name; delete h.tierarzt;
+    }
+    for (const k of (d.digital && d.digital.konten) || []) delete k.kategorie;
+    const st = d.sterbefall || {};
+    const notizen = Object.entries(st.checkliste || {}).filter(([, v]) => text(v)).map(([k, v]) => { const punkt = CHECKLISTE.find(c => c[0] === k); return `${punkt ? punkt[1] : k}: ${text(v)}`; });
+    if (notizen.length) anhaengen(st, "wuensche", "Hinweise zur Checkliste:\n" + notizen.join("\n"));
+    delete st.checkliste;
   }
 };
 
@@ -1139,7 +1166,7 @@ async function tresorSperren() {
   if (tresorTimer) await tresorSichern();
   else await tresorLauf;
   tresorVergessen();
-  if (zustand.daten && zustand.ansicht === "zugang") inhaltZeigen();
+  if (zustand.daten && zustand.ansicht === "digital") inhaltZeigen();
 }
 
 // Ohne erneute Verschlüsselung, wenn der Ordner ersetzt oder gelöscht wird.
@@ -1394,10 +1421,8 @@ const PRUEFUNG = {
   testament: d => [voll(d.testament.testament.vorhanden), voll(d.testament.erbvertrag.vorhanden), voll(d.testament.vorsorgevollmacht.vorhanden), voll(d.testament.bankvollmacht.vorhanden)],
   finanzen: d => [d.finanzen.konten.length > 0],
   versicherungen: d => [d.versicherungen.length > 0],
-  vertraege: d => [d.vertraege.length > 0],
-  wohnen: d => [voll(d.wohnen.wohnform), voll(d.wohnen.schluessel)],
-  digital: d => [d.digital.konten.length > 0 || voll(d.digital.passwortManager)],
-  zugang: d => tresor.inhalt ? [true, tresor.inhalt.eintraege.length > 0] : [!!d.zugang],
+  vertraege: d => [d.vertraege.length > 0, voll(d.wohnen.wohnform)],
+  digital: d => [d.digital.konten.length > 0 || voll(d.digital.passwortManager), !!d.zugang],
   sterbefall: d => [voll(d.sterbefall.bestattungsart), voll(d.sterbefall.organspende),
     voll(d.sterbefall.bestatter) || voll(d.sterbefall.grabstelle) || voll(d.sterbefall.wuensche)],
   nachricht: d => [voll(d.nachricht.text) || voll(d.nachricht.video.aufgenommen)]
@@ -1749,6 +1774,28 @@ const JA_NEIN = "jaNein";
 
 /* ---------- Formulare der Bereiche ---------- */
 
+const wohnenGruppen = () => [
+    gruppe("Ihre Wohnung", null,
+      feld("wohnen.wohnform", "Wie wohnen Sie?", { typ: "auswahl", optionen: "wohnform" }),
+      feld("wohnen.vermieter", "Vermieter oder Hausverwaltung", { hilfe: "Name und Telefon" }),
+      feld("wohnen.ablageMietvertrag", "Wo liegt der Mietvertrag?"),
+      feld("wohnen.ablageGrundbuch", "Wo liegen Grundbuchauszug und Kaufvertrag?", { breit: true })),
+    gruppe("Schlüssel", null,
+      feld("wohnen.schluessel", "Wer hat einen Schlüssel, und wo liegen Ersatzschlüssel?", { typ: "mehrzeilig", zeilen: 3 })),
+    gruppe("Haustiere", "Wer kümmert sich sofort, wenn Ihnen etwas passiert?",
+      liste("wohnen.haustiere", {
+        einzahl: "Haustier",
+        neu: () => ({ tier: "", betreuer: "", hinweis: "" }),
+        kopf: h => h.tier,
+        felder: p => [
+          feld(p + ".tier", "Tier", { hilfe: "Zum Beispiel: Katze Minka" }),
+          feld(p + ".betreuer", "Wer kümmert sich?", { breit: true }),
+          feld(p + ".hinweis", "Futter, Medikamente, Besonderheiten")
+        ]
+      })),
+    gruppe("Sonstiges", null, feld("wohnen.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 }))
+  ];
+
 const FORMULARE = {
   persoenlich: () => [
     druck ? null : gruppe("Ihr Foto", "Ein Foto macht den Ordner persönlich. Ihre Angehörigen können es auch für die Traueranzeige und die Trauerfeier verwenden. Am besten wählen Sie ein vorhandenes Foto aus, auf dem Sie sich gefallen.",
@@ -1762,12 +1809,10 @@ const FORMULARE = {
       feld("persoenlich.geburtsort", "Geburtsort"),
       feld("persoenlich.staatsangehoerigkeit", "Staatsangehörigkeit"),
       feld("persoenlich.familienstand", "Familienstand", { typ: "auswahl", optionen: "familienstand" })),
-    gruppe("Anschrift und Erreichbarkeit", null,
+    gruppe("Anschrift", null,
       feld("persoenlich.strasse", "Straße und Hausnummer", { breit: true }),
       feld("persoenlich.plz", "Postleitzahl", { eingabemodus: "numeric" }),
-      feld("persoenlich.ort", "Ort"),
-      feld("persoenlich.telefon", "Telefon", { typ: "tel" }),
-      feld("persoenlich.email", "E-Mail", { typ: "email" })),
+      feld("persoenlich.ort", "Ort")),
     gruppe("Wichtige Nummern", "Diese Nummern fragen Rentenversicherung, Finanzamt und Krankenkasse nach einem Todesfall ab.",
       feld("persoenlich.steuerId", "Steuer-Identifikationsnummer", { hilfe: "11 Ziffern, steht auf jedem Steuerbescheid.", eingabemodus: "numeric" }),
       feld("persoenlich.rentenversicherungsnummer", "Rentenversicherungsnummer", { hilfe: "Steht auf dem Rentenbescheid oder dem Sozialversicherungsausweis.", gross: true }),
@@ -1776,10 +1821,7 @@ const FORMULARE = {
       feld("persoenlich.postrentennummer", "Postrentennummer", { hilfe: "Nur wer schon Rente bekommt. Steht auf Schreiben des Renten Service der Deutschen Post, zum Beispiel der jährlichen Rentenanpassung." })),
     gruppe("Wo liegen Ihre Dokumente?", "Beschreiben Sie den Ort so, dass ihn jemand Fremdes findet.",
       feld("persoenlich.ablagePersonalausweis", "Personalausweis", { hilfe: "Zum Beispiel: Handtasche, Innenfach" }),
-      feld("persoenlich.ablageReisepass", "Reisepass"),
-      feld("persoenlich.ablageGeburtsurkunde", "Geburtsurkunde"),
-      feld("persoenlich.ablageStammbuch", "Familienstammbuch"),
-      feld("persoenlich.ablageHeiratsurkunde", "Heiratsurkunde"),
+      feld("persoenlich.ablageUrkunden", "Urkunden und Familienstammbuch", { breit: true, hilfe: "Geburtsurkunde, Heiratsurkunde oder das Stammbuch. Das Standesamt braucht sie für die Sterbeurkunde." }),
       feld("persoenlich.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 }))
   ],
 
@@ -1808,16 +1850,16 @@ const FORMULARE = {
   testament: () => {
     const ja = pfad => normWert(pfadLesen(pfad), "jaNein") === "ja";
     const umschalter = (pfad, frage, ...felder) => {
-      const details = bedingt(ja(pfad), el("div", { class: "felder" }, ...felder));
+      const details = bedingt(ja(pfad), el("div", { class: "felder" }, ...felder.filter(Boolean)));
       return [wahl(pfad, frage, JA_NEIN, { beiAenderung: v => { details.hidden = v !== "ja"; } }), details];
     };
-    const vollmacht = (schluessel, titel, erklaerung) => {
+    const vollmacht = (schluessel, titel, erklaerung, mitUeberTod) => {
       const basis = "testament." + schluessel;
       return gruppe(titel, erklaerung, ...umschalter(basis + ".vorhanden", "Haben Sie das?",
         feld(basis + ".bevollmaechtigt", "Wer ist bevollmächtigt?", { breit: true }),
         feld(basis + ".ablage", "Wo liegt das Original?", { breit: true }),
-        wahl(basis + ".ueberTod", "Gilt sie über den Tod hinaus?", JA_NEIN,
-          { hilfe: "Dann kann die bevollmächtigte Person sofort handeln, ohne auf den Erbschein zu warten. Steht meist im Text der Vollmacht." })));
+        mitUeberTod ? wahl(basis + ".ueberTod", "Gilt sie über den Tod hinaus?", JA_NEIN,
+          { hilfe: "Dann kann die bevollmächtigte Person sofort handeln, ohne auf den Erbschein zu warten. Steht meist im Text der Vollmacht." }) : null));
     };
     return [
       hinweis(["Klarordner hält nur fest, ob es diese Dokumente gibt und wo sie liegen. Die Dokumente selbst erstellen Sie getrennt.",
@@ -1825,8 +1867,7 @@ const FORMULARE = {
       gruppe("Testament", "Ihre Angehörigen müssen es finden. Wer ein Testament findet, muss es beim Nachlassgericht abgeben.",
         ...umschalter("testament.testament.vorhanden", "Haben Sie ein Testament?",
           wahl("testament.testament.art", "Wie ist es errichtet?", "testamentArt"),
-          feld("testament.testament.datum", "Datum des Testaments", { hilfe: "Gibt es mehrere, das neueste." }),
-          feld("testament.testament.ablage", "Wo liegt das Original?", { breit: true }),
+            feld("testament.testament.ablage", "Wo liegt das Original?", { breit: true }),
           wahl("testament.testament.verwahrt", "In amtlicher Verwahrung beim Amtsgericht?", JA_NEIN,
             { hilfe: "Gegen eine einmalige Gebühr verwahrt das Amtsgericht das Testament. Im Todesfall wird es dann sicher gefunden und eröffnet." }),
           feld("testament.testament.notar", "Notar oder Amtsgericht", { breit: true, hilfe: "Name und Ort" }))),
@@ -1838,7 +1879,7 @@ const FORMULARE = {
         feld("testament.vollstrecker.name", "Name"),
         feld("testament.vollstrecker.kontakt", "Telefon oder Anschrift")),
       vollmacht("vorsorgevollmacht", "Vorsorgevollmacht", "Eine Person Ihres Vertrauens darf für Sie entscheiden und handeln."),
-      vollmacht("bankvollmacht", "Bankvollmacht", "Eine Vollmacht für Ihre Konten, meist auf einem Formular der Bank."),
+      vollmacht("bankvollmacht", "Bankvollmacht", "Eine Vollmacht für Ihre Konten, meist auf einem Formular der Bank.", true),
       gruppe("Sonstiges", null, feld("testament.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 }))
     ];
   },
@@ -1850,14 +1891,12 @@ const FORMULARE = {
     gruppe("Konten und Depots", null,
       liste("finanzen.konten", {
         einzahl: "Konto",
-        neu: () => ({ bank: "", kontoart: "", iban: "", ansprechpartner: "", telefon: "", vollmachtUeberTod: "", bevollmaechtigt: "", notiz: "" }),
+        neu: () => ({ bank: "", kontoart: "", iban: "", vollmachtUeberTod: "", bevollmaechtigt: "", notiz: "" }),
         kopf: k => [k.bank, optText("kontoart", k.kontoart)].filter(Boolean).join(" · "),
         felder: p => [
           feld(p + ".bank", "Bank"),
           feld(p + ".kontoart", "Art", { typ: "auswahl", optionen: "kontoart" }),
           feld(p + ".iban", "IBAN", { gross: true, breit: true }),
-          feld(p + ".ansprechpartner", "Ansprechpartner bei der Bank"),
-          feld(p + ".telefon", "Telefon", { typ: "tel" }),
           wahl(p + ".vollmachtUeberTod", "Gibt es eine Vollmacht über den Tod hinaus?", JA_NEIN,
             { hilfe: "Dann kann die bevollmächtigte Person auch nach Ihrem Tod sofort Rechnungen bezahlen." }),
           feld(p + ".bevollmaechtigt", "Wer ist bevollmächtigt?", { breit: true }),
@@ -1903,7 +1942,7 @@ const FORMULARE = {
     gruppe("Laufende Verträge und Abos", null,
       liste("vertraege", {
         einzahl: "Vertrag",
-        neu: () => ({ art: "", anbieter: "", vertragsnummer: "", zaehler: "", kosten: "", kuendigung: "", notiz: "" }),
+        neu: () => ({ art: "", anbieter: "", vertragsnummer: "", zaehler: "", kuendigung: "", notiz: "" }),
         kopf: v => [optText("vertrag", v.art), v.anbieter].filter(Boolean).join(" · "),
         felder: (p, v) => {
           const zaehler = bedingt(ZAEHLER.includes(normWert(v.art, "vertrag")),
@@ -1913,37 +1952,12 @@ const FORMULARE = {
           feld(p + ".anbieter", "Anbieter", { vorschlaege: true }),
           feld(p + ".vertragsnummer", "Vertrags- oder Kundennummer", { gross: true }),
           zaehler,
-          feld(p + ".kosten", "Kosten", { hilfe: "Zum Beispiel: 12,99 € im Monat" }),
           feld(p + ".kuendigung", "Wie wird gekündigt?", { breit: true, hilfe: "Kündigungsfrist, Adresse oder Telefonnummer" }),
           feld(p + ".notiz", "Hinweis", { breit: true })
           ];
         }
-      }))
-  ],
-
-  wohnen: () => [
-    gruppe("Ihre Wohnung", null,
-      feld("wohnen.wohnform", "Wie wohnen Sie?", { typ: "auswahl", optionen: "wohnform" }),
-      feld("wohnen.vermieter", "Vermieter", { hilfe: "Name und Telefon" }),
-      feld("wohnen.hausverwaltung", "Hausverwaltung", { hilfe: "Name und Telefon" }),
-      feld("wohnen.ablageMietvertrag", "Wo liegt der Mietvertrag?"),
-      feld("wohnen.ablageGrundbuch", "Wo liegen Grundbuchauszug und Kaufvertrag?", { breit: true })),
-    gruppe("Schlüssel", null,
-      feld("wohnen.schluessel", "Wer hat einen Schlüssel, und wo liegen Ersatzschlüssel?", { typ: "mehrzeilig", zeilen: 3 })),
-    gruppe("Haustiere", "Wer kümmert sich sofort, wenn Ihnen etwas passiert?",
-      liste("wohnen.haustiere", {
-        einzahl: "Haustier",
-        neu: () => ({ tier: "", name: "", betreuer: "", tierarzt: "", hinweis: "" }),
-        kopf: t => [t.name, t.tier].filter(Boolean).join(" · "),
-        felder: p => [
-          feld(p + ".tier", "Tierart", { hilfe: "Zum Beispiel: Katze" }),
-          feld(p + ".name", "Name"),
-          feld(p + ".betreuer", "Wer kümmert sich?", { breit: true }),
-          feld(p + ".tierarzt", "Tierarzt"),
-          feld(p + ".hinweis", "Futter, Medikamente, Besonderheiten")
-        ]
       })),
-    gruppe("Sonstiges", null, feld("wohnen.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 }))
+    ...wohnenGruppen()
   ],
 
   digital: () => [
@@ -1951,16 +1965,15 @@ const FORMULARE = {
       "Apple: „Nachlasskontakt“ in den Einstellungen unter Ihrem Namen.",
       "Facebook und Instagram: „Nachlasskontakt“ oder Gedenkzustand in den Einstellungen."],
       "info", "Tipp: Manche Anbieter lassen Sie schon heute festlegen, was mit Ihrem Konto passiert"),
-    gruppe("Ihre Konten im Internet", "Passwörter gehören nicht hierher, sondern in den Bereich Zugangsdaten.",
+    gruppe("Ihre Konten im Internet", "Passwörter gehören nicht hierher, sondern weiter unten in die geschützten Zugangsdaten.",
       liste("digital.konten", {
         einzahl: "Online-Konto",
-        neu: () => ({ kategorie: "", anbieter: "", benutzername: "", wunsch: "", uebertragenAn: "", notiz: "" }),
+        neu: () => ({ anbieter: "", benutzername: "", wunsch: "", uebertragenAn: "", notiz: "" }),
         kopf: k => k.anbieter,
         felder: (p, k) => {
           const empfaenger = bedingt(normWert(k.wunsch, "wunsch") === "uebertragen",
             el("div", { class: "felder" }, feld(p + ".uebertragenAn", "An wen?", { breit: true })));
           return [
-            feld(p + ".kategorie", "Art", { typ: "auswahl", optionen: "onlineArt" }),
             feld(p + ".anbieter", "Anbieter", { hilfe: "Zum Beispiel: Amazon, PayPal, GMX", vorschlaege: true }),
             feld(p + ".benutzername", "Benutzername oder E-Mail-Adresse", { breit: true }),
             wahl(p + ".wunsch", "Was soll mit dem Konto geschehen?", "wunsch",
@@ -1972,7 +1985,10 @@ const FORMULARE = {
       })),
     gruppe("Passwort-Manager", null,
       feld("digital.passwortManager", "Nutzen Sie einen Passwort-Manager? Welchen, und wo ist der Zugang hinterlegt?", { typ: "mehrzeilig", zeilen: 2 }),
-      feld("digital.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 }))
+      feld("digital.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 })),
+    druck ? null : el("h3", { class: "kachelueberschrift", text: t("Zugangsdaten") }),
+    druck ? null : el("p", { class: "kartenhilfe abschnitt", text: t("Passwörter und Codes, mit einem eigenen Passwort verschlüsselt. Sie werden nur gedruckt, wenn Sie das beim Drucken ausdrücklich wählen.") }),
+    ...(druck ? [] : FORMULARE.zugang())
   ],
 
   sterbefall: () => [
@@ -2005,26 +2021,14 @@ const FORMULARE = {
         : (druck ? null : el("p", { class: "verweis breit" }, t("Ein Foto für die Traueranzeige können Sie bei den persönlichen Daten hinzufügen.") + " ", sprungKnopf("persoenlich", "Foto hinzufügen ›"))),
       feld("sterbefall.wuensche", "Weitere Wünsche", { typ: "mehrzeilig", zeilen: 3 })),
     druck ? null : el("p", { class: "verweis" }, t("Wer benachrichtigt werden soll, tragen Sie bei den Ansprechpartnern ein.") + " ", sprungKnopf("kontakte", "Zu den Ansprechpartnern ›")),
-    gruppe("Checkliste für Ihre Angehörigen", "Was nach einem Todesfall zu tun ist. Notieren Sie zu jedem Punkt, was Ihre Angehörigen wissen müssen.",
-      ...CHECKLISTE.map(([schluessel, titel, text]) => {
-        if (druck) {
-          return el("div", { class: "dfeld dcheck breit" },
+    gruppe("Checkliste für Ihre Angehörigen", "Was nach einem Todesfall zu tun ist, in dieser Reihenfolge. Die Liste steht auch im Ausdruck.",
+      ...CHECKLISTE.map(([, titel, text]) => druck
+        ? el("div", { class: "dfeld dcheck breit" },
             el("span", { class: "dl" }, kasten(false), el("strong", { text: t(titel) })),
-            text ? el("span", { class: "dhilfe", text: t(text) }) : null,
-            ...druckWert(zustand.daten.sterbefall.checkliste[schluessel] || ""));
-        }
-        const id = neueId();
-        const eingabe = el("input", { id, type: "text", autocomplete: "off" });
-        eingabe.value = zustand.daten.sterbefall.checkliste[schluessel] || "";
-        eingabe.addEventListener("input", () => {
-          zustand.daten.sterbefall.checkliste[schluessel] = eingabe.value;
-          geaendert();
-        });
-        return el("div", { class: "checkpunkt breit" },
-          el("label", { for: id }, el("span", { class: "kaestchen", "aria-hidden": "true" }), el("strong", { text: t(titel) })),
-          text ? el("p", { class: "hilfe", text: t(text) }) : null,
-          eingabe);
-      }))
+            text ? el("span", { class: "dhilfe", text: t(text) }) : null)
+        : el("div", { class: "checkpunkt breit" },
+            el("p", {}, el("span", { class: "kaestchen", "aria-hidden": "true" }), el("strong", { text: t(titel) })),
+            text ? el("p", { class: "hilfe", text: t(text) }) : null)))
   ],
 
   zugang: () => {
@@ -2159,6 +2163,11 @@ function druckErzeugen(ids, mitDeckblatt) {
         el("div", { class: "dkopf" }, el("span", { class: "punkt" }), el("h1", { text: `${BEREICHE.indexOf(b) + 1}. ${t(b.titel)}` })),
         ...FORMULARE[b.id]().filter(Boolean)));
     }
+    if (ids.includes("zugang")) {
+      teile.push(el("section", { class: "dbereich b-zugang", style: "--farbe: #5b6b63" },
+        el("div", { class: "dkopf" }, el("span", { class: "punkt" }), el("h1", { text: t("Anhang: Zugangsdaten") })),
+        ...FORMULARE.zugang().filter(Boolean)));
+    }
     teile.push(el("div", { class: "dfuss" },
       el("span", { text: t("Stand: {datum}", { datum: datumText(zustand.daten.lastModified) }) }),
       el("span", { text: name ? t("Vorsorgeordner von {name}", { name }) : "Klarordner" })));
@@ -2188,7 +2197,9 @@ async function druckenStarten() {
   const liste = el("div", { class: "druckliste" },
     box("deckblatt", t("Deckblatt mit Inhaltsverzeichnis"), true),
     el("div", { class: "trenner", "aria-hidden": "true" }),
-    ...BEREICHE.map((b, i) => box(b.id, `${i + 1}. ${t(b.titel)}`, b.id !== "zugang", b.id === "zugang" ? (offen ? t("(enthält Passwörter)") : t("(zuerst den Bereich öffnen)")) : null, b.id === "zugang" && !offen)));
+    ...BEREICHE.map((b, i) => box(b.id, `${i + 1}. ${t(b.titel)}`, true)),
+    el("div", { class: "trenner", "aria-hidden": "true" }),
+    box("zugang", t("Anhang: Zugangsdaten"), false, offen ? t("(enthält Passwörter)") : t("(zuerst die Zugangsdaten öffnen)"), !offen));
   const dlg = $("dialog");
   $("dialogTitel").textContent = t("Drucken");
   $("dialogText").replaceChildren(
@@ -2326,7 +2337,7 @@ function schreibenListe() {
     liste.push({ id: "vers:" + i, art: eilig.includes(art) ? "versMeldung" : "versEnde", titel: [optText("versicherung", v.art), v.gesellschaft].filter(Boolean).join(" · "), gruppe: "Mitteilungen", adresse: anschrift || v.gesellschaft, anbieter: ges, notiz: ges && ges.hinweis, vertrag: v });
   });
   if (normWert(d.wohnen.wohnform, "wohnform") === "miete" || d.vertraege.some(v => normWert(v.art, "vertrag") === "miete")) {
-    liste.push({ id: "vermieter", art: "vermieter", titel: t("Vermieter"), gruppe: "Kündigungen", adresse: d.wohnen.hausverwaltung || d.wohnen.vermieter,
+    liste.push({ id: "vermieter", art: "vermieter", titel: t("Vermieter"), gruppe: "Kündigungen", adresse: d.wohnen.vermieter,
       hinweis: "Nur, wenn niemand in den Mietvertrag eintritt, zum Beispiel ein Ehepartner im selben Haushalt. Die Kündigung muss innerhalb eines Monats erklärt werden, nachdem Sie davon erfahren haben." });
   }
   const rf = ANBIETER.find(a => a.id === "rundfunk");
@@ -3036,14 +3047,14 @@ const SCAN_ZIELE = {
       { name: "anbieter", label: "Anbieter", wert: e.dienst ? e.dienst.name : e.absender },
       { name: "vertragsnummer", label: "Vertrags- oder Kundennummer", wert: e.kundennummer },
       { name: "zaehler", label: "Zählernummer", wert: e.zaehler }],
-    uebernehmen: w => zustand.daten.vertraege.push({ art: w.art, anbieter: w.anbieter, vertragsnummer: w.vertragsnummer, zaehler: w.zaehler, kosten: "", kuendigung: "", notiz: "" })
+    uebernehmen: w => zustand.daten.vertraege.push({ art: w.art, anbieter: w.anbieter, vertragsnummer: w.vertragsnummer, zaehler: w.zaehler, kuendigung: "", notiz: "" })
   },
   finanzen: {
     felder: e => [
       { name: "bank", label: "Bank", wert: e.bank },
       { name: "kontoart", label: "Art", optionen: "kontoart", wert: e.kontoart },
       { name: "iban", label: "IBAN", wert: e.iban }],
-    uebernehmen: w => zustand.daten.finanzen.konten.push({ bank: w.bank, kontoart: w.kontoart, iban: w.iban, ansprechpartner: "", telefon: "", vollmachtUeberTod: "", bevollmaechtigt: "", notiz: "" })
+    uebernehmen: w => zustand.daten.finanzen.konten.push({ bank: w.bank, kontoart: w.kontoart, iban: w.iban, vollmachtUeberTod: "", bevollmaechtigt: "", notiz: "" })
   },
   persoenlich: {
     felder: e => [
@@ -3245,7 +3256,7 @@ async function passwoerterImportieren(datei) {
     const anbieter = a ? a.name : e.bezeichnung;
     if (daDigital.has(schl(anbieter, e.benutzer))) continue;
     daDigital.add(schl(anbieter, e.benutzer));
-    digital.push({ kategorie: art ? art[1] : "sonstiges", anbieter, benutzername: e.benutzer, wunsch: "", uebertragenAn: "", notiz: "" });
+    digital.push({ anbieter, benutzername: e.benutzer, wunsch: "", uebertragenAn: "", notiz: "" });
   }
   const ok = await fragen("Passwörter übernehmen?",
     [t("Gefunden: {n} Zugänge. Neu für Ihre Zugangsdaten: {neu}. Davon kommen {digital} bekannte Online-Konten ohne Passwort zusätzlich in den Digitalen Nachlass.", { n: alle.length, neu: neu.length, digital: digital.length }),
@@ -3333,7 +3344,7 @@ $("btnDrucken").addEventListener("click", druckenStarten);
 
 // Druck über das Browsermenü oder Strg+P: ohne Auswahl alle Bereiche außer den Zugangsdaten.
 window.addEventListener("beforeprint", () => {
-  if (zustand.daten && !$("druck").firstChild) druckErzeugen(BEREICHE.map(b => b.id).filter(id => id !== "zugang"), true);
+  if (zustand.daten && !$("druck").firstChild) druckErzeugen(BEREICHE.map(b => b.id), true);
 });
 window.addEventListener("afterprint", druckLeeren);
 $("vcfwahl").addEventListener("change", e => { const d = e.target.files[0]; if (d && zustand.daten) kontakteImportieren(d); });

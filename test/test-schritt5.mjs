@@ -22,7 +22,7 @@ console.log('Kein Aktualitätshinweis bei neuem Ordner:', !(await p.isVisible('d
 await p.click('.kachel:has-text("Persönliche Nachricht")');
 await p.fill('textarea', 'Hallo');
 await p.click('.kachel-zurueck, #navStart button');
-console.log('Nachricht ausgefüllt:', (await stufen())[10], '|', await p.textContent('.fortschritt-text'));
+console.log('Nachricht ausgefüllt:', (await stufen())[8], '|', await p.textContent('.fortschritt-text'));
 await p.click('.kachel:has-text("Persönliche Daten")');
 await p.fill('#inhalt input >> nth=0', 'Erika');
 await p.click('#navStart button');
