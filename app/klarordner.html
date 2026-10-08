@@ -2060,7 +2060,7 @@ const FORMULARE = {
       // Je nach Bestattungsart die passenden Einzelheiten, damit die Angehörigen nicht raten müssen.
       const art = normWert(pfadLesen("sterbefall.bestattungsart"), "bestattung");
       const teil = (arten, ...felder) => { const b = bedingt(arten.includes(art), el("div", { class: "felder" }, ...felder)); b.dataset.arten = arten.join(" "); return b; };
-      const grabart = (optionen, frage) => { const f = feld("sterbefall.grabart", frage, { typ: "auswahl", optionen }); f.querySelector("select").dataset.grabart = "1"; return f; };
+      const grabart = (optionen, frage) => { const f = feld("sterbefall.grabart", frage, { typ: "auswahl", optionen }); const sel = f.querySelector("select"); if (sel) sel.dataset.grabart = "1"; return f; };
       const friedhof = () => feld("sterbefall.grabstelle", "Friedhof und Grabstelle", { breit: true, hilfe: "Zum Beispiel: Familiengrab auf dem Hauptfriedhof, Feld 12, oder der gewünschte Friedhof" });
       const teile = [
         teil(["erd"],
