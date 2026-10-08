@@ -24,6 +24,7 @@ await p.click('button:has-text("Für meine Angehörigen umstellen")');
 await p.click('dialog button:has-text("Umstellen")');
 await p.waitForSelector('text=Dieser Ordner ist für die Angehörigen von Erika Musterfrau');
 pruef('Übersicht: keine Ausfüll-Knöpfe mehr', !(await text()).includes('Weiter, wo ich aufgehört habe') && !(await text()).includes('Zeit für einen Blick'));
+pruef('Übersicht: kein leerer Foto-Platzhalter', !(await p.isVisible('.portraetkopf .portraet.leer')));
 pruef('Übersicht: Titel für die Angehörigen', (await text()).includes('Vorsorgeordner für Thomas und Gisela') && (await text()).includes('Was festgehalten ist'));
 await p.click('#navliste button[data-id=kontakte]');
 pruef('Nachher: „Beziehung zu Erika Musterfrau“, Import weg', (await text()).includes('Beziehung zu Erika Musterfrau') && !(await p.isVisible('text=Aus der Kontakte-App übernehmen')));

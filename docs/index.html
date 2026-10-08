@@ -1537,7 +1537,7 @@ function uebersicht() {
         el("p", { class: "kartenhilfe", text: t("Dann stellen Sie ihn auf Ihre Angehörigen um. Alle Texte sprechen danach die Menschen an, die den Ordner später lesen, und der Ausdruck ist für die Übergabe gedacht. Sie können jederzeit zurück.") }),
         el("div", { class: "knopfreihe" }, el("button", { type: "button", class: "btn" + (fertig === BEREICHE.length ? " primaer" : ""), text: t("Für meine Angehörigen umstellen"), onclick: () => ansprecheUmstellen(true) })));
   return [
-    el("div", { class: "portraetkopf" }, portraet(), fotoKnoepfe(),
+    el("div", { class: "portraetkopf" }, fuerAngehoerige && !d.persoenlich.foto ? null : portraet(), fotoKnoepfe(),
       el("h2", { tabindex: "-1", text: name || t("Mein Ordner") }),
       el("p", { class: "fuer", text: fuer }),
       el("p", { class: "stand" }, t("Zuletzt geändert:") + " ", el("strong", { text: datumText(d.lastModified) }))),
