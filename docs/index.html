@@ -1630,22 +1630,28 @@ function feld(pfad, beschriftung, opt = {}) {
   eingabe.value = typ === "auswahl" ? normWert(wert, opt.optionen) : typ === "datum" ? datumAnzeige(wert) : wert;
   const fehler = typ === "datum" ? el("p", { class: "hilfe fehler", hidden: true, text: t("Bitte als Tag, Monat und Jahr eingeben, zum Beispiel 17.03.1952.") }) : null;
   if (typ === "datum") {
-    // Tippt jemand selbst Punkte, bleiben sie, sonst werden sie nach Tag und Monat eingefügt.
-    let eigenePunkte = /\./.test(eingabe.value) && !/^\d{2}\.\d{2}\.\d{4}$/.test(eingabe.value);
-    eingabe.addEventListener("input", e => {
-      if (e.data === ".") eigenePunkte = true;
-      if (!eingabe.value) eigenePunkte = false;
-      let z = eingabe.value.replace(/[^\d.]/g, "");
-      if (!eigenePunkte && !String(e.inputType).startsWith("delete")) {
-        z = z.replace(/\D/g, "");
-        const d = z.slice(0, 8);
-        z = d.slice(0, 2) + (d.length > 2 ? "." + d.slice(2, 4) : "") + (d.length > 4 ? "." + d.slice(4) : "");
+    // Es zählen nur die Ziffern. Beim Tippen werden die Punkte nach Tag und Monat eingefügt, beim Löschen bleibt der Rest stehen.
+    // Safari liefert nicht bei jeder Eingabe Einzelheiten zum Ereignis, deshalb hängt nichts davon ab.
+    let vorher = eingabe.value.replace(/\D/g, "");
+    const uebernehmen = () => {
+      const iso = datumLesen(eingabe.value);
+      if (iso || !eingabe.value.trim()) { pfadSchreiben(pfad, iso || ""); fehler.hidden = true; }
+      return iso;
+    };
+    eingabe.addEventListener("input", () => {
+      const ziffern = eingabe.value.replace(/\D/g, "").slice(0, 8);
+      const selbstGesetzt = /\./.test(eingabe.value) && !/^\d{2}\.\d{2}\.?\d{0,4}$/.test(eingabe.value);
+      if (ziffern.length > vorher.length && !selbstGesetzt) {
+        eingabe.value = ziffern.slice(0, 2) + (ziffern.length > 2 ? "." + ziffern.slice(2, 4) : "") + (ziffern.length > 4 ? "." + ziffern.slice(4) : "");
       }
-      eingabe.value = z;
-      const iso = datumLesen(z);
-      if (iso || !z) { pfadSchreiben(pfad, iso || ""); fehler.hidden = true; }
+      vorher = ziffern;
+      uebernehmen();
     });
-    eingabe.addEventListener("change", () => { fehler.hidden = !eingabe.value || !!datumLesen(eingabe.value); });
+    eingabe.addEventListener("change", () => {
+      const iso = uebernehmen();
+      if (iso) eingabe.value = datumAnzeige(iso);
+      fehler.hidden = !eingabe.value.trim() || !!iso;
+    });
   } else eingabe.addEventListener(typ === "auswahl" ? "change" : "input", () => {
     pfadSchreiben(pfad, eingabe.value);
     if (opt.beiAenderung) opt.beiAenderung(eingabe.value);
@@ -1662,7 +1668,8 @@ function feld(pfad, beschriftung, opt = {}) {
 // Gespeichert wird als JJJJ-MM-TT, angezeigt und getippt als TT.MM.JJJJ.
 const datumAnzeige = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso || "") ? iso.split("-").reverse().join(".") : (iso || "");
 function datumLesen(text) {
-  const m = String(text).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  const roh = String(text).trim();
+  const m = roh.match(/^(\d{1,2})[.\/ -](\d{1,2})[.\/ -](\d{4})$/) || roh.match(/^(\d{2})(\d{2})(\d{4})$/);
   if (!m) return "";
   const [tag, monat, jahr] = [Number(m[1]), Number(m[2]), Number(m[3])];
   const d = new Date(Date.UTC(jahr, monat - 1, tag));

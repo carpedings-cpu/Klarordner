@@ -43,6 +43,14 @@ await eingabe.dispatchEvent('input');
 pruef('Leeren löscht das Datum', await p.evaluate(() => zustand.daten.persoenlich.geburtsdatum) === '');
 await eingabe.click();
 await p.keyboard.type('17031952');
+// Wie Safari bei Autofill oder Einfügen: ganzer Wert auf einmal, ohne Ereignisdetails
+await eingabe.fill('');
+await p.evaluate(() => { const i = document.querySelector('.datumfeld'); i.value = '17031952'; i.dispatchEvent(new Event('input', { bubbles: true })); });
+pruef('Acht Ziffern am Stück werden angenommen', await p.evaluate(() => zustand.daten.persoenlich.geburtsdatum) === '1952-03-17' && await eingabe.inputValue() === '17.03.1952');
+await p.evaluate(() => { const i = document.querySelector('.datumfeld'); i.value = '5/11/1949'; i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); });
+pruef('Andere Trennzeichen beim Verlassen übernommen', await p.evaluate(() => zustand.daten.persoenlich.geburtsdatum) === '1949-11-05' && await eingabe.inputValue() === '05.11.1949');
+await eingabe.fill('');
+await p.keyboard.type('17031952');
 // Anzeige nach dem Neuladen und im Schreiben
 await p.waitForTimeout(700);
 await p.reload();
