@@ -539,7 +539,9 @@ const OPTIONEN = {
   onlineArt: { email: "E-Mail", shop: "Online-Shop", bezahl: "Bezahldienst", sozial: "Soziales Netzwerk", messenger: "Messenger", cloud: "Cloud-Speicher", streaming: "Streaming", banking: "Online-Banking", sonstiges: "Sonstiges" },
   wunsch: { loeschen: "Löschen", gedenken: "In Gedenkzustand versetzen", uebertragen: "An jemanden übertragen" },
   bestattung: { erd: "Erdbestattung", urne: "Feuerbestattung mit Urnengrab", see: "Seebestattung", baum: "Baumbestattung", anonym: "Anonyme Bestattung", offen: "Noch nicht entschieden", sonstiges: "Sonstiges" },
-  grabart: { reihe: "Reihengrab", wahl: "Wahlgrab", familie: "Familiengrab, schon vorhanden", urnenwand: "Urnenwand", gemeinschaft: "Gemeinschaftsgrab mit Namen", rasen: "Rasengrab ohne Grabpflege", offen: "Noch nicht entschieden" },
+  grabartErd: { reihe: "Reihengrab", wahl: "Wahlgrab", familie: "Familiengrab, schon vorhanden", rasen: "Rasengrab ohne Grabpflege", offen: "Noch nicht entschieden" },
+  grabartUrne: { urnenreihe: "Urnenreihengrab", urnenwahl: "Urnenwahlgrab", familie: "Familiengrab, schon vorhanden", urnenwand: "Urnenwand", gemeinschaft: "Gemeinschaftsgrab mit Namen", rasen: "Urnenrasengrab ohne Grabpflege", offen: "Noch nicht entschieden" },
+  grabartAnonym: { urnenfeld: "Anonymes Urnenfeld", graeberfeld: "Anonymes Gräberfeld mit Sarg", see: "Anonyme Seebestattung", offen: "Noch nicht entschieden" },
   meer: { nordsee: "Nordsee", ostsee: "Ostsee", mittelmeer: "Mittelmeer", atlantik: "Atlantik", anderes: "Anderes Gewässer" },
   wald: { friedwald: "FriedWald", ruheforst: "RuheForst", anderer: "Anderer Bestattungswald" },
   zugangArt: { geraet: "Handy oder Tablet", computer: "Computer", email: "E-Mail", online: "Online-Konto", wlan: "WLAN", sonstiges: "Sonstiges" }
@@ -2058,11 +2060,20 @@ const FORMULARE = {
       // Je nach Bestattungsart die passenden Einzelheiten, damit die Angehörigen nicht raten müssen.
       const art = normWert(pfadLesen("sterbefall.bestattungsart"), "bestattung");
       const teil = (arten, ...felder) => { const b = bedingt(arten.includes(art), el("div", { class: "felder" }, ...felder)); b.dataset.arten = arten.join(" "); return b; };
+      const grabart = (optionen, frage) => { const f = feld("sterbefall.grabart", frage, { typ: "auswahl", optionen }); f.querySelector("select").dataset.grabart = "1"; return f; };
+      const friedhof = () => feld("sterbefall.grabstelle", "Friedhof und Grabstelle", { breit: true, hilfe: "Zum Beispiel: Familiengrab auf dem Hauptfriedhof, Feld 12, oder der gewünschte Friedhof" });
       const teile = [
-        teil(["erd", "urne", "anonym"],
-          feld("sterbefall.grabart", "Welche Grabart?", { typ: "auswahl", optionen: "grabart" }),
-          feld("sterbefall.grabstelle", "Friedhof und Grabstelle", { breit: true, hilfe: "Zum Beispiel: Familiengrab auf dem Hauptfriedhof, Feld 12, oder der gewünschte Friedhof" }),
-          feld("sterbefall.sargUrne", "Wünsche zu Sarg oder Urne", { breit: true, hilfe: "Zum Beispiel: schlichtes Holz, bestimmte Farbe, keine Blumen auf dem Sarg" })),
+        teil(["erd"],
+          grabart("grabartErd", "Welche Grabart?"),
+          friedhof(),
+          feld("sterbefall.sargUrne", "Wünsche zum Sarg", { breit: true, hilfe: "Zum Beispiel: schlichtes Holz, bestimmte Farbe, keine Blumen auf dem Sarg" })),
+        teil(["urne"],
+          grabart("grabartUrne", "Welche Grabart?"),
+          friedhof(),
+          feld("sterbefall.sargUrne", "Wünsche zur Urne", { breit: true, hilfe: "Zum Beispiel: schlicht, aus Holz, biologisch abbaubar" })),
+        teil(["anonym"],
+          grabart("grabartAnonym", "Wie anonym?"),
+          friedhof()),
         teil(["see"],
           feld("sterbefall.meer", "In welchem Meer?", { typ: "auswahl", optionen: "meer" }),
           feld("sterbefall.seeOrt", "Vor welcher Küste oder welchem Hafen?", { hilfe: "Zum Beispiel: vor Kiel, vor Sylt, vor Mallorca" }),
@@ -2076,7 +2087,11 @@ const FORMULARE = {
       ];
       return gruppe("Bestattung", null,
         feld("sterbefall.bestattungsart", "Wie möchten Sie bestattet werden?", { typ: "auswahl", optionen: "bestattung",
-          beiAenderung: w => { for (const b of teile) b.hidden = !b.dataset.arten.split(" ").includes(w); } }),
+          beiAenderung: w => {
+            // Die Grabart passt nur zur gewählten Bestattungsart, deshalb wird sie beim Wechsel zurückgesetzt.
+            pfadSchreiben("sterbefall.grabart", "");
+            for (const b of teile) { b.hidden = !b.dataset.arten.split(" ").includes(w); for (const sel of b.querySelectorAll("select[data-grabart]")) sel.value = ""; }
+          } }),
         feld("sterbefall.bestatter", "Gewünschter Bestatter", { hilfe: "Name und Telefon" }),
         feld("sterbefall.vorsorgevertrag", "Gibt es einen Bestattungsvorsorgevertrag? Wo liegt er?", { breit: true }),
         ...teile);

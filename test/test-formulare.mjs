@@ -53,7 +53,7 @@ console.log('Frist sichtbar (Haftpflicht):', await p.locator('.bedingt').first()
 // Checkliste
 await p.click('#navliste button[data-id=sterbefall]');
 const bestattung = p.locator('.formkarte', { hasText: 'Wie möchten Sie bestattet werden?' });
-const sichtbarB = async () => Promise.all(['Welche Grabart?', 'In welchem Meer?', 'Welcher Baum?'].map(l => bestattung.locator('.feld', { hasText: l }).isVisible()));
+const sichtbarB = async () => Promise.all(['Welche Grabart?', 'In welchem Meer?', 'Welcher Baum?'].map(l => bestattung.locator('.feld:visible', { hasText: l }).count().then(n => n > 0)));
 await bestattung.locator('select').first().selectOption('see');
 console.log('Seebestattung zeigt Meer:', JSON.stringify(await sichtbarB()));
 await bestattung.locator('.feld', { hasText: 'In welchem Meer?' }).locator('select').selectOption('ostsee');
@@ -61,6 +61,13 @@ await bestattung.locator('select').first().selectOption('baum');
 console.log('Baumbestattung zeigt Baum:', JSON.stringify(await sichtbarB()));
 await bestattung.locator('select').first().selectOption('erd');
 console.log('Erdbestattung zeigt Grabart:', JSON.stringify(await sichtbarB()));
+const grabarten = async () => (await bestattung.locator('.bedingt:visible select[data-grabart] option').allTextContents()).join('|');
+console.log('Grabarten Erde:', await grabarten());
+await bestattung.locator('.bedingt:visible select[data-grabart]').selectOption('wahl');
+await bestattung.locator('select').first().selectOption('urne');
+console.log('Grabarten Urne:', await grabarten(), '| Grabart zurückgesetzt:', await p.evaluate(() => zustand.daten.sterbefall.grabart) === '');
+await bestattung.locator('select').first().selectOption('anonym');
+console.log('Anonym:', await grabarten());
 console.log('Meer gespeichert:', await p.evaluate(() => zustand.daten.sterbefall.meer));
 console.log('Checkliste ohne Eingabefelder:', await p.locator('.checkpunkt').count(), 'Punkte,', await p.locator('.checkpunkt input').count(), 'Felder');
 // Speichern und prüfen
