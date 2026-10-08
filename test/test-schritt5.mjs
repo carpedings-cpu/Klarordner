@@ -17,7 +17,7 @@ const stufen = () => p.locator('.kachel .stufe').allTextContents();
 // Fortschritt im leeren Ordner
 await p.click('#btnNeu');
 await p.waitForSelector('.kacheln');
-console.log('Leer:', (await stufen()).every(s => s === 'Noch leer'), '|', await p.textContent('.fortschritt-text'), '| Ring:', await p.textContent('.ringzahl'));
+console.log('Leer:', (await stufen()).every(s => s === 'Noch leer'), '|', await p.textContent('.fortschritt-text'), '| Balken:', await p.getAttribute('.balken', 'aria-valuenow'));
 console.log('Kein Aktualitätshinweis bei neuem Ordner:', !(await p.isVisible('dialog[open]')) && (await p.locator('.formkarte.aktuell').count()) === 0);
 await p.click('.kachel:has-text("Persönliche Nachricht")');
 await p.fill('textarea', 'Hallo');

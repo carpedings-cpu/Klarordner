@@ -21,6 +21,17 @@ fertig = quelle.replace(marke, json.dumps(uebersetzungen, ensure_ascii=False, se
 anbieter = json.loads((app / "anbieter.json").read_text(encoding="utf-8"))
 assert "/*ANBIETER*/[]" in fertig, "Marke für Anbieter fehlt"
 fertig = fertig.replace("/*ANBIETER*/[]", json.dumps(anbieter, ensure_ascii=False, separators=(",", ":")))
+# Schriften einbetten, damit die App ohne Verbindung nach außen gleich aussieht.
+import base64
+BEREICH = {"latin": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD",
+           "latin-ext": "U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF"}
+schriften = []
+for familie, datei, gewicht in [("Atkinson Hyperlegible", "atkinson-hyperlegible", 400), ("Atkinson Hyperlegible", "atkinson-hyperlegible", 700), ("Fraunces", "fraunces", 600)]:
+    for teil, bereich in BEREICH.items():
+        daten = base64.b64encode((app / "schriften" / f"{datei}-{teil}-{gewicht}-normal.woff2").read_bytes()).decode()
+        schriften.append(f'@font-face{{font-family:"{familie}";font-style:normal;font-weight:{gewicht};font-display:swap;src:url(data:font/woff2;base64,{daten}) format("woff2");unicode-range:{bereich}}}')
+assert "/*SCHRIFTEN*/" in fertig, "Marke für Schriften fehlt"
+fertig = fertig.replace("/*SCHRIFTEN*/", "\n".join(schriften))
 subprocess.run([sys.executable, str(wurzel / "werkzeuge" / "texte.py")], check=True)
 
 shutil.rmtree(docs, ignore_errors=True)
@@ -31,6 +42,7 @@ shutil.copy(app / "manifest.webmanifest", docs / "manifest.webmanifest")
 for icon in (app / "icons").glob("*.png"):
     shutil.copy(icon, docs / "icons" / icon.name)
 shutil.copytree(app / "ocr", docs / "ocr")
+shutil.copy(app / "schriften" / "LIZENZEN.txt", docs / "schriften-lizenzen.txt")
 ocr = hashlib.sha256()
 for datei in sorted((app / "ocr").iterdir()):
     ocr.update(datei.read_bytes())
