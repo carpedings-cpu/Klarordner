@@ -607,7 +607,7 @@ const BEREICHE = [
   { id: "versicherungen", titel: "Versicherungen", farbe: "#6f8a4a", symbol: "schild",
     text: t("Ihre Policen und wo die Unterlagen liegen.") },
   { id: "vertraege", titel: "Verträge und Wohnen", farbe: "#3f7f6e", symbol: "kreislauf",
-    text: t("Abos, Mietvertrag, Schlüssel und Haustiere.") },
+    text: t("Abos, Mietvertrag und Schlüssel.") },
   { id: "digital", titel: "Digitaler Nachlass", farbe: "#3d6b7a", symbol: "globus",
     text: t("Ihre Konten im Internet und Ihre Passwörter, geschützt.") },
   { id: "sterbefall", titel: "Für den Sterbefall", farbe: "#6a7a86", symbol: "kerze",
@@ -1830,17 +1830,6 @@ const wohnenGruppen = () => [
       feld("wohnen.ablageGrundbuch", "Wo liegen Grundbuchauszug und Kaufvertrag?", { breit: true })),
     gruppe("Schlüssel", null,
       feld("wohnen.schluessel", "Wer hat einen Schlüssel, und wo liegen Ersatzschlüssel?", { typ: "mehrzeilig", zeilen: 3 })),
-    gruppe("Haustiere", "Wer kümmert sich sofort, wenn Ihnen etwas passiert?",
-      liste("wohnen.haustiere", {
-        einzahl: "Haustier",
-        neu: () => ({ tier: "", betreuer: "", hinweis: "" }),
-        kopf: h => h.tier,
-        felder: p => [
-          feld(p + ".tier", "Tier", { hilfe: "Zum Beispiel: Katze Minka" }),
-          feld(p + ".betreuer", "Wer kümmert sich?", { breit: true }),
-          feld(p + ".hinweis", "Futter, Medikamente, Besonderheiten")
-        ]
-      })),
     gruppe("Sonstiges", null, feld("wohnen.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 }))
   ];
 
@@ -2040,6 +2029,17 @@ const FORMULARE = {
   ],
 
   sterbefall: () => [
+    gruppe("Sofort zu klären: Haustiere", "Wer kümmert sich noch am selben Tag um Ihr Tier?",
+      liste("wohnen.haustiere", {
+        einzahl: "Haustier",
+        neu: () => ({ tier: "", betreuer: "", hinweis: "" }),
+        kopf: h => h.tier,
+        felder: p => [
+          feld(p + ".tier", "Tier", { hilfe: "Zum Beispiel: Katze Minka" }),
+          feld(p + ".betreuer", "Wer kümmert sich?", { breit: true }),
+          feld(p + ".hinweis", "Futter, Medikamente, Besonderheiten")
+        ]
+      })),
     druck ? null : gruppe("Schreiben für Ihre Angehörigen", "Kündigungen und Mitteilungen, die nach Ihrem Tod verschickt werden müssen. Klarordner füllt sie mit Ihren Angaben vor, Ihre Angehörigen ergänzen nur Absender und Sterbedatum.",
       el("div", { class: "knopfreihe breit" },
         el("button", { type: "button", class: "btn primaer", text: t("Schreiben vorbereiten"), onclick: () => wechseln("schreiben") }))),

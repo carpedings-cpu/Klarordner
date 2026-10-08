@@ -39,7 +39,6 @@
  "Verträge laufen nach einem Todesfall meist weiter, bis jemand sie kündigt. Oft reicht dafür eine Kopie der Sterbeurkunde. Den Mietvertrag können Erben mit verkürzter Frist kündigen, müssen das aber innerhalb eines Monats tun.": "Verträge laufen weiter, bis Sie sie kündigen. Oft reicht dafür eine Kopie der Sterbeurkunde. Den Mietvertrag können Erben mit verkürzter Frist kündigen, müssen das aber innerhalb eines Monats tun.",
  "Ihre Wohnung": "Wohnung",
  "Wie wohnen Sie?": "Wohnform",
- "Wer kümmert sich sofort, wenn Ihnen etwas passiert?": "Wer sich um das Tier kümmern soll.",
  "Ihre Konten im Internet": "Konten im Internet",
  "Passwörter gehören nicht hierher, sondern weiter unten in die geschützten Zugangsdaten.": "Die Passwörter dazu stehen unten in den geschützten Zugangsdaten.",
  "Nutzen Sie einen Passwort-Manager? Welchen, und wo ist der Zugang hinterlegt?": "Passwort-Manager und wo der Zugang hinterlegt ist",
@@ -70,5 +69,6 @@
  "Für den Sterbefall": "Für den Sterbefall",
  "Was wünschen Sie sich genau?": "Was {name} sich genau wünscht",
  "Sollen Angehörige bei der Beisetzung an Bord sein?": "Sollen Sie bei der Beisetzung an Bord sein?",
- "Als PDF zum Ausdrucken oder zum Weitergeben. Nach dem Umstellen sprechen alle Texte Ihre Angehörigen an.": "Als PDF zum Ausdrucken oder zum Weitergeben."
+ "Als PDF zum Ausdrucken oder zum Weitergeben. Nach dem Umstellen sprechen alle Texte Ihre Angehörigen an.": "Als PDF zum Ausdrucken oder zum Weitergeben.",
+ "Wer kümmert sich noch am selben Tag um Ihr Tier?": "Wer sich noch am selben Tag um das Tier kümmern soll."
 }
