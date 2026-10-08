@@ -16,7 +16,7 @@ await p.goto(url);
 await p.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
 await spaeter(p);
 const text = () => p.textContent('#inhalt');
-pruef('Karte „Ist Ihr Ordner fertig?“', (await text()).includes('Ist Ihr Ordner fertig?'));
+pruef('Karte „Fertig? Dann weitergeben“', (await text()).includes('Fertig? Dann weitergeben'));
 await p.click('#navliste button[data-id=kontakte]');
 pruef('Vorher: „Beziehung zu Ihnen“', (await text()).includes('Beziehung zu Ihnen') && await p.isVisible('text=Aus der Kontakte-App übernehmen'));
 await p.click('#navStart button');
@@ -44,7 +44,7 @@ pruef('Ausdruck: Deckblatt für die Angehörigen', druck.includes('Vorsorgeordne
 await p.evaluate(() => window.dispatchEvent(new Event('afterprint')));
 // PDF für Angehörige: alles, Deckblatt, Ansprache an die Angehörigen, ohne Zugangsdaten
 await p.click('#navStart button');
-await p.click('button:has-text("PDF für Angehörige")');
+await p.click('.uebergabe button:has-text("PDF drucken")');
 pruef('PDF-Hinweis', (await p.textContent('#dialogTitel')).includes('PDF'));
 await p.click('dialog button:has-text("Druckfenster öffnen")');
 const pdfText = await p.textContent('#druck');
@@ -57,7 +57,7 @@ pruef('Umstellung in der Datei', JSON.parse(fs.readFileSync(await dl.path(), 'ut
 // Zurück
 await p.click('#navStart button');
 await p.click('button:has-text("Zurück zur Bearbeitung")');
-await p.waitForSelector('text=Ist Ihr Ordner fertig?');
+await p.waitForSelector('text=Fertig? Dann weitergeben');
 await p.click('#navliste button[data-id=kontakte]');
 pruef('Zurück: wieder „Beziehung zu Ihnen“', (await text()).includes('Beziehung zu Ihnen'));
 // Ohne Umstellung: Druck wählbar, Vorgabe nach Füllstand

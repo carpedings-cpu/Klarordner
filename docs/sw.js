@@ -1,6 +1,6 @@
 // Legt die App beim ersten Aufruf im Gerät ab, danach läuft sie ohne Verbindung.
 // Nutzerdaten gehen hier nie durch, sie liegen im Gerätespeicher des Browsers und in der Sicherungsdatei des Nutzers.
-const CACHE = "klarordner-aad27944a7";
+const CACHE = "klarordner-8bdebdf75e";
 // Die Texterkennung wird erst beim ersten Scannen geladen und bleibt über App-Updates hinweg erhalten.
 const OCR_CACHE = "klarordner-ocr-6f40ccab56";
 const DATEIEN = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];

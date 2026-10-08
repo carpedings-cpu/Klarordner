@@ -75,12 +75,12 @@ await q.addInitScript(() => {
 });
 await q.goto(url);
 await q.click('#btnNeu');
-await q.click('.sicherung button:has-text("Als Datei sichern")');
+await q.click('#btnSpeichern');
 await q.waitForFunction(() => Object.keys(window.__dateien).length === 1);
 await q.click('.sicherung button:has-text("Sicherungskopie mit Datum")');
 await q.waitForFunction(() => Object.keys(window.__dateien).length === 2);
 console.log('Chrome-Weg Dateien:', await q.evaluate(() => Object.keys(window.__dateien).join(' + ')));
-await q.click('.sicherung button:has-text("Als Datei sichern")');
+await q.click('#btnSpeichern');
 await q.waitForTimeout(300);
 console.log('Normales Sichern schreibt wieder in die erste Datei:', await q.evaluate(() => window.__vorschlaege.length === 2));
 

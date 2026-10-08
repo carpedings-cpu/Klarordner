@@ -218,6 +218,8 @@ p { margin: 0; }
 .fotowunsch { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; }
 .formkarte.aktuell { background: var(--gelb-hell); box-shadow: inset 0 0 0 2px var(--gelb-rand), var(--schatten); margin-bottom: 1.25rem; }
 .formkarte.aktuell .knopfreihe { margin-top: 1rem; }
+.sicherung.schlank { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; margin-top: 1.5rem; font-size: .9rem; color: var(--leise); }
+.sicherung.schlank .btn { min-height: 44px; font-size: .9rem; }
 .formkarte.uebergabe { margin-bottom: 1.25rem; background: #e9efe8; box-shadow: inset 0 0 0 2px #c9d9c8, var(--schatten); }
 .formkarte.uebergabe .knopfreihe { margin-top: 1rem; }
 .formkarte.kuendigung { background: #f3f7f2; box-shadow: inset 0 0 0 2px #c9d9c8, var(--schatten); margin-bottom: 1.25rem; }
@@ -1499,24 +1501,12 @@ async function ansprecheUmstellen(an) {
   inhaltZeigen();
 }
 
-function sicherungsKarte() {
-  const tage = zustand.gesichertAm ? Math.floor((Date.now() - new Date(zustand.gesichertAm)) / 864e5) : null;
-  // Erinnern erst, wenn eine vorhandene Sicherung veraltet ist. Beim ersten Ausfüllen wird nicht gedrängelt.
-  const dringend = zustand.geaendert && tage !== null && tage >= 30;
+function sicherungsZeile() {
   const stand = zustand.gesichertAm ? t("Letzte Sicherung: {datum}", { datum: datumText(zustand.gesichertAm) }) : t("Noch nicht als Datei gesichert");
-  return el("section", { class: "formkarte sicherung" + (dringend ? " dringend" : "") },
-    el("h3", { text: t("Sichern und weitergeben") }),
-    el("p", { class: "kartenhilfe", text: t(zustand.geraetOk
-      ? "Ihre Eingaben bleiben auf diesem Gerät gespeichert, Sie können jederzeit weitermachen. Wenn Sie fertig sind oder etwas Wichtiges geändert haben, sichern Sie Ihren Ordner als Datei, zum Beispiel für einen USB-Stick oder für Ihre Angehörigen."
-      : "Dieser Browser kann Ihre Eingaben nicht auf dem Gerät behalten. Bitte sichern Sie Ihren Ordner als Datei, bevor Sie die App schließen.") }),
-    el("p", { class: "kartenhilfe", text: t("Zwei Dateien, zwei Zwecke: Die Datei mit der Endung .notfall.json ist für Klarordner selbst, sie enthält alle Eingaben und die geschützten Zugangsdaten und lässt sich hier wieder öffnen. Das PDF ist zum Lesen und Ausdrucken für Ihre Angehörigen, ohne App.") }),
-    el("p", { class: "sicherungsstand" }, el("strong", { text: stand }),
-      zustand.gesichertAm && zustand.geaendert ? " · " + t("seitdem geändert") : null),
-    el("div", { class: "knopfreihe" },
-      el("button", { type: "button", class: "btn primaer", onclick: () => sichern(), text: t("Als Datei sichern") }),
-      el("button", { type: "button", class: "btn", onclick: pdfFuerAngehoerige, text: t("PDF für Angehörige") }),
-      el("button", { type: "button", class: "btn", onclick: () => sichern(true), text: t("Sicherungskopie mit Datum") }),
-      zustand.geraetOk ? el("button", { type: "button", class: "btn flach loeschen", onclick: vomGeraetLoeschen, text: t("Von diesem Gerät löschen") }) : null));
+  return el("div", { class: "sicherung schlank" },
+    el("span", { class: "sicherungsstand" }, el("strong", { text: stand }), zustand.gesichertAm && zustand.geaendert ? " · " + t("seitdem geändert") : null),
+    el("button", { type: "button", class: "btn flach", onclick: () => sichern(true), text: t("Sicherungskopie mit Datum") }),
+    zustand.geraetOk ? el("button", { type: "button", class: "btn flach loeschen", onclick: vomGeraetLoeschen, text: t("Von diesem Gerät löschen") }) : null);
 }
 
 function uebersicht() {
@@ -1533,14 +1523,16 @@ function uebersicht() {
   const uebergabe = fuerAngehoerige
     ? el("section", { class: "formkarte uebergabe" },
         el("h3", { text: t("Dieser Ordner ist für die Angehörigen von {name}", { name: personName() }) }),
-        el("p", { class: "kartenhilfe", text: t("Die Texte richten sich an Sie als Leserin oder Leser. Angaben lassen sich weiterhin ändern, zum Beispiel wenn eine Kündigung erledigt ist.") }),
+        el("p", { class: "kartenhilfe", text: t("Die Texte richten sich an Sie als Leserin oder Leser. Angaben lassen sich weiterhin ändern.") }),
         el("div", { class: "knopfreihe" },
-          el("button", { type: "button", class: "btn primaer", text: t("PDF für Angehörige"), onclick: pdfFuerAngehoerige }),
+          el("button", { type: "button", class: "btn primaer", text: t("PDF drucken"), onclick: pdfFuerAngehoerige }),
           el("button", { type: "button", class: "btn", text: t("Zurück zur Bearbeitung"), onclick: () => ansprecheUmstellen(false) })))
     : el("section", { class: "formkarte uebergabe" },
-        el("h3", { text: t("Ist Ihr Ordner fertig?") }),
-        el("p", { class: "kartenhilfe", text: t("Dann stellen Sie ihn auf Ihre Angehörigen um. Alle Texte sprechen danach die Menschen an, die den Ordner später lesen, und der Ausdruck ist für die Übergabe gedacht. Sie können jederzeit zurück.") }),
-        el("div", { class: "knopfreihe" }, el("button", { type: "button", class: "btn" + (fertig === BEREICHE.length ? " primaer" : ""), text: t("Für meine Angehörigen umstellen"), onclick: () => ansprecheUmstellen(true) })));
+        el("h3", { text: t("Fertig? Dann weitergeben") }),
+        el("p", { class: "kartenhilfe", text: t("Als PDF zum Ausdrucken oder zum Weitergeben. Nach dem Umstellen sprechen alle Texte Ihre Angehörigen an.") }),
+        el("div", { class: "knopfreihe" },
+          el("button", { type: "button", class: "btn primaer", text: t("PDF drucken"), onclick: pdfFuerAngehoerige }),
+          el("button", { type: "button", class: "btn", text: t("Für meine Angehörigen umstellen"), onclick: () => ansprecheUmstellen(true) })));
   return [
     el("div", { class: "portraetkopf" }, fuerAngehoerige && !d.persoenlich.foto ? null : portraet(), fotoKnoepfe(),
       el("h2", { tabindex: "-1", text: name || t("Mein Ordner") }),
@@ -1558,7 +1550,6 @@ function uebersicht() {
       fuerAngehoerige ? null : el("div", { class: "knopfreihe" },
         el("button", { type: "button", class: "btn primaer riesig weiter", text: zustand.zuletzt ? t("Weiter, wo ich aufgehört habe") : fertig ? t("Weiter ausfüllen") : t("Mit dem Ausfüllen beginnen"), onclick: () => wechseln(ziel.id) }))),
     kuendigungsKarte(),
-    sicherungsKarte(),
     uebergabe,
     el("h3", { class: "kachelueberschrift", text: t("Alle Bereiche") }),
     el("ul", { class: "kacheln" },
@@ -1569,6 +1560,7 @@ function uebersicht() {
             el("span", { class: "name", text: t(b.titel) }),
             el("span", { class: "unter", text: t(b.text) }),
             el("span", { class: "stufe " + f.stufe, text: t(STUFENTEXT[f.stufe]) })))))),
+    sicherungsZeile(),
     el("p", { class: "kleingedruckt", text: t("Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form. Die Inhalte beziehen sich auf deutsches Recht.") })
   ];
 }
@@ -2336,8 +2328,7 @@ async function druckenStarten() {
 
 async function pdfFuerAngehoerige() {
   if (!zustand.daten) return;
-  const weiter = await fragen("PDF für Ihre Angehörigen", ["Gleich öffnet sich das Druckfenster mit dem fertigen Ordner: Deckblatt, alle Bereiche, Texte an die Angehörigen gerichtet. Die geschützten Zugangsdaten sind nicht enthalten.",
-    pdfTipp(), "Die PDF-Datei lässt sich ohne Klarordner öffnen, zum Beispiel auf jedem Computer oder ausgedruckt im Ordner zum Testament."],
+  const weiter = await fragen("PDF drucken", ["Gleich öffnet sich das Druckfenster mit dem fertigen Ordner: Deckblatt, alle Bereiche, Texte an die Angehörigen gerichtet. Die geschützten Zugangsdaten sind nicht enthalten.", pdfTipp()],
     [{ text: t("Druckfenster öffnen"), wert: true, primaer: true }, { text: t("Abbrechen"), wert: false }]);
   if (!weiter) return;
   druckErzeugen(BEREICHE.map(b => b.id), true, true);

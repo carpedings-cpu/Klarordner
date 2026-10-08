@@ -68,9 +68,7 @@
  "Wird von den Angehörigen ausgefüllt.": "Bitte tragen Sie hier Ihre eigenen Angaben ein.",
  "Vorsorgeordner für meine Angehörigen": "Vorsorgeordner für die Angehörigen",
  "Für den Sterbefall": "Für den Sterbefall",
- "Ihre Eingaben bleiben auf diesem Gerät gespeichert, Sie können jederzeit weitermachen. Wenn Sie fertig sind oder etwas Wichtiges geändert haben, sichern Sie Ihren Ordner als Datei, zum Beispiel für einen USB-Stick oder für Ihre Angehörigen.": "Der Ordner bleibt auf diesem Gerät gespeichert. Sichern Sie ihn als Datei, zum Beispiel auf einem USB-Stick, damit er nicht verloren geht.",
  "Was wünschen Sie sich genau?": "Was {name} sich genau wünscht",
  "Sollen Angehörige bei der Beisetzung an Bord sein?": "Sollen Sie bei der Beisetzung an Bord sein?",
- "Zwei Dateien, zwei Zwecke: Die Datei mit der Endung .notfall.json ist für Klarordner selbst, sie enthält alle Eingaben und die geschützten Zugangsdaten und lässt sich hier wieder öffnen. Das PDF ist zum Lesen und Ausdrucken für Ihre Angehörigen, ohne App.": "Zwei Dateien, zwei Zwecke: Die Datei mit der Endung .notfall.json ist für Klarordner selbst und lässt sich hier wieder öffnen. Das PDF ist zum Lesen und Ausdrucken, ohne App.",
- "PDF für Ihre Angehörigen": "PDF zum Lesen und Ausdrucken"
+ "Als PDF zum Ausdrucken oder zum Weitergeben. Nach dem Umstellen sprechen alle Texte Ihre Angehörigen an.": "Als PDF zum Ausdrucken oder zum Weitergeben."
 }

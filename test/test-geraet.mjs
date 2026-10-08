@@ -29,7 +29,7 @@ console.log('Nach Neustart direkt im Ordner, Sicherungskarte:', (await p.textCon
 await p.click('.kachel:has-text("Persönliche Daten")');
 console.log('Vorname nach Neustart:', await p.inputValue('#inhalt input >> nth=0'));
 await p.click('#navStart button');
-const [dl] = await Promise.all([p.waitForEvent('download'), p.click('.sicherung button:has-text("Als Datei sichern")')]);
+const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#btnSpeichern')]);
 const d = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
 await p.click('dialog button:has-text("Verstanden")');
 console.log('Gesichert:', dl.suggestedFilename(), d.persoenlich.vorname, '| Karte:', (await p.textContent('.sicherung .sicherungsstand')).trim(), '| gelb markiert:', await p.locator('.sicherung.dringend').count() === 1);
