@@ -9,7 +9,7 @@ Betreff: Vortragsangebot „Vorsorgeordner, einfach erklärt“, 30 Minuten, kos
 
 Guten Tag [Name],
 
-ich bin [Vorname Nachname] aus Fulda und habe Klarordner entwickelt, einen kostenlosen Vorsorgeordner für das iPad und den Computer. Er hilft Menschen, für ihre Angehörigen festzuhalten, wo Unterlagen liegen, welche Verträge und Versicherungen es gibt und was sie sich für den Ernstfall wünschen.
+ich bin Diana Ziegler aus Großenlüder bei Fulda und habe Klarordner entwickelt, einen kostenlosen Vorsorgeordner für das iPad und den Computer. Er hilft Menschen, für ihre Angehörigen festzuhalten, wo Unterlagen liegen, welche Verträge und Versicherungen es gibt und was sie sich für den Ernstfall wünschen.
 
 Ich biete Ihnen dazu einen kostenlosen Vortrag von etwa 30 Minuten an, gern mit anschließender Fragerunde:
 
@@ -22,7 +22,7 @@ Der Vortrag ist werbefrei im Sinne von: Klarordner ist kostenlos, es wird nichts
 Passt das in Ihr Programm [im Winterhalbjahr / in den nächsten Wochen]? Ich richte mich nach Ihren Terminen.
 
 Mit freundlichen Grüßen
-[Vorname Nachname]
+Diana Ziegler
 [Telefon]
 [E-Mail]
 carpedings-cpu.github.io/Klarordner/start
