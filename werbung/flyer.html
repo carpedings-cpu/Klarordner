@@ -19,7 +19,7 @@ h2 { font-family: Fraunces, serif; font-weight: 600; font-size: 17pt; margin: 0 
 p { font-size: 11.5pt; line-height: 1.45; margin: 0 0 4mm; }
 .leise { color: #5a6a5e; }
 .kostenlos { display: inline-block; background: #4a6b55; color: #fff; border-radius: 99mm; padding: 2mm 5mm; font-weight: 700; font-size: 11pt; }
-.bild { position: absolute; right: -12mm; bottom: -8mm; width: 78mm; background: #fff; border-radius: 5mm; padding: 2mm; box-shadow: 0 4mm 10mm rgba(31,42,35,.18); transform: rotate(-5deg); }
+.bild { position: absolute; right: 13mm; bottom: 14mm; width: 74mm; height: 86mm; overflow: hidden; background: #fff; border-radius: 5mm; padding: 2mm; box-shadow: 0 4mm 10mm rgba(31,42,35,.18); }
 .bild img { width: 100%; display: block; border-radius: 3mm; }
 ul { list-style: none; padding: 0; margin: 0 0 5mm; }
 li { padding: 1.8mm 0 1.8mm 7mm; border-top: 1px solid #cfdacd; font-size: 10.5pt; line-height: 1.4; position: relative; }
@@ -28,7 +28,8 @@ li::before { content: "✓"; position: absolute; left: 0; color: #4a6b55; font-w
 .qr { display: flex; gap: 6mm; align-items: center; background: #fff; border-radius: 4mm; padding: 5mm; margin-top: 4mm; }
 .qr svg, .qr img { width: 34mm; height: 34mm; flex: none; }
 .qr strong { display: block; font-size: 12pt; margin-bottom: 1.5mm; }
-.qr span { font-size: 9.5pt; color: #5a6a5e; word-break: break-all; }
+.qr span { font-size: 9.5pt; color: #5a6a5e; }
+.qr span b { font-weight: 400; overflow-wrap: anywhere; }
 .fuss { position: absolute; left: 13mm; right: 13mm; bottom: 8mm; font-size: 8pt; color: #5a6a5e; border-top: 1px solid #cfdacd; padding-top: 2mm; }
 </style>
 </head>
@@ -60,7 +61,7 @@ li::before { content: "✓"; position: absolute; left: 0; color: #4a6b55; font-w
   </ul>
   <div class="qr">
     <img src="qr-flyer.svg" alt="QR-Code">
-    <div><strong>Kostenlos vormerken</strong><span>Code mit der Handykamera scannen oder im Browser eingeben:<br>carpedings-cpu.github.io/Klarordner/start</span></div>
+    <div><strong>Kostenlos vormerken</strong><span>Code mit der Handykamera scannen oder im Browser eingeben:<br><b>carpedings-cpu.github.io/Klarordner/start</b></span></div>
   </div>
   <div class="fuss">Klarordner · Vorsorgeordner für Angehörige · [Name, Ort, E-Mail eintragen]</div>
 </div>
