@@ -40,7 +40,7 @@ try {
   p.on('pageerror', e => fehler.push(e.message));
   p.on('console', m => { if (m.type() === 'error') fehler.push(m.text()); });
   ctx.on('request', r => { if (!/^(http:\/\/localhost:8125|data:|blob:)/.test(r.url())) fremd.push(r.url()); });
-  await p.goto('http://localhost:8125/');
+  await p.goto('http://localhost:8125/app/');
   await p.evaluate(() => navigator.serviceWorker.ready);
   await p.reload();
   await p.click('#btnNeu');

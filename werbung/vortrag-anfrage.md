@@ -25,7 +25,7 @@ Mit freundlichen Grüßen
 Diana Ziegler
 [Telefon]
 [E-Mail]
-carpedings-cpu.github.io/Klarordner/start
+carpedings-cpu.github.io/Klarordner
 
 ---
 

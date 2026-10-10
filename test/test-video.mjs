@@ -18,7 +18,7 @@ try {
   await p.addInitScript(() => { delete window.showOpenFilePicker; delete window.showSaveFilePicker; window.print = () => {}; });
   p.on('pageerror', e => fehler.push(e.message));
   p.on('console', m => { if (m.type() === 'error') fehler.push(m.text()); });
-  await p.goto('http://localhost:8127/');
+  await p.goto('http://localhost:8127/app/');
   await p.click('#btnNeu');
   await p.waitForSelector('.kacheln');
   await p.click('#navliste button[data-id=nachricht]');

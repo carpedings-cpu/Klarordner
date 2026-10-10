@@ -15,7 +15,7 @@ const fehler = [];
 try {
   const p = await (await browser.newContext({ locale: 'de-DE' })).newPage();
   p.on('pageerror', e => fehler.push(e.message));
-  await p.goto('http://localhost:8124/');
+  await p.goto('http://localhost:8124/app/');
   await p.evaluate(() => navigator.serviceWorker.ready);
   await p.reload();
   await p.click('#btnNeu');
@@ -25,7 +25,7 @@ try {
   await p.waitForTimeout(800);
   pruef('Kein Hinweis ohne neue Version', !(await p.locator('#neueVersion').count()));
   // Neue Version bereitstellen und die Rückkehr in die App simulieren
-  const sw = path.join(ordner, 'sw.js');
+  const sw = path.join(ordner, 'app', 'sw.js');
   fs.writeFileSync(sw, fs.readFileSync(sw, 'utf8').replace(/klarordner-[0-9a-f]+/, 'klarordner-neu123'));
   await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await p.locator('#neueVersion').waitFor({ timeout: 8000 }).catch(() => {});

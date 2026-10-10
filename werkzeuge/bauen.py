@@ -1,4 +1,4 @@
-"""Erzeugt aus app/ den Ordner docs/ für GitHub Pages und die Download-Fassung dist/klarordner.html.
+"""Erzeugt aus start/ und app/ den Ordner docs/ für GitHub Pages (Webseite an der Wurzel, App unter app/) und die Download-Fassung dist/klarordner.html.
 
 Die Übersetzungen aus app/sprachen/ werden dabei in die App eingesetzt."""
 import hashlib
@@ -42,30 +42,42 @@ unbekannt = [k for k in ansprache if k not in bekannt]
 assert not unbekannt, f"ansprache.json: kein Anzeigetext: {unbekannt}"
 
 shutil.rmtree(docs, ignore_errors=True)
-docs.mkdir()
-(docs / "icons").mkdir()
-(docs / "index.html").write_text(fertig, encoding="utf-8")
-shutil.copy(app / "manifest.webmanifest", docs / "manifest.webmanifest")
-for icon in (app / "icons").glob("*.png"):
-    shutil.copy(icon, docs / "icons" / icon.name)
-shutil.copytree(app / "ocr", docs / "ocr")
-shutil.copy(app / "schriften" / "LIZENZEN.txt", docs / "schriften-lizenzen.txt")
-# Landingpage mit Warteliste unter /start/, die Schriften dafür liegen als Dateien unter /schriften/.
-shutil.copytree(wurzel / "start", docs / "start")
+# Wurzel: die Webseite mit Vormerkung, Checkliste, Impressum und Auswertung. Darunter app/ mit der eigentlichen App.
+shutil.copytree(wurzel / "start", docs)
 (docs / "schriften").mkdir()
 for schrift in (app / "schriften").glob("*.woff2"):
     shutil.copy(schrift, docs / "schriften" / schrift.name)
+appziel = docs / "app"
+appziel.mkdir()
+(appziel / "icons").mkdir()
+(appziel / "index.html").write_text(fertig, encoding="utf-8")
+shutil.copy(app / "manifest.webmanifest", appziel / "manifest.webmanifest")
+for icon in (app / "icons").glob("*.png"):
+    shutil.copy(icon, appziel / "icons" / icon.name)
+shutil.copytree(app / "ocr", appziel / "ocr")
+shutil.copy(app / "schriften" / "LIZENZEN.txt", appziel / "schriften-lizenzen.txt")
 ocr = hashlib.sha256()
 for datei in sorted((app / "ocr").iterdir()):
     ocr.update(datei.read_bytes())
 
-# Neue Version, sobald sich eine Datei ändert, damit installierte Apps das Update laden.
+# Neue Version, sobald sich eine Datei der App ändert, damit installierte Apps das Update laden.
 pruef = hashlib.sha256()
-for datei in sorted(docs.rglob("*")):
-    if datei.is_file() and not datei.is_relative_to(docs / "start") and not datei.is_relative_to(docs / "schriften"):
+for datei in sorted(appziel.rglob("*")):
+    if datei.is_file():
         pruef.update(datei.read_bytes())
 version = pruef.hexdigest()[:10]
-(docs / "sw.js").write_text((app / "sw.js").read_text(encoding="utf-8").replace("__VERSION__", version).replace("__OCRVERSION__", ocr.hexdigest()[:10]), encoding="utf-8")
+(appziel / "sw.js").write_text((app / "sw.js").read_text(encoding="utf-8").replace("__VERSION__", version).replace("__OCRVERSION__", ocr.hexdigest()[:10]), encoding="utf-8")
+# Die App lag früher an der Wurzel. Ein dort noch installierter Service Worker holt sich diese Fassung,
+# räumt seine Ablage auf, meldet sich ab und lädt die Seite neu, die dann die Webseite zeigt.
+(docs / "sw.js").write_text(f"""// Die App liegt jetzt unter app/. Diese Datei löst eine ältere Installation an der Wurzel ab.
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", e => e.waitUntil(
+  caches.keys()
+    .then(namen => Promise.all(namen.filter(n => n !== "klarordner-{version}" && n !== "klarordner-ocr-{ocr.hexdigest()[:10]}").map(n => caches.delete(n))))
+    .then(() => self.registration.unregister())
+    .then(() => self.clients.matchAll({{ type: "window" }}))
+    .then(fenster => fenster.forEach(f => f.navigate(f.url)))));
+""", encoding="utf-8")
 (docs / ".nojekyll").write_text("")
 
 dist.mkdir(exist_ok=True)

@@ -19,7 +19,7 @@ try {
     anfragen.push({ url: route.request().url(), kopf: route.request().headers(), daten: route.request().postDataJSON() });
     route.fulfill({ status: antwort, body: antwort === 201 ? '' : '{"code":"23505"}', headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' } });
   });
-  await p.goto('http://localhost:8128/start/?q=test-anzeige');
+  await p.goto('http://localhost:8128/?q=test-anzeige');
   pruef('Überschrift und Bilder', await p.isVisible('h1') && await p.evaluate(() => [...document.images].every(i => i.loading === 'lazy' || (i.complete && i.naturalWidth > 0))));
   const text = await p.textContent('body');
   pruef('Kostenlos, ohne Preisfragen und ohne Datenschutzversprechen', text.includes('kostenlos') && !/kaufen|Preis|Cloud|bleibt auf Ihrem Gerät/.test(text.replace('Datenschutzhinweise', '')));
@@ -43,7 +43,7 @@ try {
   pruef('Alle Antworten enthalten', a.daten.email === 'test@beispiel.de' && a.daten.fuer === 'eltern' && a.daten.geraet === 'ipad' && !('preis' in a.daten) && a.daten.nachricht === 'Bitte große Schrift.' && a.daten.quelle === 'test-anzeige');
   pruef('Dank mit Link zur Checkliste', await p.isVisible('#danke a[href="checkliste.html"]') && !(await p.isVisible('#formular')));
   // Doppelte Adresse, Aufruf ohne Kennzeichen
-  await p.goto('http://localhost:8128/start/');
+  await p.goto('http://localhost:8128/');
   antwort = 409;
   await p.fill('#email', 'test@beispiel.de');
   await p.check('#zustimmung');
@@ -60,12 +60,12 @@ try {
   await p.waitForSelector('#fehlerSenden.sichtbar');
   pruef('Fehler wird gemeldet, Knopf wieder frei', !(await p.isDisabled('#btnSenden')));
   // Checkliste und Rechtliches
-  await p.goto('http://localhost:8128/start/checkliste.html');
+  await p.goto('http://localhost:8128/checkliste.html');
   pruef('Checkliste mit Fristen', (await p.locator('.frist').count()) >= 6 && (await p.textContent('body')).includes('Sterbevierteljahr'));
   await p.emulateMedia({ media: 'print' });
   await p.pdf({ path: path.join(erg, 'checkliste.pdf'), preferCSSPageSize: true, printBackground: true });
   await p.emulateMedia({ media: 'screen' });
-  await p.goto('http://localhost:8128/start/rechtliches.html');
+  await p.goto('http://localhost:8128/rechtliches.html');
   pruef('Datenschutz nennt Supabase und Widerruf', (await p.textContent('body')).includes('Supabase') && (await p.textContent('body')).includes('widerrufen'));
   // Auswertungsseite: falsches Passwort, dann nachgestellte Antwort
   await p.unroute('https://uvvqgwbshdtwlveopgvn.supabase.co/**');
@@ -76,7 +76,7 @@ try {
     route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' },
       body: JSON.stringify({ gesamt: 12, heute: 2, woche: 9, quelle: [{ wert: 'fb-eltern', n: 7 }, { wert: 'ohne Kennzeichen', n: 5 }], fuer: [{ wert: 'eltern', n: 8 }, { wert: 'mich', n: 4 }], geraet: [{ wert: 'ipad', n: 10 }, { wert: 'keine Angabe', n: 2 }], tage: [{ tag: new Date().toISOString().slice(0, 10), n: 2 }], nachrichten: [{ datum: '2026-10-10', fuer: 'eltern', quelle: 'fb-eltern', text: 'Große Schrift bitte.' }] }) });
   });
-  await p.goto('http://localhost:8128/start/auswertung.html');
+  await p.goto('http://localhost:8128/auswertung.html');
   await p.fill('#schluessel', 'falsch');
   await p.click('button:has-text("Anzeigen")');
   await p.waitForSelector('#anmeldeFehler:not([hidden])');
@@ -90,11 +90,11 @@ try {
   pruef('Auswertung ohne E-Mail-Adressen', !aus.includes('@'));
   // iPad-Ansicht
   const ipad = await (await browser.newContext({ locale: 'de-DE', viewport: { width: 820, height: 1180 }, hasTouch: true })).newPage();
-  await ipad.goto('http://localhost:8128/start/');
+  await ipad.goto('http://localhost:8128/');
   pruef('Kein seitliches Scrollen auf dem iPad', await ipad.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   await ipad.screenshot({ path: path.join(erg, 'start-ipad.png'), fullPage: true });
   const handy = await (await browser.newContext({ locale: 'de-DE', viewport: { width: 390, height: 844 }, hasTouch: true })).newPage();
-  await handy.goto('http://localhost:8128/start/');
+  await handy.goto('http://localhost:8128/');
   pruef('Kein seitliches Scrollen auf dem Handy', await handy.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   await handy.screenshot({ path: path.join(erg, 'start-handy.png'), fullPage: true });
 } finally {

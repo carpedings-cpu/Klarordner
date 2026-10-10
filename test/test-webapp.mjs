@@ -16,9 +16,9 @@ try {
   p.on('pageerror', e => fehler.push(e.message));
   p.on('console', m => { if (m.type() === 'error') fehler.push(m.text()); });
   p.on('request', r => { if (!/^(http:\/\/localhost:8123|data:|blob:)/.test(r.url())) fremd.push(r.url()); });
-  await p.goto('http://localhost:8123/');
+  await p.goto('http://localhost:8123/app/');
   await p.evaluate(() => navigator.serviceWorker.ready);
-  const manifest = (await ctx.request.get('http://localhost:8123/manifest.webmanifest')).ok() && await p.evaluate(() => !!document.querySelector('link[rel=manifest]'));
+  const manifest = (await ctx.request.get('http://localhost:8123/app/manifest.webmanifest')).ok() && await p.evaluate(() => !!document.querySelector('link[rel=manifest]'));
   const icon = await p.getAttribute('link[rel="apple-touch-icon"]', 'href');
   console.log('Service Worker aktiv: ja | Manifest erreichbar:', manifest, '| Home-Symbol:', icon);
   await p.reload();
@@ -26,6 +26,16 @@ try {
   await p.reload();
   console.log('Offline neu geladen, Titel:', await p.textContent('.held h1'));
   await ctx.setOffline(false);
+  // Eine frühere Installation an der Wurzel wird vom Aufräum-Worker abgelöst
+  const wurzel = await ctx.newPage();
+  await wurzel.goto('http://localhost:8123/');
+  // Der Aufräum-Worker lädt die Seite neu, sobald er aktiv ist, danach darf an der Wurzel keine Registrierung mehr liegen.
+  await Promise.all([wurzel.waitForEvent('load', { timeout: 8000 }).catch(() => {}), wurzel.evaluate(() => navigator.serviceWorker.register('/sw.js'))]);
+  await wurzel.waitForTimeout(500);
+  const abgemeldet = await wurzel.evaluate(async () => !(await navigator.serviceWorker.getRegistration('/'))).catch(() => false);
+  console.log('Aufräum-Worker an der Wurzel meldet sich ab:', abgemeldet);
+  if (!abgemeldet) fehler.push('Aufräum-Worker an der Wurzel meldet sich nicht ab');
+  await wurzel.close();
 
   // iPad-Weg: kein Dateizugriff, Touch, Teilen-Menü
   const ipad = await browser.newContext({ locale: 'de-DE',  viewport: { width: 820, height: 1180 }, hasTouch: true });
@@ -38,7 +48,7 @@ try {
     navigator.canShare = () => true;
     navigator.share = async d => { window.__geteilt = { name: d.files[0].name, text: await d.files[0].text() }; };
   });
-  await q.goto('http://localhost:8123/');
+  await q.goto('http://localhost:8123/app/');
   console.log('iPad-Hinweis:', await q.textContent('#hinweisBrowser'));
   await q.setInputFiles('#dateiwahl', path.join(hier, 'testdaten.notfall.json'));
   await spaeter(q);
