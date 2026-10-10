@@ -67,3 +67,7 @@ GitHub Pages auf den Branch `main`, Ordner `/docs` stellen. Die App ist danach u
 ## Sicherheit
 
 Die Content-Security-Policy erlaubt nur Dateien der eigenen Adresse (App, Service Worker, Manifest, Symbole). Verbindungen aus der App heraus (`connect-src`) sind vollständig gesperrt. Es gibt keine Statistik, kein Tracking und keine Fehlerberichte. Nutzerdaten liegen ausschließlich in der IndexedDB des Geräts und in der vom Nutzer gesicherten Datei, nie im Cache des Service Workers. Der Bereich Zugangsdaten wird auch dort nur verschlüsselt abgelegt. Das Porträt liegt verkleinert (höchstens 1000 Pixel) im Ordner und damit in der Sicherungsdatei, das Original als eigener Eintrag in der IndexedDB. Eine Videonachricht liegt als eigener Eintrag in der IndexedDB, nicht in der Sicherungsdatei, und wird über „Video sichern“ separat exportiert. Für das Abspielen erlaubt die Content-Security-Policy `media-src blob:`, also nur lokal erzeugte Adressen. Fotos von Dokumenten werden nur im Arbeitsspeicher ausgelesen und weder gespeichert noch übertragen. Die Texterkennung läuft in einem Worker der eigenen Adresse und lädt ihre Dateien ebenfalls nur von dort. Über „Von diesem Gerät löschen“ entfernt der Nutzer seinen Ordner vollständig.
+
+## Werbung
+
+`werbung/` enthält Material für den Markttest, nichts davon wird ausgeliefert: Anzeigenbilder und -texte für Meta (`anzeigen-texte.md`), Flyer A5 (`flyer.html`, gerendert als `flyer-a5.pdf`, QR-Code `qr-flyer.svg`), Pressemitteilung und Vortragsanfrage als Entwürfe mit Platzhaltern.

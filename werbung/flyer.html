@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Klarordner · Flyer A5</title>
+<style>
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;src:url(../app/schriften/atkinson-hyperlegible-latin-400-normal.woff2)}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;src:url(../app/schriften/atkinson-hyperlegible-latin-700-normal.woff2)}
+@font-face{font-family:"Fraunces";font-weight:600;src:url(../app/schriften/fraunces-latin-600-normal.woff2)}
+@page { size: A5; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Atkinson Hyperlegible", sans-serif; color: #1f2a23; }
+.seite { width: 148mm; height: 210mm; padding: 14mm 13mm; background: #eef2ec; position: relative; page-break-after: always; overflow: hidden; }
+.seite:last-child { page-break-after: auto; }
+.marke { display: flex; align-items: center; gap: 3mm; font-weight: 700; font-size: 14pt; color: #4a6b55; }
+.marke img { width: 9mm; height: 9mm; border-radius: 2mm; }
+h1 { font-family: Fraunces, serif; font-weight: 600; font-size: 24pt; line-height: 1.12; margin: 10mm 0 5mm; }
+h2 { font-family: Fraunces, serif; font-weight: 600; font-size: 17pt; margin: 0 0 4mm; color: #4a6b55; }
+p { font-size: 11.5pt; line-height: 1.45; margin: 0 0 4mm; }
+.leise { color: #5a6a5e; }
+.kostenlos { display: inline-block; background: #4a6b55; color: #fff; border-radius: 99mm; padding: 2mm 5mm; font-weight: 700; font-size: 11pt; }
+.bild { position: absolute; right: -12mm; bottom: -8mm; width: 78mm; background: #fff; border-radius: 5mm; padding: 2mm; box-shadow: 0 4mm 10mm rgba(31,42,35,.18); transform: rotate(-5deg); }
+.bild img { width: 100%; display: block; border-radius: 3mm; }
+ul { list-style: none; padding: 0; margin: 0 0 5mm; }
+li { padding: 1.8mm 0 1.8mm 7mm; border-top: 1px solid #cfdacd; font-size: 10.5pt; line-height: 1.4; position: relative; }
+li:first-child { border-top: 0; }
+li::before { content: "✓"; position: absolute; left: 0; color: #4a6b55; font-weight: 700; }
+.qr { display: flex; gap: 6mm; align-items: center; background: #fff; border-radius: 4mm; padding: 5mm; margin-top: 4mm; }
+.qr svg, .qr img { width: 34mm; height: 34mm; flex: none; }
+.qr strong { display: block; font-size: 12pt; margin-bottom: 1.5mm; }
+.qr span { font-size: 9.5pt; color: #5a6a5e; word-break: break-all; }
+.fuss { position: absolute; left: 13mm; right: 13mm; bottom: 8mm; font-size: 8pt; color: #5a6a5e; border-top: 1px solid #cfdacd; padding-top: 2mm; }
+</style>
+</head>
+<body>
+
+<div class="seite">
+  <div class="marke"><img src="../app/icons/icon-192.png" alt="">Klarordner</div>
+  <h1>Wenn Ihnen etwas passiert, wissen Ihre Angehörigen, was zu tun ist.</h1>
+  <p class="leise">Der Vorsorgeordner für das iPad und den Computer. In neun ruhigen Schritten halten Sie fest, was Ihre Familie später braucht: Ausweise, Konten, Verträge, Versicherungen, Wünsche.</p>
+  <span class="kostenlos">Kostenlos</span>
+  <div class="bild"><img src="../start/bilder/uebersicht.png" alt=""></div>
+</div>
+
+<div class="seite">
+  <h2>Was Ihre Angehörigen sonst wochenlang suchen</h2>
+  <ul>
+    <li>Wo Testament, Vollmachten und Ausweise liegen</li>
+    <li>Welche Versicherung binnen 48 Stunden informiert werden muss</li>
+    <li>Welche Verträge weiterlaufen, bis jemand kündigt</li>
+    <li>Wer benachrichtigt werden soll, wer sich um das Haustier kümmert</li>
+    <li>Wie Sie bestattet werden möchten</li>
+  </ul>
+  <h2>Das Besondere</h2>
+  <ul>
+    <li>Große Schrift, eine Frage nach der anderen, keine Fachbegriffe</li>
+    <li>Kündigungen und Mitteilungen an Bank, Rente, Versicherer und Anbieter sind fertig vorbereitet, mit den richtigen Adressen</li>
+    <li>Ausdrucken oder als Datei weitergeben</li>
+    <li>Dazu eine Checkliste für die ersten Tage nach einem Todesfall</li>
+  </ul>
+  <div class="qr">
+    <img src="qr-flyer.svg" alt="QR-Code">
+    <div><strong>Kostenlos vormerken</strong><span>Code mit der Handykamera scannen oder im Browser eingeben:<br>carpedings-cpu.github.io/Klarordner/start</span></div>
+  </div>
+  <div class="fuss">Klarordner · Vorsorgeordner für Angehörige · [Name, Ort, E-Mail eintragen]</div>
+</div>
+
+</body>
+</html>
