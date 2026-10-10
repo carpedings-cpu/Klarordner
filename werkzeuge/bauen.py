@@ -50,6 +50,11 @@ for icon in (app / "icons").glob("*.png"):
     shutil.copy(icon, docs / "icons" / icon.name)
 shutil.copytree(app / "ocr", docs / "ocr")
 shutil.copy(app / "schriften" / "LIZENZEN.txt", docs / "schriften-lizenzen.txt")
+# Landingpage mit Warteliste unter /start/, die Schriften dafür liegen als Dateien unter /schriften/.
+shutil.copytree(wurzel / "start", docs / "start")
+(docs / "schriften").mkdir()
+for schrift in (app / "schriften").glob("*.woff2"):
+    shutil.copy(schrift, docs / "schriften" / schrift.name)
 ocr = hashlib.sha256()
 for datei in sorted((app / "ocr").iterdir()):
     ocr.update(datei.read_bytes())
@@ -57,7 +62,7 @@ for datei in sorted((app / "ocr").iterdir()):
 # Neue Version, sobald sich eine Datei ändert, damit installierte Apps das Update laden.
 pruef = hashlib.sha256()
 for datei in sorted(docs.rglob("*")):
-    if datei.is_file():
+    if datei.is_file() and not datei.is_relative_to(docs / "start") and not datei.is_relative_to(docs / "schriften"):
         pruef.update(datei.read_bytes())
 version = pruef.hexdigest()[:10]
 (docs / "sw.js").write_text((app / "sw.js").read_text(encoding="utf-8").replace("__VERSION__", version).replace("__OCRVERSION__", ocr.hexdigest()[:10]), encoding="utf-8")

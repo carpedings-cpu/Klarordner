@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; font-src 'self'; form-action 'none'; base-uri 'none'">
+<title>Die ersten Tage nach einem Todesfall · Checkliste von Klarordner</title>
+<meta name="description" content="Was in den ersten Stunden, Tagen und Wochen nach einem Todesfall zu tun ist, in der richtigen Reihenfolge, mit Fristen. Zum Ausdrucken.">
+<link rel="icon" href="../icons/icon-192.png">
+<style>
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-display:swap;src:url(../schriften/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-display:swap;src:url(../schriften/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url(../schriften/fraunces-latin-600-normal.woff2) format("woff2")}
+:root { --grund: #eef2ec; --text: #1f2a23; --leise: #5a6a5e; --linie: #cfdacd; --gruen: #4a6b55; --gruen-hell: #e1eadf; --gold: #efe9d2; --gold-text: #6b5a1e; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--grund); color: var(--text); font-family: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 1.05rem; line-height: 1.5; }
+h1, h2 { font-family: "Fraunces", Georgia, serif; font-weight: 600; line-height: 1.15; margin: 0 0 .5rem; }
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.5rem; margin-top: 2rem; padding-top: 1.2rem; border-top: 2px solid var(--gruen); color: var(--gruen); }
+h2 small { display: block; font-family: "Atkinson Hyperlegible", sans-serif; font-weight: 400; font-size: 1rem; color: var(--leise); }
+.blatt { max-width: 820px; margin: 1.5rem auto; background: #fff; padding: 2.5rem 2.8rem; border-radius: 18px; box-shadow: 0 10px 40px rgba(31,42,35,.08); }
+.kopf { display: flex; align-items: center; gap: .7rem; font-weight: 700; color: var(--gruen); margin-bottom: 1.5rem; }
+.kopf img { width: 32px; height: 32px; border-radius: 8px; }
+.kopf .knoepfe { margin-left: auto; display: flex; gap: .5rem; }
+.btn { border: 0; border-radius: 999px; padding: .55rem 1.1rem; font: inherit; font-weight: 700; cursor: pointer; background: var(--gruen-hell); color: var(--gruen); text-decoration: none; }
+.btn.primaer { background: var(--gruen); color: #fff; }
+.einleitung { color: var(--leise); font-size: 1.1rem; }
+ul { list-style: none; padding: 0; margin: .8rem 0 0; }
+li { display: grid; grid-template-columns: 1.6rem 1fr; gap: .7rem; padding: .55rem 0; border-top: 1px solid var(--linie); break-inside: avoid; }
+li:first-child { border-top: 0; }
+li::before { content: ""; width: 1.3rem; height: 1.3rem; border: 2px solid var(--gruen); border-radius: 5px; margin-top: .15rem; }
+li strong { display: block; }
+li span { color: var(--leise); font-size: .98rem; }
+.frist { display: inline-block; background: var(--gold); color: var(--gold-text); border-radius: 999px; padding: .05rem .6rem; font-size: .85rem; font-weight: 700; margin-left: .3rem; vertical-align: middle; }
+.hinweis { background: var(--gruen-hell); border-radius: 12px; padding: 1rem 1.2rem; margin-top: 2rem; font-size: .98rem; }
+.fuss { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--linie); color: var(--leise); font-size: .9rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 700px) { .blatt { padding: 1.4rem; margin: 0; border-radius: 0; } }
+@page { size: A4; margin: 16mm 14mm; }
+@media print {
+  body { background: #fff; font-size: 10.5pt; }
+  .blatt { box-shadow: none; max-width: none; margin: 0; padding: 0; border-radius: 0; }
+  .kopf .knoepfe { display: none; }
+  h2 { margin-top: 1.2rem; }
+  a { color: inherit; text-decoration: none; }
+}
+</style>
+</head>
+<body>
+<div class="blatt">
+  <div class="kopf"><img src="../icons/icon-192.png" alt="">Klarordner<div class="knoepfe"><a class="btn" href="./">Zurück</a><button class="btn primaer" id="drucken">Drucken oder als PDF sichern</button></div></div>
+  <h1>Die ersten Tage nach einem Todesfall</h1>
+  <p class="einleitung">Was jetzt zu tun ist, in der richtigen Reihenfolge. Nicht alles muss sofort geschehen. Die Fristen zeigen, was wirklich eilt. Haken Sie ab, was erledigt ist.</p>
+
+  <h2>Die ersten Stunden<small>Am Todestag</small></h2>
+  <ul>
+    <li><strong>Arzt rufen</strong><span>Zu Hause den Hausarzt oder den ärztlichen Bereitschaftsdienst (116 117). Der Arzt stellt den Totenschein aus. Im Krankenhaus oder Pflegeheim übernimmt das die Einrichtung.</span></li>
+    <li><strong>Die engste Familie verständigen</strong><span>Wer soll es zuerst erfahren? Wer kann heute bei Ihnen sein?</span></li>
+    <li><strong>Haustiere versorgen</strong><span>Wer nimmt das Tier noch heute? Futter, Medikamente, Tierarzt klären.</span></li>
+    <li><strong>Nach Verfügungen suchen</strong><span>Organspendeausweis, Bestattungsvorsorge, Bestattungswünsche. Im Krankenhaus sofort nach dem Organspendeausweis fragen.</span></li>
+    <li><strong>Bestatter beauftragen</strong><span>Innerhalb von 24 bis 36 Stunden muss die verstorbene Person überführt werden, je nach Bundesland. Gibt es einen Vorsorgevertrag? Dann steht der Bestatter schon fest. <em class="frist">24 bis 36 Stunden</em></span></li>
+    <li><strong>Wohnung sichern</strong><span>Herd, Fenster, Heizung, Schlüssel. Wertsachen und Dokumente an einen sicheren Ort.</span></li>
+  </ul>
+
+  <h2>Die ersten drei Tage<small>Unterlagen und Meldungen</small></h2>
+  <ul>
+    <li><strong>Dokumente zusammensuchen</strong><span>Personalausweis, Geburtsurkunde, Heiratsurkunde oder Stammbuch, bei Geschiedenen das Scheidungsurteil, bei Verwitweten die Sterbeurkunde des Partners, Krankenversicherungskarte, Rentennummer.</span></li>
+    <li><strong>Sterbeurkunde beim Standesamt beantragen</strong><span>Beim Standesamt des Sterbeorts, spätestens am dritten Werktag. Meist erledigt das der Bestatter. Gleich mehrere Ausfertigungen bestellen, etwa zehn, für Banken, Versicherungen und Verträge. <em class="frist">3 Werktage</em></span></li>
+    <li><strong>Testament abgeben</strong><span>Wer ein Testament findet, muss es unverzüglich beim Nachlassgericht (Amtsgericht) abliefern. Auch dann, wenn es ungültig erscheint. Nicht öffnen, nicht zurückhalten.</span></li>
+    <li><strong>Lebens-, Unfall- und Sterbegeldversicherung melden</strong><span>Viele Gesellschaften verlangen die Meldung innerhalb von 24 bis 72 Stunden. Die genaue Frist steht im Vertrag. Erst melden, dann Unterlagen nachreichen. <em class="frist">24 bis 72 Stunden</em></span></li>
+    <li><strong>Arbeitgeber informieren</strong><span>Bei Berufstätigen. Es geht um Gehalt, Urlaubsabgeltung und eventuell eine betriebliche Versorgung.</span></li>
+    <li><strong>Trauerfeier und Traueranzeige planen</strong><span>Gab es Wünsche zur Bestattungsart, zum Friedhof, zur Musik, zu einem Foto? Die Traueranzeige kann der Bestatter aufgeben.</span></li>
+  </ul>
+
+  <h2>Die ersten zwei Wochen<small>Rente, Kasse, Bank, Verträge</small></h2>
+  <ul>
+    <li><strong>Rentenversicherung und Renten Service der Deutschen Post</strong><span>Die Rente wird abgemeldet. Ehe- oder Lebenspartner beantragen beim Renten Service den Vorschuss für das Sterbevierteljahr: drei volle Monatsrenten, nur innerhalb von 30 Tagen nach dem Tod. <em class="frist">30 Tage</em></span></li>
+    <li><strong>Krankenkasse und Pflegekasse</strong><span>Mitgliedschaft beenden, Versichertenkarte zurückgeben. Familienversicherte Angehörige brauchen eine neue Lösung.</span></li>
+    <li><strong>Bank informieren</strong><span>Mit Sterbeurkunde. Wer eine Kontovollmacht über den Tod hinaus hat, darf weiter verfügen und offene Rechnungen bezahlen. Ohne Vollmacht wartet die Bank auf den Erbschein oder ein eröffnetes Testament. Daueraufträge und Lastschriften prüfen.</span></li>
+    <li><strong>Mietvertrag</strong><span>Erben und Mitbewohner können innerhalb eines Monats nach Kenntnis des Todes mit der gesetzlichen Frist von drei Monaten kündigen. Den Vermieter sofort informieren. <em class="frist">1 Monat</em></span></li>
+    <li><strong>Verträge kündigen</strong><span>Strom, Gas, Wasser, Telefon, Internet, Rundfunkbeitrag, Zeitung, Vereine, Fitnessstudio, Streaming, Zeitschriften, Versicherungen wie Hausrat und Haftpflicht. Jeweils mit Kopie der Sterbeurkunde. Viele Verträge laufen sonst monatelang weiter.</span></li>
+    <li><strong>Auto</strong><span>Kfz-Versicherung informieren, Fahrzeug bei der Zulassungsstelle ummelden oder abmelden.</span></li>
+    <li><strong>Post und Behörden</strong><span>Nachsendeauftrag bei der Post. Einwohnermeldeamt und Finanzamt erfahren es über das Standesamt, trotzdem auf Schreiben achten.</span></li>
+    <li><strong>Digitaler Nachlass</strong><span>Handy, E-Mail-Postfach, soziale Netzwerke, Online-Konten. Abonnements im Internet kündigen. Bei Facebook und Google gibt es Verfahren für Verstorbene.</span></li>
+  </ul>
+
+  <h2>Die ersten Monate<small>Nachlass und Steuern</small></h2>
+  <ul>
+    <li><strong>Erbschaft annehmen oder ausschlagen</strong><span>Wer die Erbschaft nicht will, zum Beispiel wegen Schulden, muss innerhalb von sechs Wochen beim Nachlassgericht ausschlagen. Wer nichts tut, nimmt an. <em class="frist">6 Wochen</em></span></li>
+    <li><strong>Erbschein beantragen</strong><span>Beim Nachlassgericht, wenn Banken, Grundbuchamt oder Versicherungen ihn verlangen. Mit notariellem Testament ist er oft nicht nötig.</span></li>
+    <li><strong>Erbschaft beim Finanzamt anzeigen</strong><span>Jeder Erwerb von Todes wegen ist innerhalb von drei Monaten dem Finanzamt anzuzeigen, auch wenn am Ende keine Steuer anfällt. Freibeträge: Ehepartner 500 000 €, Kinder 400 000 €, Enkel 200 000 €. <em class="frist">3 Monate</em></span></li>
+    <li><strong>Letzte Steuererklärung</strong><span>Für das Todesjahr geben die Erben die Einkommensteuererklärung der verstorbenen Person ab. Oft gibt es Geld zurück.</span></li>
+    <li><strong>Hinterbliebenenrente beantragen</strong><span>Witwen-, Witwer- und Waisenrente bei der Deutschen Rentenversicherung. Rückwirkend höchstens zwölf Monate.</span></li>
+    <li><strong>Grabpflege und Gedenken</strong><span>Grabstein, Grabpflege, Danksagung an die Trauergäste. Dafür ist Zeit.</span></li>
+  </ul>
+
+  <div class="hinweis">Diese Liste ersetzt keine Rechtsberatung. Fristen können je nach Bundesland, Vertrag und Einzelfall abweichen. Stand: Oktober 2026.</div>
+  <div class="fuss"><span>Klarordner · Vorsorgeordner für Angehörige</span><span>Mit Klarordner sind diese Schreiben schon vorbereitet, bevor es so weit ist.</span></div>
+</div>
+<script>document.getElementById("drucken").addEventListener("click", () => window.print());</script>
+</body>
+</html>

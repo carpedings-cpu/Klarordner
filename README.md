@@ -14,8 +14,9 @@ Vorsorgeordner für den Todesfall in neun Bereichen, der komplett im Browser lä
 | `app/ocr/` | Texterkennung für „Dokument fotografieren“ (tesseract.js 7 mit deutschem Sprachpaket, Apache-Lizenz, Hinweise in `LIZENZEN.txt`). Wird erst beim ersten Scannen geladen und dann im Gerät abgelegt. |
 | `app/ansprache.json` | Texte nach der Übergabe an die Angehörigen: deutscher Anzeigetext → Fassung in der dritten Person mit `{name}`. Das Bauskript prüft, dass jeder Schlüssel ein echter Anzeigetext ist. |
 | `app/sprachen/xx.json` | Übersetzungen. Schlüssel ist der deutsche Text, Wert die Übersetzung. `_texte.json` listet alle Anzeigetexte und wird erzeugt. |
+| `start/` | Landingpage mit Warteliste (`index.html`), Checkliste „Die ersten Tage nach einem Todesfall“ (`checkliste.html`) und Impressum/Datenschutz (`rechtliches.html`). Wird nach `docs/start/` kopiert und ist unter `/start/` erreichbar. Die Warteliste schreibt in eine Supabase-Tabelle (nur Einfügen erlaubt, Lesen nur im Dashboard). Änderungen hier ändern nicht die Version der App. |
 | `docs/` | Erzeugt, wird über GitHub Pages veröffentlicht. Nicht von Hand ändern. |
-| `test/` | Browsertests und erfundene Testdaten. Wird nicht ausgeliefert. |
+| `test/` | Browsertests und erfundene Testdaten. Wird nicht ausgeliefert. `test-start.mjs` prüft die Landingpage mit nachgestellter Übermittlung. |
 | `werkzeuge/` | Bauskript und Erzeugung der Symbole. |
 
 ## Sprachen
