@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src https://uvvqgwbshdtwlveopgvn.supabase.co; form-action 'none'; base-uri 'none'">
+<meta name="robots" content="noindex, nofollow">
+<title>Auswertung · Klarordner</title>
+<link rel="icon" href="../icons/icon-192.png">
+<style>
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-display:swap;src:url(../schriften/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-display:swap;src:url(../schriften/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url(../schriften/fraunces-latin-600-normal.woff2) format("woff2")}
+:root { --grund: #eef2ec; --text: #1f2a23; --leise: #5a6a5e; --linie: #cfdacd; --gruen: #4a6b55; --gruen-hell: #e1eadf; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--grund); color: var(--text); font-family: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 1.05rem; line-height: 1.5; }
+h1, h2 { font-family: "Fraunces", Georgia, serif; font-weight: 600; margin: 0 0 .5rem; }
+h2 { font-size: 1.3rem; }
+.huelle { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+.kopf { display: flex; align-items: center; gap: .7rem; font-weight: 700; color: var(--gruen); margin-bottom: 1.2rem; }
+.kopf img { width: 32px; height: 32px; border-radius: 8px; }
+.kopf a { margin-left: auto; color: var(--gruen); font-weight: 400; }
+.karte { background: #fff; border-radius: 16px; padding: 1.3rem 1.5rem; margin-bottom: 1rem; }
+.zahlen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.zahl { background: #fff; border-radius: 16px; padding: 1.2rem 1.4rem; }
+.zahl strong { display: block; font-family: "Fraunces", Georgia, serif; font-size: 2.6rem; line-height: 1; color: var(--gruen); }
+.zahl span { color: var(--leise); }
+.spalten { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.balken { display: grid; grid-template-columns: 1fr auto; gap: .2rem .8rem; align-items: center; margin: .4rem 0; }
+.balken .leiste { grid-column: 1 / -1; height: 10px; background: var(--gruen-hell); border-radius: 5px; overflow: hidden; }
+.balken .leiste i { display: block; height: 100%; background: var(--gruen); }
+.balken b { font-weight: 400; }
+.tage { display: flex; align-items: flex-end; gap: 3px; height: 120px; margin-top: .8rem; }
+.tage div { flex: 1; background: var(--gruen); border-radius: 3px 3px 0 0; min-height: 2px; position: relative; }
+.tage div[title]:hover::after { content: attr(title); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; font-size: .8rem; padding: .1rem .4rem; border-radius: 4px; white-space: nowrap; }
+.tage div.leer { background: var(--gruen-hell); }
+table { width: 100%; border-collapse: collapse; font-size: .98rem; }
+td { padding: .5rem .4rem; border-top: 1px solid var(--linie); vertical-align: top; }
+td:first-child { white-space: nowrap; color: var(--leise); }
+input[type=password] { font: inherit; padding: .7rem .9rem; border: 2px solid var(--linie); border-radius: 10px; width: 16rem; max-width: 100%; }
+.btn { border: 0; border-radius: 999px; padding: .7rem 1.3rem; font: inherit; font-weight: 700; background: var(--gruen); color: #fff; cursor: pointer; }
+.fehler { color: #8a2f2f; font-weight: 700; }
+.leise { color: var(--leise); font-size: .95rem; }
+[hidden] { display: none !important; }
+@media (max-width: 720px) { .zahlen, .spalten { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="huelle">
+  <div class="kopf"><img src="../icons/icon-192.png" alt="">Klarordner · Auswertung der Vormerkungen<a href="./">Zur Startseite</a></div>
+
+  <form id="anmeldung" class="karte">
+    <label for="schluessel"><strong>Passwort</strong></label><br>
+    <input type="password" id="schluessel" autocomplete="current-password"> <button class="btn" type="submit">Anzeigen</button>
+    <p class="fehler" id="anmeldeFehler" hidden>Passwort stimmt nicht.</p>
+  </form>
+
+  <div id="inhalt" hidden>
+    <div class="zahlen">
+      <div class="zahl"><strong id="gesamt">0</strong><span>Vormerkungen insgesamt</span></div>
+      <div class="zahl"><strong id="woche">0</strong><span>in den letzten 7 Tagen</span></div>
+      <div class="zahl"><strong id="heute">0</strong><span>heute</span></div>
+    </div>
+    <div class="karte" style="margin-top:1rem">
+      <h2>Verlauf, letzte 30 Tage</h2>
+      <div class="tage" id="tage"></div>
+      <p class="leise" id="stand"></p>
+    </div>
+    <div class="spalten">
+      <div class="karte"><h2>Woher</h2><p class="leise">Kennzeichen aus dem Link (<code>?q=…</code>)</p><div id="quelle"></div></div>
+      <div class="karte"><h2>Für wen</h2><div id="fuer"></div></div>
+      <div class="karte"><h2>Gerät</h2><div id="geraet"></div></div>
+    </div>
+    <div class="karte">
+      <h2>Was den Leuten wichtig ist</h2>
+      <p class="leise" id="keineNachrichten" hidden>Noch keine Nachrichten.</p>
+      <table id="nachrichten"></table>
+    </div>
+    <p class="leise">E-Mail-Adressen zeigt diese Seite nicht. Die stehen nur im Supabase-Dashboard, Tabelle klarordner_warteliste.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  const ZIEL = "https://uvvqgwbshdtwlveopgvn.supabase.co/rest/v1/rpc/klarordner_auswertung";
+  const SCHLUESSEL = "sb_publishable_PHmilLbfbsV7P6iGzlQEvg_WGlLcsRR";
+  const $ = s => document.querySelector(s);
+  const NAMEN = { mich: "Für mich selbst", eltern: "Für meine Eltern", beide: "Für beide", ipad: "iPad oder Tablet", computer: "Computer", handy: "Handy" };
+  const name = w => NAMEN[w] || w;
+
+  async function laden(passwort) {
+    const antwort = await fetch(ZIEL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: SCHLUESSEL, Authorization: "Bearer " + SCHLUESSEL },
+      body: JSON.stringify({ schluessel: passwort })
+    });
+    if (!antwort.ok) throw new Error(String(antwort.status));
+    return antwort.json();
+  }
+
+  function balken(ziel, liste) {
+    const max = Math.max(1, ...liste.map(e => e.n));
+    ziel.replaceChildren(...liste.map(e => {
+      const z = document.createElement("div"); z.className = "balken";
+      z.innerHTML = `<b></b><strong></strong><div class="leiste"><i style="width:${Math.round(e.n / max * 100)}%"></i></div>`;
+      z.querySelector("b").textContent = name(e.wert); z.querySelector("strong").textContent = e.n;
+      return z;
+    }));
+  }
+
+  function zeigen(d) {
+    $("#gesamt").textContent = d.gesamt; $("#woche").textContent = d.woche; $("#heute").textContent = d.heute;
+    const proTag = Object.fromEntries(d.tage.map(t => [t.tag, t.n]));
+    const max = Math.max(1, ...d.tage.map(t => t.n));
+    const tage = [];
+    for (let i = 29; i >= 0; i--) {
+      const t = new Date(); t.setDate(t.getDate() - i);
+      const schl = t.toISOString().slice(0, 10), n = proTag[schl] || 0;
+      const el = document.createElement("div");
+      el.style.height = Math.max(2, Math.round(n / max * 100)) + "%";
+      el.title = `${t.toLocaleDateString("de-DE")}: ${n}`;
+      if (!n) el.classList.add("leer");
+      tage.push(el);
+    }
+    $("#tage").replaceChildren(...tage);
+    $("#stand").textContent = "Stand: " + new Date().toLocaleString("de-DE");
+    balken($("#quelle"), d.quelle); balken($("#fuer"), d.fuer); balken($("#geraet"), d.geraet);
+    $("#keineNachrichten").hidden = d.nachrichten.length > 0;
+    $("#nachrichten").replaceChildren(...d.nachrichten.map(n => {
+      const tr = document.createElement("tr");
+      const td1 = document.createElement("td"), td2 = document.createElement("td");
+      td1.textContent = new Date(n.datum).toLocaleDateString("de-DE") + (n.fuer ? " · " + name(n.fuer) : "") + (n.quelle ? " · " + n.quelle : "");
+      td2.textContent = n.text;
+      tr.append(td1, td2); return tr;
+    }));
+    $("#anmeldung").hidden = true; $("#inhalt").hidden = false;
+  }
+
+  $("#anmeldung").addEventListener("submit", async e => {
+    e.preventDefault();
+    const passwort = $("#schluessel").value;
+    try {
+      zeigen(await laden(passwort));
+      try { sessionStorage.setItem("klarordner-auswertung", passwort); } catch (_) {}
+    } catch (fehler) { $("#anmeldeFehler").hidden = false; }
+  });
+  let gemerkt = null;
+  try { gemerkt = sessionStorage.getItem("klarordner-auswertung"); } catch (_) {}
+  if (gemerkt) laden(gemerkt).then(zeigen).catch(() => {});
+})();
+</script>
+</body>
+</html>

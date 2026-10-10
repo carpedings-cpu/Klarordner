@@ -67,6 +67,27 @@ try {
   await p.emulateMedia({ media: 'screen' });
   await p.goto('http://localhost:8128/start/rechtliches.html');
   pruef('Datenschutz nennt Supabase und Widerruf', (await p.textContent('body')).includes('Supabase') && (await p.textContent('body')).includes('widerrufen'));
+  // Auswertungsseite: falsches Passwort, dann nachgestellte Antwort
+  await p.unroute('https://uvvqgwbshdtwlveopgvn.supabase.co/**');
+  let rpcSchluessel = null;
+  await p.route('https://uvvqgwbshdtwlveopgvn.supabase.co/rest/v1/rpc/**', route => {
+    rpcSchluessel = route.request().postDataJSON().schluessel;
+    if (rpcSchluessel !== 'richtig') return route.fulfill({ status: 403, body: '{"message":"Kein Zugang"}', headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' } });
+    route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' },
+      body: JSON.stringify({ gesamt: 12, heute: 2, woche: 9, quelle: [{ wert: 'fb-eltern', n: 7 }, { wert: 'ohne Kennzeichen', n: 5 }], fuer: [{ wert: 'eltern', n: 8 }, { wert: 'mich', n: 4 }], geraet: [{ wert: 'ipad', n: 10 }, { wert: 'keine Angabe', n: 2 }], tage: [{ tag: new Date().toISOString().slice(0, 10), n: 2 }], nachrichten: [{ datum: '2026-10-10', fuer: 'eltern', quelle: 'fb-eltern', text: 'Große Schrift bitte.' }] }) });
+  });
+  await p.goto('http://localhost:8128/start/auswertung.html');
+  await p.fill('#schluessel', 'falsch');
+  await p.click('button:has-text("Anzeigen")');
+  await p.waitForSelector('#anmeldeFehler:not([hidden])');
+  pruef('Auswertung: falsches Passwort abgelehnt', await p.isHidden('#inhalt'));
+  await p.fill('#schluessel', 'richtig');
+  await p.click('button:has-text("Anzeigen")');
+  await p.waitForSelector('#inhalt:not([hidden])');
+  const aus = await p.textContent('#inhalt');
+  pruef('Auswertung zeigt Zahlen, Namen und Nachrichten', (await p.textContent('#gesamt')) === '12' && aus.includes('Für meine Eltern') && aus.includes('iPad oder Tablet') && aus.includes('Große Schrift bitte.') && (await p.locator('#tage div').count()) === 30);
+  await p.screenshot({ path: path.join(erg, 'start-auswertung.png'), fullPage: true });
+  pruef('Auswertung ohne E-Mail-Adressen', !aus.includes('@'));
   // iPad-Ansicht
   const ipad = await (await browser.newContext({ locale: 'de-DE', viewport: { width: 820, height: 1180 }, hasTouch: true })).newPage();
   await ipad.goto('http://localhost:8128/start/');
