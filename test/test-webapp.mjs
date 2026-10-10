@@ -26,16 +26,16 @@ try {
   await p.reload();
   console.log('Offline neu geladen, Titel:', await p.textContent('.held h1'));
   await ctx.setOffline(false);
-  // Eine frühere Installation an der Wurzel wird vom Aufräum-Worker abgelöst
-  const wurzel = await ctx.newPage();
-  await wurzel.goto('http://localhost:8123/');
-  // Der Aufräum-Worker lädt die Seite neu, sobald er aktiv ist, danach darf an der Wurzel keine Registrierung mehr liegen.
-  await Promise.all([wurzel.waitForEvent('load', { timeout: 8000 }).catch(() => {}), wurzel.evaluate(() => navigator.serviceWorker.register('/sw.js'))]);
-  await wurzel.waitForTimeout(500);
-  const abgemeldet = await wurzel.evaluate(async () => !(await navigator.serviceWorker.getRegistration('/'))).catch(() => false);
+  // Eine frühere Installation an der Wurzel wird vom Aufräum-Worker abgelöst: er räumt auf und meldet sich ab.
+  const abgemeldet = await p.evaluate(async () => {
+    await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    for (let i = 0; i < 50; i++) { await new Promise(r => setTimeout(r, 100)); if (!(await navigator.serviceWorker.getRegistration('/'))) return true; }
+    return false;
+  }).catch(e => String(e));
   console.log('Aufräum-Worker an der Wurzel meldet sich ab:', abgemeldet);
-  if (!abgemeldet) fehler.push('Aufräum-Worker an der Wurzel meldet sich nicht ab');
-  await wurzel.close();
+  if (abgemeldet !== true) fehler.push('Aufräum-Worker an der Wurzel meldet sich nicht ab: ' + abgemeldet);
+  const appBleibt = await p.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/app/')));
+  if (!appBleibt) fehler.push('Registrierung der App unter /app/ verloren');
 
   // iPad-Weg: kein Dateizugriff, Touch, Teilen-Menü
   const ipad = await browser.newContext({ locale: 'de-DE',  viewport: { width: 820, height: 1180 }, hasTouch: true });
