@@ -21,6 +21,8 @@ try {
   });
   await p.goto('http://localhost:8128/start/?q=test-anzeige');
   pruef('Überschrift und Bilder', await p.isVisible('h1') && await p.evaluate(() => [...document.images].every(i => i.loading === 'lazy' || (i.complete && i.naturalWidth > 0))));
+  const text = await p.textContent('body');
+  pruef('Kostenlos, ohne Preisfragen und ohne Datenschutzversprechen', text.includes('kostenlos') && !/kaufen|Preis|Cloud|bleibt auf Ihrem Gerät/.test(text.replace('Datenschutzhinweise', '')));
   pruef('Schriften geladen', await p.evaluate(() => document.fonts.check('600 20px Fraunces') && document.fonts.check('700 16px "Atkinson Hyperlegible"')));
   await p.screenshot({ path: path.join(erg, 'start-desktop.png'), fullPage: true });
   // Ohne E-Mail und Einwilligung geht nichts raus
@@ -30,9 +32,6 @@ try {
   await p.click('#btnSenden');
   pruef('Fehlende Einwilligung wird gemeldet', await p.isVisible('#fehlerZustimmung') && !(await p.isVisible('#fehlerEmail')) && anfragen.length === 0);
   await p.click('label:has-text("Für meine Eltern")');
-  await p.click('label:has-text("Ja, sofort")');
-  await p.click('label:has-text("20 bis 40 €")');
-  await p.click('label:has-text("Einmal kaufen")');
   await p.click('label:has-text("iPad oder Tablet")');
   await p.fill('#nachricht', 'Bitte große Schrift.');
   await p.check('#zustimmung');
@@ -41,7 +40,7 @@ try {
   const a = anfragen[0];
   console.log('  Übermittelt:', JSON.stringify(a.daten));
   pruef('Eintrag an die Warteliste geschickt', a.url.endsWith('/rest/v1/klarordner_warteliste') && a.kopf.apikey.startsWith('sb_publishable_') && a.kopf.prefer === 'return=minimal');
-  pruef('Alle Antworten enthalten', a.daten.email === 'test@beispiel.de' && a.daten.fuer === 'eltern' && a.daten.kaufen === 'ja' && a.daten.preis === 'bis40' && a.daten.modell === 'einmal' && a.daten.geraet === 'ipad' && a.daten.nachricht === 'Bitte große Schrift.' && a.daten.quelle === 'test-anzeige');
+  pruef('Alle Antworten enthalten', a.daten.email === 'test@beispiel.de' && a.daten.fuer === 'eltern' && a.daten.geraet === 'ipad' && !('preis' in a.daten) && a.daten.nachricht === 'Bitte große Schrift.' && a.daten.quelle === 'test-anzeige');
   pruef('Dank mit Link zur Checkliste', await p.isVisible('#danke a[href="checkliste.html"]') && !(await p.isVisible('#formular')));
   // Doppelte Adresse, Aufruf ohne Kennzeichen
   await p.goto('http://localhost:8128/start/');
