@@ -21,6 +21,10 @@ fertig = quelle.replace(marke, json.dumps(uebersetzungen, ensure_ascii=False, se
 anbieter = json.loads((app / "anbieter.json").read_text(encoding="utf-8"))
 assert "/*ANBIETER*/[]" in fertig, "Marke für Anbieter fehlt"
 fertig = fertig.replace("/*ANBIETER*/[]", json.dumps(anbieter, ensure_ascii=False, separators=(",", ":")))
+# Trauersprüche für Anzeigen und Karten, alle gemeinfrei.
+sprueche = json.loads((app / "sprueche.json").read_text(encoding="utf-8"))
+assert "/*SPRUECHE*/[]" in fertig, "Marke für Sprüche fehlt"
+fertig = fertig.replace("/*SPRUECHE*/[]", json.dumps(sprueche, ensure_ascii=False, separators=(",", ":")))
 # Schriften einbetten, damit die App ohne Verbindung nach außen gleich aussieht.
 import base64
 BEREICH = {"latin": "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD",

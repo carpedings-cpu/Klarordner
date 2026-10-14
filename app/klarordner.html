@@ -324,6 +324,73 @@ dialog p { margin-bottom: .8rem; color: var(--leise); }
 dialog .knopfreihe { flex-direction: column; margin-top: 1.2rem; }
 dialog .knopfreihe .btn { width: 100%; }
 
+
+/* Trauerkarten, Traueranzeige, Danksagung */
+.feldtitel { font-weight: 700; margin: .4rem 0 0; }
+.vorlagenwahl { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .7rem; }
+.vorlage { background: none; border: 3px solid transparent; border-radius: 14px; padding: .3rem; cursor: pointer; font: inherit; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: .35rem; }
+.vorlage.aktiv { border-color: var(--blau); background: var(--blau-hell); }
+.vorlage .vname { font-size: .85rem; font-weight: 600; }
+.tkarte { --kfarbe: #4a6b55; --kgrund: #f3f6f1; --ktext: #1f2a23; --kleise: #5a6a5e; --kschrift: "Fraunces", Georgia, serif; width: 100%; }
+.tkarte.klein { width: 100%; pointer-events: none; }
+.kseite { background: var(--kgrund); color: var(--ktext); aspect-ratio: 105 / 148; padding: 8% 9%; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; gap: 4%; box-sizing: border-box; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.08); overflow: hidden; font-size: 1rem; }
+.tkarte.klein .kseite { font-size: .38rem; gap: 3%; border-radius: 4px; }
+.tkarte.klein .kabsatz, .tkarte.klein .kfeier, .tkarte.klein .kspende, .tkarte.klein .kort { display: none; }
+.tkarte.klein .kspruch p:first-child { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tkarte.klein .kname { font-size: 1.3em; }
+.kartenvorschau .kseite { font-size: .95rem; }
+.kartenvorschau .tkarte { display: grid; gap: 1rem; }
+.kmotiv { display: block; width: 3.2em; height: 3.2em; color: var(--kfarbe); }
+.kmotiv svg { width: 100%; height: 100%; }
+.kfoto { display: block; object-fit: cover; }
+.kfoto.rund, .kfoto.klein { width: 5.2em; height: 5.2em; border-radius: 50%; border: .15em solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,.15); }
+.kfoto.mittel { width: 7em; height: 7em; }
+.kfoto.gross { width: 100%; aspect-ratio: 4 / 5; border-radius: .4em; }
+.kfoto.leer { background: #dfe6dc; }
+.kfoto.leer.klein { width: 5.2em; height: 5.2em; border-radius: 50%; }
+.kfoto.leer.gross { width: 100%; aspect-ratio: 4 / 5; border-radius: .4em; }
+.kkopf { display: flex; flex-direction: column; align-items: center; gap: .8em; width: 100%; }
+.kname { font-family: var(--kschrift); font-weight: 600; font-size: 1.5em; line-height: 1.15; margin: 0; }
+.kgeb { margin: 0; color: var(--kleise); font-size: .85em; }
+.kdaten { margin: .3em 0 0; display: flex; gap: 1.2em; justify-content: center; flex-wrap: wrap; font-size: .9em; }
+.kspruch { font-family: var(--kschrift); font-style: italic; font-size: .95em; line-height: 1.35; max-width: 90%; }
+.kspruch p { margin: 0; }
+.kquelle { font-style: normal; font-family: inherit; font-size: .7em; color: var(--kleise); margin-top: .3em !important; }
+.kstill { font-family: var(--kschrift); font-style: italic; margin: 0 0 .2em; }
+.ktrauernde p { margin: 0; font-size: .9em; line-height: 1.4; }
+.ktext, .kfeier, .kspende { margin: 0; font-size: .85em; line-height: 1.4; max-width: 92%; }
+.kort { margin: 0; font-size: .75em; color: var(--kleise); }
+.kdanke { font-family: var(--kschrift); font-size: 2.2em; margin: 0; letter-spacing: .04em; }
+.kabsatz { width: 100%; }
+/* Vorlagen */
+.v-salbei { --kfarbe: #4a6b55; --kgrund: #eef2ec; }
+.v-klassisch { --kfarbe: #222; --kgrund: #fff; --kleise: #555; }
+.v-klassisch .kseite { outline: .12em solid #222; outline-offset: -.6em; box-shadow: none; border-radius: 0; }
+.v-schlicht { --kfarbe: #333; --kgrund: #fff; }
+.v-schlicht .kname { border-bottom: 1px solid #333; padding-bottom: .3em; }
+.v-fotogross { --kfarbe: #3a5544; --kgrund: #fff; }
+.v-fotogross .kseite { padding: 5% 6%; gap: 3%; }
+.v-fotoklein { --kfarbe: #4a6b55; --kgrund: #f6f7f4; }
+.v-kerze { --kfarbe: #a0862b; --kgrund: #fbf8ef; --kleise: #7a6a3a; }
+.v-baum { --kfarbe: #5c6b3f; --kgrund: #f3f5ec; }
+.v-meer { --kfarbe: #3d6b7a; --kgrund: #eef3f5; --kleise: #4e6b76; }
+.v-blumen { --kfarbe: #8a6a7a; --kgrund: #fbf5f7; }
+.v-sterne { --kfarbe: #e8e2c8; --kgrund: #1f2a3a; --ktext: #f2efe6; --kleise: #c8c4b4; }
+.v-sterne .kseite { background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,.08), transparent 30%), radial-gradient(circle at 80% 70%, rgba(255,255,255,.06), transparent 30%); }
+.kartenvorschau { max-height: 55vh; overflow: auto; padding: .2rem; }
+.anzeigentext { width: 100%; font: inherit; font-size: .95rem; margin-top: .4rem; }
+.druckdienste { margin-top: 1rem; text-align: left; }
+.dienstliste { display: flex; flex-wrap: wrap; gap: .4rem; }
+.dienstliste .btn { font-size: .95rem; }
+@media print {
+  #druck.karten .dkarte { break-after: page; }
+  #druck.karten .danzeige .kseite { aspect-ratio: auto; height: 128mm; width: 128mm; margin: 0 auto; font-size: 14pt; border-radius: 0; box-shadow: none; }
+  #druck.karten .dblatt { display: grid; grid-template-columns: 1fr 1fr; width: 210mm; height: 148mm; }
+  #druck.karten .dhalb { width: 105mm; height: 148mm; }
+  #druck.karten .dhalb .kseite { aspect-ratio: auto; width: 105mm; height: 148mm; border-radius: 0; box-shadow: none; font-size: 12pt; }
+  #druck.karten .v-klassisch .kseite { outline-offset: -8mm; }
+}
+
 /* Druckansicht: auf dem Bildschirm unsichtbar, beim Drucken das Einzige */
 #druck { display: none; }
 .schreibliste { display: grid; gap: .6rem; }
@@ -504,7 +571,7 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 <script>
 "use strict";
 
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 const FORMAT = "klarordner";
 const standardName = () => t("Mein Vorsorgeordner") + ".notfall.json";
 
@@ -541,6 +608,7 @@ const gebietsschema = () => (sprache === "en" ? "en-GB" : sprache);
 // Auswahlwerte werden als neutrale Schlüssel gespeichert, angezeigt wird die Übersetzung.
 const OPTIONEN = {
   jaNein: { ja: "Ja", nein: "Nein", weissNicht: "Weiß nicht" },
+  dankArt: { allgemein: "Allgemein", spenden: "Mit Dank für Spenden", pflege: "Mit Dank an Pflege oder Hospiz", kurz: "Kurz" },
   familienstand: { ledig: "ledig", verheiratet: "verheiratet", partnerschaft: "eingetragene Lebenspartnerschaft", getrennt: "getrennt lebend", geschieden: "geschieden", verwitwet: "verwitwet" },
   rolle: { angehoerig: "Angehörige/r", erbe: "Erbe/Erbin", bevollmaechtigt: "Bevollmächtigte/r", freund: "Freund/in", nachbar: "Nachbar/in", verein: "Verein oder Gemeinde", sonstige: "Sonstige" },
   testamentArt: { handschriftlich: "Handschriftlich", notariell: "Beim Notar", gemeinsam: "Gemeinschaftlich mit Ehe- oder Lebenspartner" },
@@ -654,7 +722,8 @@ function leereDaten() {
       hausarzt: { name: "", telefon: "" }, organspende: "", ablageOrganspendeausweis: "",
       bestattungsart: "", bestatter: "", vorsorgevertrag: "", grabstelle: "",
       grabart: "", sargUrne: "", meer: "", seeOrt: "", seeBegleitung: "", wald: "", waldOrt: "", baum: "", bestattungSonst: "",
-      trauerfeier: "", traueranzeige: "", fotoTrauer: "", wuensche: ""
+      trauerfeier: "", fotoTrauer: "", wuensche: "",
+      karten: { vorlage: "salbei", spruch: "", spruchEigen: "", anzeige: "", zeitung: "", spende: "", trauernde: "", trauerfeier: "", dank: "allgemein", pflege: "", dankEigen: "" }
     },
     nachricht: { text: "", video: { aufgenommen: "", groesse: 0 }, videoAblage: "" },
     schreiben: { absender: "", anschrift: "", beziehung: "", sterbedatum: "", ort: "", empfaenger: {}, email: {} }
@@ -735,7 +804,14 @@ const MIGRATIONEN = {
     const notizen = Object.entries(st.checkliste || {}).filter(([, v]) => text(v)).map(([k, v]) => { const punkt = CHECKLISTE.find(c => c[0] === k); return `${punkt ? punkt[1] : k}: ${text(v)}`; });
     if (notizen.length) anhaengen(st, "wuensche", "Hinweise zur Checkliste:\n" + notizen.join("\n"));
     delete st.checkliste;
-  }
+  },
+  // Version 5: Trauerkarten und Anzeigen bekommen eigene Felder. Der alte Freitext zur Traueranzeige wandert in die Zeitungsangabe.
+  4: d => {
+    d.sterbefall = d.sterbefall || {};
+    const alt = typeof d.sterbefall.traueranzeige === "string" ? d.sterbefall.traueranzeige.trim() : "";
+    d.sterbefall.karten = { vorlage: "salbei", spruch: "", spruchEigen: "", anzeige: alt ? "ja" : "", zeitung: alt, spende: "", trauernde: "", trauerfeier: "", dank: "allgemein", pflege: "", dankEigen: "" };
+    delete d.sterbefall.traueranzeige;
+  },
 };
 
 function istObjekt(x) {
@@ -2096,13 +2172,13 @@ const FORMULARE = {
     })(),
     gruppe("Trauerfeier und Wünsche", null,
       feld("sterbefall.trauerfeier", "Trauerfeier", { typ: "mehrzeilig", zeilen: 3, hilfe: "Ort, Musik, Redner, Blumen" }),
-      feld("sterbefall.traueranzeige", "Traueranzeige", { typ: "mehrzeilig", zeilen: 2, hilfe: "In welcher Zeitung, welcher Spruch?" }),
       zustand.daten.persoenlich.foto
         ? el("div", { class: "fotowunsch breit" }, druck ? null : portraet(true),
             wahl("sterbefall.fotoTrauer", "Soll Ihr Foto für die Traueranzeige und die Trauerfeier verwendet werden?", JA_NEIN,
               { hilfe: "Gemeint ist das Foto aus Ihren persönlichen Daten. Im Ausdruck steht es auf dem Deckblatt." }))
         : (druck ? null : el("p", { class: "verweis breit" }, t("Ein Foto für die Traueranzeige können Sie bei den persönlichen Daten hinzufügen.") + " ", sprungKnopf("persoenlich", "Foto hinzufügen ›"))),
       feld("sterbefall.wuensche", "Weitere Wünsche", { typ: "mehrzeilig", zeilen: 3 })),
+    kartenGruppe(),
     druck ? null : el("p", { class: "verweis" }, t("Wer benachrichtigt werden soll, tragen Sie bei den Ansprechpartnern ein.") + " ", sprungKnopf("kontakte", "Zu den Ansprechpartnern ›")),
     gruppe("Checkliste für Ihre Angehörigen", "Was nach einem Todesfall zu tun ist, in dieser Reihenfolge. Die Liste steht auch im Ausdruck.",
       ...CHECKLISTE.map(([, titel, text]) => druck
@@ -2785,6 +2861,235 @@ function briefeDrucken(auswahl) {
   }
   $("druckSeiten").textContent = "@media print { @page brief { margin: 18mm 20mm 18mm 25mm; } .dbrief { page: brief; } }";
   window.print();
+}
+
+
+/* ---------- Trauerkarten, Traueranzeige und Danksagung ---------- */
+
+const SPRUECHE = /*SPRUECHE*/[];
+const SPRUCH_GRUPPEN = { christlich: "Christlich", weltlich: "Weltlich", gedicht: "Gedicht", kurz: "Kurz" };
+
+// Zehn Vorlagen. Die Motive sind eigene Zeichnungen, damit es keine Lizenzfragen gibt.
+const KARTEN_VORLAGEN = [
+  { id: "salbei", name: "Salbei", motiv: "blatt" },
+  { id: "klassisch", name: "Klassisch", motiv: "kreuz" },
+  { id: "schlicht", name: "Schlicht", motiv: "" },
+  { id: "fotogross", name: "Mit Foto groß", motiv: "", foto: "gross" },
+  { id: "fotoklein", name: "Mit Foto klein", motiv: "", foto: "klein" },
+  { id: "kerze", name: "Kerze", motiv: "kerze" },
+  { id: "baum", name: "Baum", motiv: "baum" },
+  { id: "meer", name: "Meer", motiv: "meer" },
+  { id: "blumen", name: "Blumen", motiv: "blumen" },
+  { id: "sterne", name: "Sternenhimmel", motiv: "sterne" }
+];
+/* OHNE-TEXTE-START */
+const KARTEN_MOTIVE = {
+  blatt: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M50 12C30 12 14 26 12 50c24-2 38-18 38-38z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M14 48c10-10 20-20 32-32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M44 50.5c0-3.3 4-8.5 4-8.5s4 5.2 4 8.5a4 4 0 0 1-8 0z" fill="currentColor"/></svg>',
+  kreuz: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8v48M18 22h28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
+  kerze: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6c-4 6-7 9-7 14a7 7 0 0 0 14 0c0-5-3-8-7-14z" fill="currentColor" opacity=".85"/><path d="M32 13c-1.5 2.5-3 4-3 6.5a3 3 0 0 0 6 0c0-2.5-1.5-4-3-6.5z" fill="#fff" opacity=".9"/><rect x="24" y="28" width="16" height="30" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M20 58h24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  baum: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 58V30" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M32 40c-6-2-12-6-16-12M32 36c6-2 11-6 14-12M32 30c-4-2-8-6-10-11M32 30c4-2 8-7 9-12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 30c-2-1-3-3-3-5 2 0 4 1 5 3zM47 27c1-2 3-3 5-3 0 2-1 4-3 5zM21 20c-1-2-1-4 0-6 2 1 3 3 3 5zM42 19c0-2 1-4 3-5 1 2 1 4 0 6zM30 8c1-2 3-3 5-3 0 2-1 4-3 5z" fill="currentColor"/><path d="M12 58h40" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".6"/><path d="M18 50c-2 1-3 3-2 5M46 46c2 1 3 3 2 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".7"/></svg>',
+  meer: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M6 30c6-5 10-5 16 0s10 5 16 0 10-5 16 0M6 40c6-5 10-5 16 0s10 5 16 0 10-5 16 0M6 50c6-5 10-5 16 0s10 5 16 0 10-5 16 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="46" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  blumen: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 56C22 40 30 28 50 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M26 36c-5 1-9-1-11-5 4-2 8-1 11 2zM32 28c-1-5 1-9 5-11 2 4 1 8-2 11zM40 20c-4-3-5-7-4-11 4 1 7 4 7 8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="20" cy="46" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="20" cy="46" r="1.2" fill="currentColor"/></svg>',
+  sterne: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8l2.4 6.4L41 17l-6.6 2.6L32 26l-2.4-6.4L23 17l6.6-2.6z" fill="currentColor"/><circle cx="14" cy="22" r="1.6" fill="currentColor"/><circle cx="50" cy="30" r="1.3" fill="currentColor"/><circle cx="20" cy="44" r="1.2" fill="currentColor"/><circle cx="44" cy="48" r="1.8" fill="currentColor"/><circle cx="54" cy="12" r="1" fill="currentColor"/><circle cx="10" cy="52" r="1" fill="currentColor"/><path d="M8 58c8-6 16-9 24-9s16 3 24 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".7"/></svg>'
+};
+
+/* OHNE-TEXTE-ENDE */
+// Druckdienste, bei denen sich das fertige Motiv bestellen lässt. Keine Provisionslinks, solange kein Partnerprogramm angenommen ist.
+/* OHNE-TEXTE-START */
+const DRUCKDIENSTE = [
+  { name: "Kartenmacherei", url: "https://www.kartenmacherei.de/trauerkarten/", hinweis: "Große Auswahl, Fotos in Farbe oder Schwarz-Weiß" },
+  { name: "Momentu", url: "https://www.momentu.de/anlaesse/trauer/trauerkarten", hinweis: "Kauf auf Rechnung, kostenloses Muster" },
+  { name: "Memento", url: "https://memento-trauerkarten.de/kategorie/trauerkarten/", hinweis: "Büttenpapier, Lieferung meist am nächsten Tag" },
+  { name: "Sterbebild24", url: "https://sterbebild24.de/", hinweis: "Familiendruckerei, Musterkarte kostenlos" },
+  { name: "PrintPlanet", url: "https://www.printplanet.de/grusskarten/trauerkarten.html", hinweis: "Online-Gestaltung mit eigenem Foto" }
+];
+
+const DANK_TEXTE = {
+  allgemein: "Herzlichen Dank sagen wir allen, die {name} auf dem letzten Weg begleitet haben, die ihre Anteilnahme in so vielfältiger Weise zum Ausdruck gebracht haben und die uns mit tröstenden Worten, Blumen und stiller Umarmung beigestanden sind.",
+  spenden: "Herzlichen Dank sagen wir allen, die {name} auf dem letzten Weg begleitet haben und uns mit tröstenden Worten, Blumen und Spenden ihre Anteilnahme gezeigt haben. Die Spenden kommen {spende} zugute.",
+  pflege: "Herzlichen Dank sagen wir allen, die {name} auf dem letzten Weg begleitet und uns in den schweren Stunden beigestanden haben. Unser besonderer Dank gilt {pflege} für die liebevolle Pflege und Begleitung.",
+  kurz: "Für die herzliche Anteilnahme beim Abschied von {name} sagen wir von Herzen Danke."
+};
+
+function kartenDaten() {
+  const d = zustand.daten, p = d.persoenlich, k = d.sterbefall.karten, s = d.schreiben;
+  const vorlage = KARTEN_VORLAGEN.find(v => v.id === k.vorlage) || KARTEN_VORLAGEN[0];
+  const spruchEintrag = SPRUECHE.find(x => x.text === k.spruch);
+  const spruch = voll(k.spruchEigen) ? k.spruchEigen.trim() : (spruchEintrag ? spruchEintrag.text : (k.spruch || ""));
+  const quelle = voll(k.spruchEigen) ? "" : (spruchEintrag ? spruchEintrag.quelle : "");
+  const name = [p.vorname, p.nachname].filter(Boolean).join(" ") || "Vorname Nachname";
+  const geb = voll(p.geburtsname) && p.geburtsname !== p.nachname ? `geb. ${p.geburtsname}` : "";
+  const geboren = [p.geburtsdatum ? datumText(p.geburtsdatum) : "", voll(p.geburtsort) ? `in ${p.geburtsort}` : ""].filter(Boolean).join(" ");
+  const gestorben = s.sterbedatum ? datumText(s.sterbedatum) : "";
+  const trauernde = voll(k.trauernde) ? k.trauernde.trim() : (d.kontakte || []).map(x => x.name).filter(voll).slice(0, 4).join("\n");
+  const ort = voll(s.ort) ? s.ort.trim() : (voll(p.ort) ? p.ort : "");
+  return { vorlage, spruch, quelle, name, geb, geboren, gestorben, trauernde, ort, trauerfeier: (k.trauerfeier || "").trim(), spende: (k.spende || "").trim(),
+    foto: p.foto && normWert(d.sterbefall.fotoTrauer, JA_NEIN) !== "nein" ? p.foto : "", dankArt: k.dank || "allgemein", dankEigen: (k.dankEigen || "").trim(), pflege: (k.pflege || "").trim() };
+}
+
+function dankText(x) {
+  if (x.dankEigen) return x.dankEigen;
+  return DANK_TEXTE[x.dankArt in DANK_TEXTE ? x.dankArt : "allgemein"]
+    .replace("{name}", x.name).replace("{spende}", x.spende || "einem guten Zweck").replace("{pflege}", x.pflege || "allen Pflegenden");
+}
+
+const zeilen = text => String(text || "").split("\n").map(z => z.trim()).filter(Boolean);
+
+// Eine Karte als Element. typ: "anzeige" (eine Seite), "karte" (Vorder- und Innenseite), "dank" (Vorder- und Innenseite).
+function karteElement(typ, vorlageId, klein = false) {
+  const x = kartenDaten();
+  const v = KARTEN_VORLAGEN.find(e => e.id === vorlageId) || x.vorlage;
+  const motiv = () => { if (!v.motiv) return null; const m = el("span", { class: "kmotiv" }); m.innerHTML = KARTEN_MOTIVE[v.motiv]; return m; };
+  const foto = () => x.foto ? el("img", { class: "kfoto " + (v.foto || "rund"), src: x.foto, alt: "" }) : (v.foto ? el("span", { class: "kfoto leer " + v.foto }) : null);
+  const kopf = () => el("div", { class: "kkopf" },
+    v.foto === "gross" ? foto() : null,
+    v.foto !== "gross" ? motiv() : null,
+    v.foto === "klein" ? foto() : null);
+  const person = () => el("div", { class: "kperson" },
+    el("p", { class: "kname", text: x.name }),
+    x.geb ? el("p", { class: "kgeb", text: x.geb }) : null,
+    el("p", { class: "kdaten" }, el("span", { text: `* ${x.geboren || "Geburtsdatum"}` }), el("span", { text: `† ${x.gestorben || "Sterbedatum"}` })));
+  const spruch = () => x.spruch ? el("div", { class: "kspruch" }, el("p", { text: x.spruch }), x.quelle ? el("p", { class: "kquelle", text: x.quelle }) : null) : null;
+  const trauernde = () => el("div", { class: "ktrauernde" },
+    el("p", { class: "kstill", text: typ === "dank" ? "Im Namen aller Angehörigen" : "In stiller Trauer" }),
+    ...zeilen(x.trauernde || "Name der Angehörigen").map(z => el("p", { text: z })));
+  const ortDatum = () => x.ort ? el("p", { class: "kort", text: x.ort + (x.gestorben ? ", im " + new Date(x.gestorben.split(".").reverse().join("-")).toLocaleDateString("de-DE", { month: "long", year: "numeric" }) : "") }) : null;
+  const karte = el("div", { class: `tkarte v-${v.id} t-${typ}` + (klein ? " klein" : "") });
+  if (typ === "anzeige") {
+    karte.append(el("div", { class: "kseite" }, kopf(), spruch(), person(),
+      el("div", { class: "kabsatz" }, trauernde()),
+      x.trauerfeier ? el("p", { class: "kfeier", text: x.trauerfeier }) : null,
+      x.spende ? el("p", { class: "kspende", text: `Statt Blumen bitten wir um eine Spende an ${x.spende}.` }) : null,
+      ortDatum()));
+  } else if (typ === "karte") {
+    karte.append(
+      el("div", { class: "kseite vorn" }, kopf(), spruch(), person()),
+      el("div", { class: "kseite innen" },
+        v.foto !== "gross" && x.foto ? el("img", { class: "kfoto rund mittel", src: x.foto, alt: "" }) : null,
+        el("p", { class: "ktext", text: `Wir nehmen Abschied von ${x.name}.` }),
+        x.trauerfeier ? el("p", { class: "kfeier", text: x.trauerfeier }) : null,
+        x.spende ? el("p", { class: "kspende", text: `Statt Blumen bitten wir um eine Spende an ${x.spende}.` }) : null,
+        trauernde(), ortDatum()));
+  } else {
+    karte.append(
+      el("div", { class: "kseite vorn" }, kopf(), el("p", { class: "kdanke", text: "Danke" }), person()),
+      el("div", { class: "kseite innen" }, spruch(), el("p", { class: "ktext", text: dankText(x) }), trauernde(), ortDatum()));
+  }
+  return karte;
+}
+
+// Reiner Text für die Anzeigenabteilung der Zeitung.
+function anzeigenText() {
+  const x = kartenDaten();
+  return [x.spruch, x.quelle ? `(${x.quelle})` : "", "", x.name, x.geb, `* ${x.geboren}   † ${x.gestorben}`, "", "In stiller Trauer", x.trauernde, "",
+    x.trauerfeier, x.spende ? `Statt Blumen bitten wir um eine Spende an ${x.spende}.` : "", x.ort].filter((z, i, a) => z !== "" || (a[i - 1] !== "" && a[i - 1] !== undefined)).join("\n").trim();
+}
+
+/* OHNE-TEXTE-ENDE */
+
+function kartenDrucken(typ) {
+  const ziel = $("druck");
+  ziel.className = "karten";
+  const vorher = sprache;
+  sprache = "de";
+  try {
+    const k = karteElement(typ, zustand.daten.sterbefall.karten.vorlage);
+    if (typ === "anzeige") {
+      ziel.replaceChildren(el("section", { class: "dkarte danzeige" }, k));
+    } else {
+      // Klappkarte: Blatt 1 außen (Rückseite links, Vorderseite rechts), Blatt 2 innen (links Foto oder leer, rechts Text).
+      const [vorn, innen] = [...k.querySelectorAll(".kseite")];
+      const huelle = kl => { const h = el("div", { class: `tkarte v-${k.className.match(/v-(\w+)/)[1]} t-${typ}` }); if (kl) h.append(kl); return h; };
+      ziel.replaceChildren(
+        el("section", { class: "dkarte dblatt" }, el("div", { class: "dhalb leer" }, el("p", { class: "kklein", text: "" })), el("div", { class: "dhalb" }, huelle(vorn))),
+        el("section", { class: "dkarte dblatt" }, el("div", { class: "dhalb leer" }), el("div", { class: "dhalb" }, huelle(innen))));
+    }
+  } finally {
+    sprache = vorher;
+  }
+  $("druckSeiten").textContent = typ === "anzeige"
+    ? "@media print { @page anzeige { size: A5 portrait; margin: 10mm; } .danzeige { page: anzeige; } }"
+    : "@media print { @page klapp { size: A5 landscape; margin: 0; } .dblatt { page: klapp; } }";
+  window.print();
+}
+
+async function kartenDialog(typ) {
+  const titel = { anzeige: "Traueranzeige", karte: "Trauerkarte", dank: "Danksagung" }[typ];
+  const dlg = $("dialog");
+  $("dialogTitel").textContent = t(titel);
+  const vorschau = el("div", { class: "kartenvorschau" }, karteElement(typ, zustand.daten.sterbefall.karten.vorlage));
+  const links = el("div", { class: "druckdienste" },
+    el("p", { class: "hilfe", text: t("Drucken lassen: Das PDF nimmt jede Druckerei vor Ort an. Oder Sie gestalten die Karte mit denselben Angaben bei einem Online-Anbieter.") }),
+    el("div", { class: "dienstliste" }, ...DRUCKDIENSTE.map(d => el("a", { class: "btn flach", href: d.url, target: "_blank", rel: "noopener", text: d.name, title: d.hinweis }))));
+  const teile = [vorschau];
+  if (typ === "anzeige") {
+    const text = el("textarea", { class: "anzeigentext", rows: 8, readonly: true });
+    text.value = anzeigenText();
+    teile.push(el("p", { class: "hilfe", text: t("Text für die Anzeigenabteilung der Zeitung. Die meisten Verlage nehmen Anzeigen online oder per E-Mail an.") }), text);
+  }
+  teile.push(links);
+  $("dialogText").replaceChildren(...teile);
+  const antwort = await new Promise(resolve => {
+    $("dialogKnoepfe").replaceChildren(
+      el("button", { type: "button", class: "btn primaer", text: t("Drucken oder als PDF sichern"), onclick: () => { dlg.close(); resolve(true); } }),
+      el("button", { type: "button", class: "btn", text: t("Schließen"), onclick: () => { dlg.close(); resolve(false); } }));
+    dlg.onclose = () => { if (!dlg.open) resolve(false); };
+    dlg.showModal();
+  });
+  if (antwort) kartenDrucken(typ);
+}
+
+function kartenGruppe() {
+  const k = zustand.daten.sterbefall.karten;
+  if (druck) {
+    const v = KARTEN_VORLAGEN.find(e => e.id === k.vorlage);
+    return gruppe("Trauerkarten und Anzeigen", null,
+      el("div", { class: "dfeld" }, el("span", { class: "dl", text: t("Gewählte Vorlage") }), ...druckWert(v ? t(v.name) : "")),
+      el("div", { class: "dfeld breit" }, el("span", { class: "dl", text: t("Trauerspruch") }), ...druckWert(voll(k.spruchEigen) ? k.spruchEigen : k.spruch)),
+      druckFeld("sterbefall.karten.anzeige", "Traueranzeige in der Zeitung gewünscht?", { typ: "auswahl", optionen: JA_NEIN }),
+      druckFeld("sterbefall.karten.zeitung", "In welcher Zeitung?", {}),
+      druckFeld("sterbefall.karten.spende", "Statt Blumen: Spende an", { breit: true }));
+  }
+  // Vorlagenwahl als kleine Vorschaukarten
+  const wahlfeld = el("div", { class: "vorlagenwahl breit", role: "radiogroup", "aria-label": t("Vorlage") });
+  const zeichnen = () => {
+    wahlfeld.replaceChildren(...KARTEN_VORLAGEN.map(v => {
+      const aktiv = (k.vorlage || "salbei") === v.id;
+      return el("button", { type: "button", class: "vorlage" + (aktiv ? " aktiv" : ""), role: "radio", "aria-checked": String(aktiv),
+        onclick: () => { pfadSchreiben("sterbefall.karten.vorlage", v.id); zeichnen(); } },
+        karteElement("anzeige", v.id, true), el("span", { class: "vname", text: t(v.name) }));
+    }));
+  };
+  zeichnen();
+  const spruchwahl = el("select", { id: neueId() },
+    el("option", { value: "", text: t("Bitte wählen") }),
+    ...Object.keys(SPRUCH_GRUPPEN).map(g => el("optgroup", { label: t(SPRUCH_GRUPPEN[g]) },
+      ...SPRUECHE.filter(s => s.gruppe === g).map(s => el("option", { value: s.text, text: s.text + (s.quelle ? ` (${s.quelle})` : "") })))));
+  spruchwahl.value = k.spruch || "";
+  spruchwahl.addEventListener("change", () => { pfadSchreiben("sterbefall.karten.spruch", spruchwahl.value); zeichnen(); });
+  const spruchfeld = el("div", { class: "feld breit" }, el("label", { for: spruchwahl.id, text: t("Trauerspruch") }), el("p", { class: "hilfe", text: t("Alle Sprüche sind frei verwendbar. Ein eigener Text unten hat Vorrang.") }), spruchwahl);
+  const knoepfe = el("div", { class: "knopfreihe breit" },
+    el("button", { type: "button", class: "btn primaer", text: t("Traueranzeige"), onclick: () => kartenDialog("anzeige") }),
+    el("button", { type: "button", class: "btn", text: t("Trauerkarte"), onclick: () => kartenDialog("karte") }),
+    el("button", { type: "button", class: "btn", text: t("Danksagung"), onclick: () => kartenDialog("dank") }));
+  const neu = () => zeichnen();
+  return gruppe("Trauerkarten und Anzeigen", fuerAngehoerige
+      ? t("Traueranzeige, Trauerkarte und Danksagung mit den Angaben aus dem Ordner. Vorlage und Spruch hat {name} gewählt, Sie können beides ändern.", { name: personName() })
+      : "Wählen Sie eine Vorlage und einen Spruch. Ihre Angehörigen erhalten daraus Traueranzeige, Trauerkarte und Danksagung, mit Ihrem Foto und Ihren Daten schon eingesetzt.",
+    el("p", { class: "feldtitel breit", text: t("Vorlage") }),
+    wahlfeld,
+    spruchfeld,
+    feld("sterbefall.karten.spruchEigen", "Eigener Spruch oder Text", { typ: "mehrzeilig", zeilen: 2, beiAenderung: neu }),
+    wahl("sterbefall.karten.anzeige", "Traueranzeige in der Zeitung gewünscht?", JA_NEIN),
+    feld("sterbefall.karten.zeitung", "In welcher Zeitung?", { hilfe: "Zum Beispiel: Fuldaer Zeitung" }),
+    feld("sterbefall.karten.spende", "Statt Blumen: Spende an", { breit: true, hilfe: "Zum Beispiel: den Hospizverein Fulda, IBAN DE…", beiAenderung: neu }),
+    el("p", { class: "feldtitel breit", text: t("Nach dem Todesfall tragen die Angehörigen ein:") }),
+    feld("sterbefall.karten.trauernde", "In stiller Trauer", { typ: "mehrzeilig", zeilen: 3, hilfe: "Ein Name je Zeile. Ohne Eintrag stehen die ersten Ansprechpartner hier.", beiAenderung: neu }),
+    feld("sterbefall.karten.trauerfeier", "Trauerfeier, Ort und Zeit", { typ: "mehrzeilig", zeilen: 2, hilfe: "Zum Beispiel: Die Trauerfeier findet am 3. Oktober um 14 Uhr in der Friedhofskapelle Großenlüder statt.", beiAenderung: neu }),
+    feld("sterbefall.karten.dank", "Text der Danksagung", { typ: "auswahl", optionen: "dankArt" }),
+    feld("sterbefall.karten.pflege", "Dank an Pflege oder Hospiz", { hilfe: "Zum Beispiel: dem Team der Palliativstation Fulda" }),
+    feld("sterbefall.karten.dankEigen", "Eigener Danktext", { typ: "mehrzeilig", zeilen: 3 }),
+    knoepfe);
 }
 
 /* ---------- Import aus Kontakte-App und Passwort-Export ---------- */
