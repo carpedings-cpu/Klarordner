@@ -115,7 +115,7 @@ footer .leise { color: var(--leise); }
 }
 
 /* Unterseiten */
-.seitenkopf-titel { padding: 2.2rem 0 1rem; }
+.seitenkopf-titel { padding-top: 2.2rem; padding-bottom: 1rem; }
 .seitenkopf-titel p { font-size: 1.2rem; color: var(--leise); max-width: 720px; }
 .text { max-width: 720px; }
 .text h2 { margin-top: 2.2rem; }
