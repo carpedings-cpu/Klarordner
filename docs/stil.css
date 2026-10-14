@@ -140,3 +140,104 @@ footer .leise { color: var(--leise); }
 
 .oben-knapp { padding-top: 1rem; }
 .abstand-oben { margin-top: 2.5rem; }
+
+/* Startseite, zweite Fassung */
+.start section { padding: 4.5rem 0; }
+.start .ruhig { background: var(--weiss); }
+.mitte { text-align: center; max-width: 760px; margin: 0 auto 2.2rem; }
+.mitte .einleitung { margin: 0 auto; }
+.schmal { max-width: 760px; }
+.nachsatz { margin-top: 1.8rem; font-weight: 700; }
+.nachsatz a { color: var(--gruen); }
+.leise { color: var(--leise); }
+.klein-text { font-size: .95rem; }
+.freiwillig { font-weight: 400; color: var(--leise); }
+.btn.gross { font-size: 1.15rem; padding: 1rem 1.8rem; }
+h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); }
+.held2 { position: relative; overflow: hidden; padding: 3.5rem 0 4rem; }
+.held2-hintergrund { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.kreis { position: absolute; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #dbe7d8, transparent 70%); opacity: .9; }
+.kreis.k1 { width: 620px; height: 620px; right: -160px; top: -220px; }
+.kreis.k2 { width: 420px; height: 420px; left: -200px; bottom: -200px; background: radial-gradient(circle at 60% 40%, #e6ecd2, transparent 70%); }
+.held2-raster { position: relative; z-index: 1; display: grid; grid-template-columns: 1.05fr .95fr; gap: 3rem; align-items: center; }
+.held2 h1 { font-size: clamp(2.2rem, 4.6vw, 3.4rem); margin-bottom: 1rem; }
+.held2 .gross { font-size: 1.25rem; color: var(--leise); max-width: 560px; }
+.held2 .knoepfe { display: flex; flex-wrap: wrap; gap: .8rem; margin: 1.6rem 0 1.2rem; }
+.vertrauen { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; color: var(--gruen); font-weight: 700; font-size: .98rem; }
+.vertrauen li::before { content: "✓ "; }
+.held2-bild { position: relative; justify-self: center; width: min(100%, 440px); }
+.tablet { background: #1f2a23; border-radius: 30px; padding: 12px; box-shadow: 0 30px 70px rgba(31,42,35,.22), inset 0 0 0 2px #3a4a40; }
+.tablet img { display: block; width: 100%; height: auto; border-radius: 18px; }
+.tablet.klein { border-radius: 22px; padding: 9px; box-shadow: 0 18px 40px rgba(31,42,35,.16), inset 0 0 0 2px #3a4a40; }
+.tablet.klein img { border-radius: 13px; max-height: 420px; object-fit: cover; object-position: top; }
+.schwebe { position: absolute; background: var(--weiss); border-radius: 14px; padding: .7rem 1rem; box-shadow: 0 12px 30px rgba(31,42,35,.14); font-size: .9rem; color: var(--leise); line-height: 1.3; }
+.schwebe strong { display: block; color: var(--text); font-size: 1.05rem; }
+.schwebe.s1 { left: -40px; top: 18%; }
+.schwebe.s2 { right: -30px; bottom: 14%; }
+.zahlen { background: var(--gruen); color: #fff; padding: 2rem 0 !important; }
+.zahlen-raster { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+.zahlen .zahl { background: none; padding: 0; text-align: center; }
+.zahlen .zahl strong { display: block; font-family: "Fraunces", Georgia, serif; font-size: 2.6rem; line-height: 1.1; }
+.zahlen .zahl span { color: #dfe9dc; }
+.zweispalt-breit { display: grid; grid-template-columns: 1fr 1.1fr; gap: 3rem; align-items: start; }
+.zeitleiste { list-style: none; padding: 0; margin: 0; position: relative; }
+.zeitleiste::before { content: ""; position: absolute; left: 4.6rem; top: .6rem; bottom: .6rem; width: 2px; background: var(--linie); }
+.zeitleiste li { display: grid; grid-template-columns: 4rem 1fr; gap: 1.6rem; padding: .8rem 0; position: relative; }
+.zeitleiste .zeit { font-family: "Fraunces", Georgia, serif; font-weight: 600; color: var(--gruen); font-size: 1.15rem; text-align: right; padding-top: .1rem; }
+.zeitleiste li::before { content: ""; position: absolute; left: 4.6rem; top: 1.25rem; width: 12px; height: 12px; margin-left: -5px; border-radius: 50%; background: var(--gruen); box-shadow: 0 0 0 4px var(--grund); }
+.zeitleiste div { padding-left: .4rem; color: var(--leise); }
+.zeitleiste strong { display: block; color: var(--text); margin-bottom: .15rem; }
+.vergleich { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; max-width: 960px; margin: 0 auto; }
+.vergleich-karte { border-radius: 20px; padding: 1.8rem; }
+.vergleich-karte h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 1.4rem; margin-bottom: .8rem; }
+.vergleich-karte ul { list-style: none; padding: 0; margin: 0; }
+.vergleich-karte li { padding: .55rem 0 .55rem 2rem; position: relative; border-top: 1px solid rgba(0,0,0,.06); }
+.vergleich-karte li:first-child { border-top: 0; }
+.vergleich-karte.alt { background: #f1efe9; color: #5a584f; }
+.vergleich-karte.alt li::before { content: "–"; position: absolute; left: .4rem; color: #a09c8f; font-weight: 700; }
+.vergleich-karte.neu { background: var(--gruen); color: #fff; box-shadow: 0 20px 50px rgba(31,42,35,.18); }
+.vergleich-karte.neu h3 { color: #fff; }
+.vergleich-karte.neu li { border-top-color: rgba(255,255,255,.15); }
+.vergleich-karte.neu li::before { content: "✓"; position: absolute; left: .3rem; color: #c9dcc6; font-weight: 700; }
+.schritt-reihe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.schritt-text { margin-top: 1.2rem; position: relative; padding-left: 3.4rem; }
+.schritt-text .nummer { position: absolute; left: 0; top: 0; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--gruen); color: #fff; font-family: "Fraunces", Georgia, serif; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; }
+.schritt-text p { color: var(--leise); margin: 0; }
+.brief { background: #fff; border-radius: 6px; padding: 2rem 2.2rem; box-shadow: 0 20px 50px rgba(31,42,35,.14); font-size: .92rem; line-height: 1.5; transform: rotate(1.2deg); border: 1px solid var(--linie); }
+.brief p { margin: 0 0 .8rem; }
+.brief-kopf { color: var(--leise); font-size: .85rem; margin-bottom: 1.4rem; }
+.brief-an { margin-bottom: 1.4rem; }
+.brief-betreff { font-weight: 700; margin-bottom: 1rem; }
+.brief mark { background: var(--gold); color: var(--gold-text); padding: 0 .2rem; border-radius: 3px; }
+.brief-anlage { color: var(--leise); font-size: .85rem; margin-top: 1rem; }
+.fuerwen { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; max-width: 960px; margin: 0 auto; }
+.fuerwen-karte { display: block; background: var(--grund); border-radius: 20px; padding: 1.8rem; text-decoration: none; color: var(--text); border: 2px solid transparent; transition: transform .15s, border-color .15s; }
+.fuerwen-karte:hover { transform: translateY(-3px); border-color: var(--gruen); }
+.fuerwen-karte p { color: var(--leise); }
+.fuerwen-kreis { display: flex; width: 56px; height: 56px; border-radius: 50%; background: var(--gruen); align-items: center; justify-content: center; margin-bottom: 1rem; }
+.fuerwen-kreis svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.fuerwen-karte .btn { display: inline-block; margin-top: .4rem; }
+.einblenden { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+.einblenden.da { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .einblenden { opacity: 1; transform: none; transition: none; } .fuerwen-karte { transition: none; } }
+@media (max-width: 960px) {
+  .held2-raster, .zweispalt-breit, .vergleich, .fuerwen { grid-template-columns: 1fr; }
+  .schritt-reihe { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
+  .zahlen-raster { grid-template-columns: 1fr 1fr; }
+  .held2-bild { width: min(100%, 380px); margin-top: 1rem; }
+  .schwebe.s1 { left: -8px; } .schwebe.s2 { right: -8px; }
+  .start section { padding: 3rem 0; }
+  .brief { transform: none; padding: 1.4rem; }
+  .zeitleiste::before, .zeitleiste li::before { left: 3.6rem; }
+  .zeitleiste li { grid-template-columns: 3rem 1fr; gap: 1.4rem; }
+}
+
+.karte.f1 { --farbe: #4a6b55; }
+.karte.f2 { --farbe: #2f7a5c; }
+.karte.f3 { --farbe: #5c6b3f; }
+.karte.f4 { --farbe: #2b6f73; }
+.karte.f5 { --farbe: #6f8a4a; }
+.karte.f6 { --farbe: #3f7f6e; }
+.karte.f7 { --farbe: #3d6b7a; }
+.karte.f8 { --farbe: #6a7a86; }
+.karte.f9 { --farbe: #8a7a3a; }

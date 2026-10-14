@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://uvvqgwbshdtwlveopgvn.supabase.co; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://uvvqgwbshdtwlveopgvn.supabase.co; form-action 'none'; base-uri 'none'">
 <title>Klarordner · Damit Ihre Angehörigen wissen, was zu tun ist</title>
-<meta name="description" content="Klarordner ist ein kostenloser Vorsorgeordner für das iPad und den Computer. Tragen Sie sich ein und erhalten Sie die Checkliste für die ersten Tage nach einem Todesfall.">
+<meta name="description" content="Klarordner ist ein kostenloser Vorsorgeordner für das iPad und den Computer. Neun ruhige Schritte, vorbereitete Schreiben für den Ernstfall. Jetzt vormerken und die Checkliste für die ersten Tage nach einem Todesfall erhalten.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Klarordner · Damit Ihre Angehörigen wissen, was zu tun ist">
 <meta property="og:description" content="Der kostenlose Vorsorgeordner für das iPad und den Computer. Jetzt vormerken und die Checkliste für die ersten Tage nach einem Todesfall erhalten.">
@@ -19,8 +19,7 @@
 <link rel="apple-touch-icon" href="app/icons/icon-180.png">
 <link rel="stylesheet" href="stil.css">
 </head>
-<body>
-
+<body class="start">
 <header class="seitenkopf">
   <div class="huelle">
     <a class="marke" href="./"><img src="app/icons/icon-192.png" alt="" width="40" height="40">Klarordner</a>
@@ -36,97 +35,189 @@
 </header>
 
 
-<div class="held">
-  <div class="huelle">
-    <div>
+<section class="held2">
+  <div class="held2-hintergrund" aria-hidden="true"><span class="kreis k1"></span><span class="kreis k2"></span></div>
+  <div class="huelle held2-raster">
+    <div class="held2-text">
       <div class="vor">Kostenloser Vorsorgeordner für das iPad und den Computer</div>
       <h1>Wenn Ihnen etwas passiert, wissen Ihre Angehörigen, was zu tun ist.</h1>
-      <p class="gross">Klarordner führt Sie in neun ruhigen Schritten durch alles, was Ihre Familie nach einem Todesfall braucht: Ausweise, Konten, Verträge, Versicherungen, Wünsche. Fertig vorbereitet, ausgedruckt oder als Datei weitergegeben.</p>
+      <p class="gross">Neun ruhige Schritte, in großer Schrift, ohne Fachbegriffe. Am Ende liegt ein Ordner bereit, mit dem Ihre Familie im Ernstfall sofort handeln kann, bis hin zu den fertigen Briefen an Bank, Rente und Versicherung.</p>
       <div class="knoepfe">
-        <a class="btn primaer" href="#eintragen">Kostenlos vormerken</a>
-        <a class="btn" href="#so">So funktioniert es</a>
+        <a class="btn primaer gross" href="#eintragen">Kostenlos vormerken</a>
+        <a class="btn gross" href="#so">So funktioniert es</a>
       </div>
-      <p class="klein-hinweis">Nach dem Eintragen erhalten Sie sofort unsere Checkliste „Die ersten Tage nach einem Todesfall“ zum Ausdrucken. Kostenlos, ohne Verpflichtung.</p>
+      <ul class="vertrauen">
+        <li>Kostenlos</li>
+        <li>Kein Fachwissen nötig</li>
+        <li>Checkliste sofort nach dem Eintragen</li>
+      </ul>
     </div>
-    <div class="geraet"><img src="bilder/uebersicht.png" alt="Die Übersicht von Klarordner auf dem iPad: Foto, Name, Fortschritt der neun Bereiche" width="820" height="1000"></div>
-  </div>
-</div>
-
-<div class="band">
-  <div class="huelle">
-    <span>Kostenlos</span>
-    <span>Große Schrift, klare Sprache</span>
-    <span>Für iPad und Computer</span>
-    <span>Schreiben für den Ernstfall fertig vorbereitet</span>
-  </div>
-</div>
-
-<section>
-  <div class="huelle">
-    <h2>Was Ihre Angehörigen sonst wochenlang suchen müssen</h2>
-    <p class="einleitung">Nach einem Todesfall stehen Familien vor hunderten Fragen, meist ohne Antwort. Wo ist das Testament? Welche Versicherung muss binnen 48 Stunden informiert werden? Welche Verträge laufen weiter? Klarordner fragt das alles in Ruhe ab, solange Sie es noch selbst beantworten können.</p>
-    <div class="raster">
-      <div class="karte" style="--farbe:#4a6b55"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><h3>Persönliche Daten</h3><p>Wer Sie sind und wo Ausweise, Urkunden und Stammbuch liegen.</p></div>
-      <div class="karte" style="--farbe:#2f7a5c"><div class="ico"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></div><h3>Ansprechpartner</h3><p>Wer benachrichtigt werden soll, wer sich um was kümmert.</p></div>
-      <div class="karte" style="--farbe:#5c6b3f"><div class="ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></div><h3>Testament und Vollmachten</h3><p>Wo die Dokumente liegen, wer handeln darf. Ohne Muster, ohne Rechtsberatung.</p></div>
-      <div class="karte" style="--farbe:#2b6f73"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v9M9 10v9M15 10v9M19 10v9M2 19h20M12 3 2 10h20z"/></svg></div><h3>Konten und Finanzen</h3><p>Banken, Depots, Vollmachten. Bewusst ohne PIN und Passwörter.</p></div>
-      <div class="karte" style="--farbe:#6f8a4a"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div><h3>Versicherungen</h3><p>Welche Police eilt, welche nicht. Mit Adressen von 34 Gesellschaften.</p></div>
-      <div class="karte" style="--farbe:#3f7f6e"><div class="ico"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 21M3 12a9 9 0 0 1 15.5-6.2L21 3"/><path d="M3 16v5h5M21 8V3h-5"/></svg></div><h3>Verträge und Wohnen</h3><p>Strom, Telefon, Abos, Mietvertrag, Schlüssel. Alles, was gekündigt werden muss.</p></div>
-      <div class="karte" style="--farbe:#3d6b7a"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg></div><h3>Digitaler Nachlass</h3><p>E-Mail, Handy, soziale Netzwerke. Zugangsdaten verschlüsselt mit eigenem Passwort.</p></div>
-      <div class="karte" style="--farbe:#6a7a86"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 2c0 3-2 4-2 7a2 2 0 0 0 4 0c0-3-2-4-2-7z"/><path d="M8 12v8a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-8"/></svg></div><h3>Für den Sterbefall</h3><p>Bestattung, Grabart, Trauerfeier, Haustiere. Und eine Checkliste für die Familie.</p></div>
-      <div class="karte" style="--farbe:#8a7a3a"><div class="ico"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><path d="m2 7 10 6 10-6"/></svg></div><h3>Persönliche Nachricht</h3><p>Was Sie Ihren Liebsten noch sagen möchten. Als Text oder als Videobotschaft.</p></div>
+    <div class="held2-bild">
+      <div class="tablet"><img src="bilder/uebersicht.png" alt="Die Übersicht von Klarordner auf dem iPad: Foto, Name und der Fortschritt der neun Bereiche" width="820" height="1000"></div>
+      <div class="schwebe s1"><strong>7 von 9</strong>Bereichen ausgefüllt</div>
+      <div class="schwebe s2"><strong>Brief fertig</strong>Rentenservice, Bank, Krankenkasse</div>
     </div>
   </div>
 </section>
 
-<section class="ruhig" id="so">
+<section class="zahlen">
+  <div class="huelle zahlen-raster">
+    <div class="zahl"><strong>9</strong><span>Bereiche, Schritt für Schritt</span></div>
+    <div class="zahl"><strong>74</strong><span>Anbieter mit geprüfter Anschrift</span></div>
+    <div class="zahl"><strong>20+</strong><span>Schreiben für den Ernstfall vorbereitet</span></div>
+    <div class="zahl"><strong>0 €</strong><span>Klarordner ist kostenlos</span></div>
+  </div>
+</section>
+
+<section class="einblenden">
   <div class="huelle">
-    <h2>So funktioniert es</h2>
-    <div class="schritte">
-      <div class="schritt"><h3>In Ruhe ausfüllen</h3><p>Ein Bereich nach dem anderen, in großer Schrift. Sie können jederzeit unterbrechen. Dokumente lassen sich abfotografieren, Klarordner liest die Nummern aus.</p></div>
-      <div class="schritt"><h3>Ausdrucken oder weitergeben</h3><p>Der fertige Ordner wird als PDF gedruckt oder als Datei gesichert. Mit einem Klick sprechen alle Texte Ihre Angehörigen an.</p></div>
-      <div class="schritt"><h3>Im Ernstfall ist alles vorbereitet</h3><p>Kündigungen und Mitteilungen an Bank, Versicherung, Rentenservice und Anbieter sind vorausgefüllt. Unterschreiben, Sterbeurkunde beilegen, abschicken.</p></div>
+    <div class="zweispalt-breit">
+      <div>
+        <div class="vor">Warum es Klarordner gibt</div>
+        <h2>Nach einem Todesfall beginnt für die Familie ein zweiter Vollzeitjob.</h2>
+        <p class="einleitung">Für Trauer bleibt keine Zeit, denn die Fristen laufen vom ersten Tag an. Wer dann suchen muss, wo das Testament liegt und welche Verträge es gibt, verliert Wochen und oft Geld. Das meiste davon lässt sich heute in Ruhe vorbereiten.</p>
+      </div>
+      <ol class="zeitleiste">
+        <li><span class="zeit">24 h</span><div><strong>Arzt, Bestatter, Familie</strong>Totenschein, Überführung, Haustier versorgen. Wo liegt der Vorsorgevertrag?</div></li>
+        <li><span class="zeit">3 Tage</span><div><strong>Sterbeurkunde, Versicherungen</strong>Urkunden zusammensuchen, Standesamt, Lebensversicherung melden. Oft binnen 48 Stunden.</div></li>
+        <li><span class="zeit">2 Wochen</span><div><strong>Rente, Kasse, Bank, Verträge</strong>Sterbevierteljahr beantragen, Konten, Mietvertrag, zwanzig Kündigungen schreiben.</div></li>
+        <li><span class="zeit">Monate</span><div><strong>Nachlass und Steuern</strong>Erbschein, Ausschlagung binnen sechs Wochen, Anzeige beim Finanzamt.</div></li>
+      </ol>
     </div>
   </div>
 </section>
 
-<section>
+<section class="ruhig einblenden">
+  <div class="huelle">
+    <div class="mitte">
+      <div class="vor">Der Unterschied</div>
+      <h2>Die Notfallmappe aus Papier liegt bei den meisten leer im Schrank.</h2>
+      <p class="einleitung">Jeder Landkreis verteilt eine, kaum jemand füllt sie aus: zu lang, zu abstrakt, zu viel auf einmal. Klarordner geht einen anderen Weg.</p>
+    </div>
+    <div class="vergleich">
+      <div class="vergleich-karte alt">
+        <h3>Notfallmappe aus Papier</h3>
+        <ul>
+          <li>30 Seiten Formular auf einmal</li>
+          <li>Kleine Schrift, Amtsdeutsch</li>
+          <li>Nach dem Ausfüllen veraltet sie still</li>
+          <li>Angehörige müssen jeden Brief selbst schreiben</li>
+          <li>Adressen und Fristen muss die Familie suchen</li>
+        </ul>
+      </div>
+      <div class="vergleich-karte neu">
+        <h3>Klarordner</h3>
+        <ul>
+          <li>Eine Frage nach der anderen, jederzeit unterbrechen</li>
+          <li>Große Schrift, klare Sprache, Beispiele bei jeder Frage</li>
+          <li>Erinnert nach einem Jahr, hineinzuschauen</li>
+          <li>Kündigungen und Mitteilungen sind fertig vorbereitet</li>
+          <li>74 Anbieter mit geprüfter Anschrift, 28 mit E-Mail</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="so" class="einblenden">
+  <div class="huelle">
+    <div class="mitte">
+      <div class="vor">So funktioniert es</div>
+      <h2>Drei Schritte, kein Fachwissen.</h2>
+    </div>
+    <div class="schritt-reihe">
+      <div class="schritt-block">
+        <div class="tablet klein"><img src="bilder/persoenlich.png" alt="Der Bereich Persönliche Daten in Klarordner" width="820" height="1000"></div>
+        <div class="schritt-text"><span class="nummer">1</span><h3>In Ruhe ausfüllen</h3><p>Neun Bereiche, von den Ausweisen bis zur persönlichen Nachricht. Verträge und Policen fotografieren Sie einfach ab, Klarordner liest die Nummern aus.</p></div>
+      </div>
+      <div class="schritt-block">
+        <div class="tablet klein"><img src="bilder/drucken.png" alt="Der Druckdialog von Klarordner mit allen Bereichen" width="820" height="1000"></div>
+        <div class="schritt-text"><span class="nummer">2</span><h3>Ausdrucken oder weitergeben</h3><p>Als vollständiger Ordner mit Deckblatt und Inhaltsverzeichnis, als PDF oder als Datei. Mit einem Klick sprechen alle Texte Ihre Angehörigen an.</p></div>
+      </div>
+      <div class="schritt-block">
+        <div class="tablet klein"><img src="bilder/schreiben.png" alt="Vorbereitete Schreiben in Klarordner" width="820" height="1000"></div>
+        <div class="schritt-text"><span class="nummer">3</span><h3>Im Ernstfall ist alles vorbereitet</h3><p>Angehörige tragen Namen und Sterbedatum ein, öffnen jedes Schreiben als Brief oder E-Mail, unterschreiben, Sterbeurkunde beilegen, fertig.</p></div>
+      </div>
+    </div>
+    <p class="mitte nachsatz"><a href="so-funktioniert-es.html">Alle Einzelheiten auf der Seite „So funktioniert es“</a></p>
+  </div>
+</section>
+
+<section class="ruhig einblenden">
   <div class="huelle zweispalt">
-    <div class="bild geraet"><img src="bilder/schreiben.png" alt="Vorausgefüllte Schreiben an Rentenservice, Krankenkasse, Bank und Versicherung mit Knöpfen für Brief und E-Mail" width="820" height="1000"></div>
     <div>
-      <h2>Die Schreiben sind schon fertig</h2>
-      <p>Angehörige müssen nach einem Todesfall oft zwanzig Briefe schreiben, in den schwersten Wochen ihres Lebens. Klarordner hat sie bereits vorbereitet.</p>
+      <div class="vor">Der Beweis</div>
+      <h2>Ein Brief, der schon geschrieben ist, bevor er gebraucht wird.</h2>
+      <p>So sieht eines der Schreiben aus, die Klarordner vorbereitet. Alles Markierte stammt aus Ihrem Ordner. Angehörige ergänzen nur ihren Namen und das Datum.</p>
       <ul class="liste">
-        <li>Brieftexte für Bank, Krankenkasse, Rentenversicherung, Versicherer, Strom, Telefon, Zeitung, Verein und Fitnessstudio</li>
-        <li>74 Anbieter mit geprüfter Anschrift, 28 davon mit E-Mail-Adresse</li>
-        <li>Als Brief zum Ausdrucken oder direkt als E-Mail</li>
-        <li>Hinweis, welche Fristen gelten, zum Beispiel das Sterbevierteljahr der Rente</li>
+        <li>Für Bank, Krankenkasse, Rentenservice, Versicherer, Strom, Gas, Wasser, Telefon, Zeitung, Verein, Fitnessstudio</li>
+        <li>Mit Hinweis, welche Unterlagen beizulegen sind</li>
+        <li>Als Brief zum Ausdrucken oder als fertige E-Mail</li>
       </ul>
+    </div>
+    <div class="brief" aria-label="Beispiel eines vorbereiteten Schreibens">
+      <div class="brief-kopf"><span>Thomas Musterfrau<br>Am Markt 1<br>12345 Beispielstadt</span></div>
+      <div class="brief-an"><mark>Beispielbank AG</mark><br><mark>Kundenservice</mark><br><mark>Bankplatz 1</mark><br><mark>12345 Beispielstadt</mark></div>
+      <div class="brief-betreff">Mitteilung eines Todesfalls, Konto <mark>IBAN DE12 3456 7890 1234 5678 90</mark></div>
+      <p>Sehr geehrte Damen und Herren,</p>
+      <p>hiermit teile ich Ihnen mit, dass <mark>Erika Musterfrau</mark>, geboren am <mark>17.03.1952</mark>, <mark>Lindenweg 4, 12345 Beispielstadt</mark>, am 20.09.2026 verstorben ist. Eine Kopie der Sterbeurkunde liegt bei.</p>
+      <p>Bitte teilen Sie mir mit, welche Unterlagen Sie für die weitere Abwicklung benötigen, und senden Sie mir eine Aufstellung der Konten und Depots zum Todestag.</p>
+      <p>Mit freundlichen Grüßen<br>Thomas Musterfrau</p>
+      <p class="brief-anlage">Anlage: Kopie der Sterbeurkunde</p>
     </div>
   </div>
 </section>
 
-<section class="ruhig">
-  <div class="huelle zweispalt umgekehrt">
-    <div class="bild geraet"><img src="bilder/bereiche.png" alt="Die neun Bereiche von Klarordner als Kacheln mit Fortschrittsanzeige" width="820" height="1000"></div>
-    <div>
-      <h2>Einfach genug für jeden</h2>
-      <p>Klarordner wurde für Menschen gemacht, die sich mit Technik nicht beschäftigen wollen. Wer ein Formular auf Papier ausfüllen kann, kann auch Klarordner ausfüllen.</p>
-      <ul class="liste">
-        <li>Große Schrift, auf Wunsch noch größer, eine Frage nach der anderen</li>
-        <li>Jederzeit unterbrechen, Klarordner merkt sich, wo Sie waren</li>
-        <li>Verträge und Ausweise einfach abfotografieren, die Nummern werden ausgelesen</li>
-        <li>Eine Videobotschaft an die Familie, aufgenommen mit dem iPad</li>
-      </ul>
-      <div class="zitatkasten" style="margin-top:1.4rem"><strong>Für wen ist Klarordner?</strong>Für alle, die ihren Angehörigen die schwerste Zeit erleichtern wollen. Und für Kinder, die sich das mit ihren Eltern gemeinsam vornehmen.</div>
-    </div>
-  </div>
-</section>
-
-<section id="eintragen">
+<section class="einblenden">
   <div class="huelle">
-    <h2 style="text-align:center">Klarordner kostenlos vormerken</h2>
-    <p class="einleitung" style="text-align:center;margin:0 auto">Klarordner wird gerade fertiggestellt und ist kostenlos. Tragen Sie sich ein, dann erfahren Sie als Erste, wenn es losgeht. Zwei kurze Fragen helfen uns, Klarordner richtig zu machen.</p>
+    <div class="mitte">
+      <div class="vor">Was Ihre Angehörigen sonst wochenlang suchen</div>
+      <h2>Neun Bereiche, die den Unterschied machen.</h2>
+    </div>
+    <div class="raster">
+      <div class="karte f1"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><h3>Persönliche Daten</h3><p>Wer Sie sind und wo Ausweise, Urkunden und Stammbuch liegen.</p></div>
+      <div class="karte f2"><div class="ico"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></div><h3>Ansprechpartner</h3><p>Wer benachrichtigt werden soll, wer sich um was kümmert.</p></div>
+      <div class="karte f3"><div class="ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></div><h3>Testament und Vollmachten</h3><p>Wo die Dokumente liegen, wer handeln darf. Ohne Muster, ohne Rechtsberatung.</p></div>
+      <div class="karte f4"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v9M9 10v9M15 10v9M19 10v9M2 19h20M12 3 2 10h20z"/></svg></div><h3>Konten und Finanzen</h3><p>Banken, Depots, Vollmachten. Bewusst ohne PIN und Passwörter.</p></div>
+      <div class="karte f5"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div><h3>Versicherungen</h3><p>Welche Police eilt, welche nicht. Mit Adressen von 34 Gesellschaften.</p></div>
+      <div class="karte f6"><div class="ico"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 21M3 12a9 9 0 0 1 15.5-6.2L21 3"/><path d="M3 16v5h5M21 8V3h-5"/></svg></div><h3>Verträge und Wohnen</h3><p>Strom, Telefon, Abos, Mietvertrag, Schlüssel. Alles, was gekündigt werden muss.</p></div>
+      <div class="karte f7"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg></div><h3>Digitaler Nachlass</h3><p>E-Mail, Handy, soziale Netzwerke. Zugangsdaten verschlüsselt mit eigenem Passwort.</p></div>
+      <div class="karte f8"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 2c0 3-2 4-2 7a2 2 0 0 0 4 0c0-3-2-4-2-7z"/><path d="M8 12v8a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-8"/></svg></div><h3>Für den Sterbefall</h3><p>Bestattung, Grabart, Trauerfeier, Haustiere. Und eine Checkliste für die Familie.</p></div>
+      <div class="karte f9"><div class="ico"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><path d="m2 7 10 6 10-6"/></svg></div><h3>Persönliche Nachricht</h3><p>Was Sie Ihren Liebsten noch sagen möchten. Als Text oder als Videobotschaft.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="ruhig einblenden">
+  <div class="huelle">
+    <div class="mitte">
+      <div class="vor">Für wen</div>
+      <h2>Für Sie selbst. Oder für Ihre Eltern.</h2>
+    </div>
+    <div class="fuerwen">
+      <a class="fuerwen-karte" href="#eintragen" data-fuer="mich">
+        <span class="fuerwen-kreis"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+        <h3>Ich möchte vorsorgen</h3>
+        <p>Sie wollen Ihren Angehörigen die schwerste Zeit erleichtern und endlich Ordnung in Unterlagen, Verträge und Wünsche bringen. In Ihrem Tempo, in großer Schrift.</p>
+        <span class="btn primaer">Für mich vormerken</span>
+      </a>
+      <a class="fuerwen-karte" href="#eintragen" data-fuer="eltern">
+        <span class="fuerwen-kreis"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2 21c0-4 3-6.5 7-6.5s7 2.5 7 6.5M15 21c0-2.5 1.5-4.5 4-4.5s3 2 3 4.5"/></svg></span>
+        <h3>Ich möchte es mit meinen Eltern angehen</h3>
+        <p>Sie wissen nicht, wo bei Ihren Eltern das Testament liegt, und trauen sich nicht zu fragen. Klarordner macht aus dem schweren Gespräch einen gemeinsamen Nachmittag am iPad.</p>
+        <span class="btn primaer">Für meine Eltern vormerken</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section id="eintragen" class="einblenden">
+  <div class="huelle">
+    <div class="mitte">
+      <div class="vor">Vormerkung</div>
+      <h2>Klarordner kostenlos vormerken</h2>
+      <p class="einleitung">Klarordner wird gerade fertiggestellt. Tragen Sie sich ein, dann erfahren Sie als Erste, wenn es losgeht. Als Dankeschön gibt es sofort die Checkliste für die ersten Tage nach einem Todesfall.</p>
+    </div>
     <form class="formular" id="formular" novalidate>
       <div class="feld">
         <label for="email">Ihre E-Mail-Adresse</label>
@@ -150,7 +241,7 @@
         </div>
       </div>
       <div class="feld">
-        <label for="nachricht">Was wäre Ihnen wichtig? <span style="font-weight:400;color:var(--leise)">(freiwillig)</span></label>
+        <label for="nachricht">Was wäre Ihnen wichtig? <span class="freiwillig">(freiwillig)</span></label>
         <textarea id="nachricht" name="nachricht" maxlength="1000" placeholder="Zum Beispiel: Was fehlt Ihnen? Was macht Ihnen Sorgen?"></textarea>
       </div>
       <div class="honig" aria-hidden="true"><label>Firma <input type="text" name="firma" tabindex="-1" autocomplete="off"></label></div>
@@ -159,8 +250,8 @@
         <div class="fehler" id="fehlerZustimmung">Bitte die Einwilligung ankreuzen.</div>
       </div>
       <div class="absenden">
-        <button type="submit" class="btn primaer" id="btnSenden">Kostenlos vormerken und Checkliste erhalten</button>
-        <span style="color:var(--leise);font-size:.95rem">Keine Werbung, keine Weitergabe. Höchstens ein paar E-Mails bis zum Start.</span>
+        <button type="submit" class="btn primaer gross" id="btnSenden">Kostenlos vormerken und Checkliste erhalten</button>
+        <span class="leise klein-text">Keine Werbung, keine Weitergabe. Höchstens ein paar E-Mails bis zum Start.</span>
       </div>
       <div class="fehler" id="fehlerSenden">Das hat leider nicht geklappt. Bitte versuchen Sie es in einer Minute noch einmal.</div>
     </form>
@@ -169,19 +260,18 @@
       <h2>Vielen Dank, Sie sind vorgemerkt.</h2>
       <p>Wir melden uns, sobald Klarordner fertig ist. Bis dahin hilft Ihnen vielleicht schon unsere Checkliste.</p>
       <p><a class="btn primaer" href="checkliste.html">Checkliste öffnen und ausdrucken</a></p>
-      <p id="dankeHinweis" style="color:var(--leise);font-size:.95rem"></p>
+      <p id="dankeHinweis" class="leise klein-text"></p>
     </div>
   </div>
 </section>
 
-<section class="ruhig faq">
-  <div class="huelle">
-    <h2>Häufige Fragen</h2>
-    <details><summary>Ersetzt Klarordner ein Testament oder eine Vollmacht?</summary><p>Nein, und das soll es auch nicht. Klarordner hält fest, ob es diese Dokumente gibt und wo sie liegen. Die Dokumente selbst erstellen Sie mit Notar oder Anwalt.</p></details>
-    <details><summary>Auf welchen Geräten läuft Klarordner?</summary><p>Auf dem iPad, auf anderen Tablets und auf jedem Computer mit einem aktuellen Browser. Es muss nichts installiert werden.</p></details>
-    <details><summary>Wann geht es los?</summary><p>Klarordner wird gerade fertiggestellt. Wer vorgemerkt ist, bekommt als Erste eine E-Mail, sobald es so weit ist.</p></details>
+<section class="ruhig faq einblenden">
+  <div class="huelle schmal">
+    <h2>Die drei häufigsten Fragen</h2>
     <details><summary>Was kostet Klarordner?</summary><p>Nichts. Klarordner ist kostenlos.</p></details>
-    <details><summary>Wie kann ich meine Eintragung wieder löschen?</summary><p>Eine kurze E-Mail genügt. Die Adresse steht in den Datenschutzhinweisen. Wir löschen Ihre Angaben dann sofort.</p></details>
+    <details><summary>Ersetzt Klarordner ein Testament oder eine Vollmacht?</summary><p>Nein, und das soll es auch nicht. Klarordner hält fest, ob es diese Dokumente gibt und wo sie liegen. Die Dokumente selbst erstellen Sie mit Notar oder Anwalt.</p></details>
+    <details><summary>Ich bin nicht sicher am Computer. Schaffe ich das?</summary><p>Klarordner wurde für Menschen gemacht, die sich mit Technik nicht beschäftigen wollen. Große Schrift, eine Frage nach der anderen, alles auf Deutsch. Wer ein Formular auf Papier ausfüllen kann, kann auch Klarordner ausfüllen.</p></details>
+    <p class="mitte nachsatz"><a href="fragen.html">Alle Fragen und Antworten</a></p>
   </div>
 </section>
 
@@ -204,6 +294,20 @@
   // Herkunft der Besucher, zum Beispiel ?q=anzeige1 oder utm_source. Ohne Cookies, ohne Tracking.
   const url = new URL(location.href);
   const quelle = (url.searchParams.get("q") || url.searchParams.get("utm_source") || "").slice(0, 100) || null;
+
+  // „Für mich“ oder „Für meine Eltern“ aus den Karten vorbelegen
+  document.querySelectorAll("[data-fuer]").forEach(a => a.addEventListener("click", () => {
+    const r = formular.querySelector(`input[name=fuer][value=${a.dataset.fuer}]`);
+    if (r) r.checked = true;
+  }));
+
+  // Abschnitte sanft einblenden, ohne Bewegung bei entsprechender Systemeinstellung
+  if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const io = new IntersectionObserver(eintraege => eintraege.forEach(e => { if (e.isIntersecting) { e.target.classList.add("da"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
+    document.querySelectorAll(".einblenden").forEach(s => io.observe(s));
+  } else {
+    document.querySelectorAll(".einblenden").forEach(s => s.classList.add("da"));
+  }
 
   formular.addEventListener("submit", async e => {
     e.preventDefault();
