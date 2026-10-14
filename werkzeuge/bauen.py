@@ -43,7 +43,17 @@ assert not unbekannt, f"ansprache.json: kein Anzeigetext: {unbekannt}"
 
 shutil.rmtree(docs, ignore_errors=True)
 # Wurzel: die Webseite mit Vormerkung, Checkliste, Impressum und Auswertung. Darunter app/ mit der eigentlichen App.
-shutil.copytree(wurzel / "start", docs)
+shutil.copytree(wurzel / "start", docs, ignore=shutil.ignore_patterns("_*"))
+# Gemeinsame Navigation und Fußzeile in jede Seite einsetzen, die aktuelle Seite in der Navigation markieren.
+kopf = (wurzel / "start" / "_kopf.html").read_text(encoding="utf-8")
+fuss = (wurzel / "start" / "_fuss.html").read_text(encoding="utf-8")
+for seite in docs.glob("*.html"):
+    inhalt = seite.read_text(encoding="utf-8")
+    if "<!--KOPF-->" not in inhalt:
+        continue
+    ziel = "./" if seite.name == "index.html" else seite.name
+    eigener = kopf.replace(f'<a href="{ziel}">', f'<a href="{ziel}" aria-current="page">', 1)
+    seite.write_text(inhalt.replace("<!--KOPF-->", eigener).replace("<!--FUSS-->", fuss), encoding="utf-8")
 (docs / "schriften").mkdir()
 for schrift in (app / "schriften").glob("*.woff2"):
     shutil.copy(schrift, docs / "schriften" / schrift.name)

@@ -2296,7 +2296,7 @@ async function druckenStarten() {
   $("dialogText").replaceChildren(
     el("p", { text: t("Wählen Sie, was gedruckt werden soll. Leere Bereiche werden als Formular zum Ausfüllen von Hand gedruckt.") }),
     el("p", { text: pdfTipp() }),
-    sprache !== "de" ? el("p", { text: t("Der Ausdruck ist auf Deutsch, damit Ärzte, Banken und Ämter ihn lesen können.") }) : null,
+    ...(sprache !== "de" ? [el("p", { text: t("Der Ausdruck ist auf Deutsch, damit Ärzte, Banken und Ämter ihn lesen können.") })] : []),
     liste);
   const antwort = await new Promise(resolve => {
     $("dialogKnoepfe").replaceChildren(

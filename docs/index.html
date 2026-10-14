@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://uvvqgwbshdtwlveopgvn.supabase.co; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://uvvqgwbshdtwlveopgvn.supabase.co; form-action 'none'; base-uri 'none'">
 <title>Klarordner · Damit Ihre Angehörigen wissen, was zu tun ist</title>
 <meta name="description" content="Klarordner ist ein kostenloser Vorsorgeordner für das iPad und den Computer. Tragen Sie sich ein und erhalten Sie die Checkliste für die ersten Tage nach einem Todesfall.">
 <meta property="og:type" content="website">
@@ -17,114 +17,24 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="app/icons/icon-192.png">
 <link rel="apple-touch-icon" href="app/icons/icon-180.png">
-<style>
-@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-display:swap;src:url(schriften/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122}
-@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-display:swap;src:url(schriften/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122}
-@font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url(schriften/fraunces-latin-600-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122}
-:root {
-  --grund: #eef2ec; --weiss: #fff; --text: #1f2a23; --leise: #5a6a5e; --linie: #cfdacd;
-  --gruen: #4a6b55; --gruen-dunkel: #3a5544; --gruen-hell: #e1eadf; --gold: #efe9d2; --gold-text: #6b5a1e;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--grund); color: var(--text); font-family: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 1.1rem; line-height: 1.55; -webkit-text-size-adjust: 100%; }
-h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; line-height: 1.15; margin: 0 0 .6rem; letter-spacing: 0; }
-h1 { font-size: clamp(2rem, 5.5vw, 3.1rem); }
-h2 { font-size: clamp(1.6rem, 3.8vw, 2.2rem); }
-h3 { font-size: 1.3rem; font-family: inherit; font-weight: 700; }
-p { margin: 0 0 1rem; }
-a { color: var(--gruen); }
-.huelle { max-width: 1040px; margin: 0 auto; padding: 0 1.25rem; }
-header { padding: 1.1rem 0; }
-header .huelle { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.marke { display: flex; align-items: center; gap: .6rem; font-weight: 700; font-size: 1.25rem; text-decoration: none; color: var(--text); }
-.marke img { width: 40px; height: 40px; border-radius: 10px; }
-.btn { display: inline-block; border: 0; border-radius: 999px; padding: .85rem 1.5rem; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; background: var(--gruen-hell); color: var(--gruen); transition: background .15s; }
-.btn.primaer { background: var(--gruen); color: #fff; }
-.btn.primaer:hover { background: var(--gruen-dunkel); }
-.btn.klein { padding: .6rem 1.1rem; font-size: 1rem; }
-.held { padding: 2.5rem 0 3rem; }
-.held .huelle { display: grid; grid-template-columns: 1.1fr .9fr; gap: 2.5rem; align-items: center; }
-.held .vor { font-weight: 700; color: var(--gruen); text-transform: uppercase; letter-spacing: .06em; font-size: .9rem; margin-bottom: .8rem; }
-.held p.gross { font-size: 1.3rem; color: var(--leise); }
-.held .knoepfe { display: flex; flex-wrap: wrap; gap: .8rem; margin: 1.5rem 0 1rem; }
-.held .klein-hinweis { font-size: .95rem; color: var(--leise); }
-.geraet { background: var(--weiss); border-radius: 22px; padding: 10px; box-shadow: 0 18px 50px rgba(31,42,35,.14); }
-.geraet img { display: block; width: 100%; height: auto; border-radius: 14px; }
-.band { background: var(--weiss); padding: 1.2rem 0; border-top: 1px solid var(--linie); border-bottom: 1px solid var(--linie); }
-.band .huelle { display: flex; flex-wrap: wrap; justify-content: center; gap: .8rem 2.2rem; font-weight: 700; color: var(--gruen); }
-.band span::before { content: "✓ "; }
-section { padding: 3.5rem 0; }
-.einleitung { max-width: 680px; color: var(--leise); font-size: 1.15rem; }
-.raster { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; margin-top: 1.8rem; }
-.karte { background: var(--weiss); border-radius: 18px; padding: 1.4rem; box-shadow: 0 6px 20px rgba(31,42,35,.06); }
-.karte .ico { width: 48px; height: 48px; border-radius: 50%; background: var(--farbe, var(--gruen)); display: flex; align-items: center; justify-content: center; margin-bottom: .9rem; }
-.karte .ico svg { width: 24px; height: 24px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.karte p { color: var(--leise); margin: 0; font-size: 1.02rem; }
-.schritte { counter-reset: s; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem; margin-top: 1.8rem; }
-.schritt { position: relative; padding-left: 4rem; }
-.schritt::before { counter-increment: s; content: counter(s); position: absolute; left: 0; top: 0; width: 3rem; height: 3rem; border-radius: 50%; background: var(--gruen); color: #fff; font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; }
-.schritt p { color: var(--leise); margin: 0; }
-.zweispalt { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: center; }
-.zweispalt.umgekehrt .bild { order: 2; }
-.liste { list-style: none; padding: 0; margin: 1rem 0 0; }
-.liste li { padding: .55rem 0 .55rem 2rem; position: relative; border-top: 1px solid var(--linie); }
-.liste li:first-child { border-top: 0; }
-.liste li::before { content: ""; position: absolute; left: 0; top: .9rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--gruen-hell); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a6b55' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E"); background-size: 70%; background-position: center; background-repeat: no-repeat; }
-.ruhig { background: var(--weiss); border-top: 1px solid var(--linie); border-bottom: 1px solid var(--linie); }
-.zitatkasten { background: var(--gruen-hell); border-radius: 18px; padding: 1.6rem 1.8rem; font-size: 1.15rem; }
-.zitatkasten strong { display: block; margin-bottom: .4rem; }
-#eintragen { scroll-margin-top: 1rem; }
-.formular { background: var(--weiss); border-radius: 22px; padding: 2rem; box-shadow: 0 18px 50px rgba(31,42,35,.1); max-width: 760px; margin: 1.8rem auto 0; }
-.feld { margin-bottom: 1.4rem; }
-.feld > label, .feld > .frage { display: block; font-weight: 700; margin-bottom: .45rem; }
-.feld .hilfe { color: var(--leise); font-size: .95rem; margin: -.2rem 0 .5rem; }
-input[type=email], textarea { width: 100%; font: inherit; padding: .85rem 1rem; border: 2px solid var(--linie); border-radius: 12px; background: #f6f8f5; color: var(--text); }
-input[type=email]:focus, textarea:focus { outline: none; border-color: var(--gruen); background: #fff; }
-textarea { min-height: 5.5rem; resize: vertical; }
-.wahl { display: flex; flex-wrap: wrap; gap: .6rem; }
-.wahl label { position: relative; }
-.wahl input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.wahl span { display: inline-block; padding: .65rem 1.1rem; border-radius: 999px; background: var(--gruen-hell); color: var(--gruen); font-weight: 700; cursor: pointer; border: 2px solid transparent; }
-.wahl input:checked + span { background: var(--gruen); color: #fff; }
-.wahl input:focus-visible + span { border-color: var(--gruen-dunkel); }
-.zustimmung { display: flex; gap: .7rem; align-items: flex-start; font-size: 1rem; }
-.zustimmung input { width: 1.4rem; height: 1.4rem; margin-top: .2rem; flex: none; accent-color: var(--gruen); }
-.fehler { color: #8a2f2f; font-weight: 700; margin-top: .4rem; display: none; }
-.fehler.sichtbar { display: block; }
-.absenden { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: .5rem; }
-.absenden .btn { font-size: 1.15rem; padding: 1rem 1.8rem; }
-.absenden .btn[disabled] { opacity: .6; cursor: wait; }
-.honig { position: absolute; left: -9999px; }
-.danke { display: none; text-align: center; padding: 1rem 0; }
-.danke.sichtbar { display: block; }
-.danke .haken { width: 72px; height: 72px; border-radius: 50%; background: var(--gruen); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; }
-.danke .haken svg { width: 36px; height: 36px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.faq details { background: var(--weiss); border-radius: 14px; padding: .2rem 1.3rem; margin-bottom: .7rem; }
-.faq summary { font-weight: 700; padding: .9rem 0; cursor: pointer; font-size: 1.1rem; }
-.faq details p { color: var(--leise); padding-bottom: .9rem; margin: 0; }
-footer { padding: 2.5rem 0 3rem; color: var(--leise); font-size: .95rem; border-top: 1px solid var(--linie); }
-footer .huelle { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
-footer a { color: var(--leise); margin-right: 1.2rem; }
-@media (max-width: 860px) {
-  .held .huelle, .zweispalt { grid-template-columns: 1fr; }
-  .zweispalt.umgekehrt .bild { order: 0; }
-  .raster, .schritte { grid-template-columns: 1fr; }
-  .held { padding-top: 1.2rem; }
-  .formular { padding: 1.4rem; }
-  section { padding: 2.6rem 0; }
-}
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-</style>
+<link rel="stylesheet" href="stil.css">
 </head>
 <body>
 
-<header>
+<header class="seitenkopf">
   <div class="huelle">
     <a class="marke" href="./"><img src="app/icons/icon-192.png" alt="" width="40" height="40">Klarordner</a>
-    <a class="btn klein primaer" href="#eintragen">Kostenlos vormerken</a>
+    <nav class="navigation" aria-label="Hauptnavigation">
+      <a href="./" aria-current="page">Start</a>
+      <a href="so-funktioniert-es.html">So funktioniert es</a>
+      <a href="fuer-angehoerige.html">Für Angehörige</a>
+      <a href="fragen.html">Fragen</a>
+      <a href="ueber.html">Über Klarordner</a>
+    </nav>
+    <a class="btn klein primaer" href="./#eintragen">Kostenlos vormerken</a>
   </div>
 </header>
+
 
 <div class="held">
   <div class="huelle">
@@ -277,10 +187,11 @@ footer a { color: var(--leise); margin-right: 1.2rem; }
 
 <footer>
   <div class="huelle">
-    <div>Klarordner · Vorsorgeordner für Angehörige</div>
-    <div><a href="rechtliches.html#impressum">Impressum</a><a href="rechtliches.html#datenschutz">Datenschutz</a><a href="checkliste.html">Checkliste</a></div>
+    <div>Klarordner · Vorsorgeordner für Angehörige<br><span class="leise">Diana Ziegler, Großenlüder</span></div>
+    <div class="fussnav"><a href="so-funktioniert-es.html">So funktioniert es</a><a href="fuer-angehoerige.html">Für Angehörige</a><a href="checkliste.html">Checkliste</a><a href="fragen.html">Fragen</a><a href="ueber.html">Über Klarordner</a><a href="rechtliches.html#impressum">Impressum</a><a href="rechtliches.html#datenschutz">Datenschutz</a></div>
   </div>
 </footer>
+
 
 <script>
 (() => {

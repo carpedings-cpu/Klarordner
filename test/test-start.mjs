@@ -67,6 +67,18 @@ try {
   await p.emulateMedia({ media: 'screen' });
   await p.goto('http://localhost:8128/rechtliches.html');
   pruef('Datenschutz nennt Supabase und Widerruf', (await p.textContent('body')).includes('Supabase') && (await p.textContent('body')).includes('widerrufen'));
+  // Alle Seiten der Webseite: laden ohne Fehler, Navigation vollständig, aktuelle Seite markiert, Links erreichbar
+  for (const seite of ['', 'so-funktioniert-es.html', 'fuer-angehoerige.html', 'fragen.html', 'ueber.html', 'checkliste.html', 'rechtliches.html']) {
+    await p.goto('http://localhost:8128/' + seite);
+    const nav = await p.locator('.navigation a').count();
+    const aktuell = await p.locator('.navigation a[aria-current=page]').getAttribute('href').catch(() => null);
+    const links = await p.evaluate(() => [...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href')).filter(h => !h.startsWith('http') && !h.startsWith('mailto') && !h.startsWith('#')));
+    const kaputt = [];
+    for (const h of new Set(links)) { const r = await p.request.get('http://localhost:8128/' + h.replace(/#.*$/, '')); if (!r.ok()) kaputt.push(h); }
+    const bilder = await p.evaluate(() => [...document.images].filter(i => !i.complete || !i.naturalWidth).map(i => i.src));
+    pruef(`Seite ${seite || 'Start'}: Navigation ${nav} Punkte, aktuell ${aktuell}, Links ok, Bilder ok`, nav === 5 && kaputt.length === 0 && bilder.length === 0 && (seite === 'checkliste.html' || seite === 'rechtliches.html' ? aktuell === null : aktuell === (seite || './')));
+    if (kaputt.length) console.log('   kaputt:', kaputt);
+  }
   // Auswertungsseite: falsches Passwort, dann nachgestellte Antwort
   await p.unroute('https://uvvqgwbshdtwlveopgvn.supabase.co/**');
   let rpcSchluessel = null;
