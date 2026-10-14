@@ -25,6 +25,15 @@ try {
   pruef('Kostenlos, ohne Preisfragen und ohne Datenschutzversprechen', text.includes('kostenlos') && !/kaufen|Preis|Cloud|bleibt auf Ihrem Gerät/.test(text.replace('Datenschutzhinweise', '')));
   pruef('Schriften geladen', await p.evaluate(() => document.fonts.check('600 20px Fraunces') && document.fonts.check('700 16px "Atkinson Hyperlegible"')));
   await p.screenshot({ path: path.join(erg, 'start-desktop.png'), fullPage: true });
+  // Effekte: Bildwechsel im iPad, hochzählende Zahlen, sich füllender Brief
+  pruef('Vier Bilder im iPad, erstes aktiv', await p.locator('#schau .folie').count() === 4 && await p.locator('#schau .folie.aktiv >> nth=0').getAttribute('src') === 'bilder/uebersicht.png');
+  await p.waitForTimeout(4600);
+  pruef('Nach vier Sekunden nächstes Bild und neue Karte', await p.locator('#schau .folie.aktiv').getAttribute('src') === 'bilder/persoenlich.png' && (await p.textContent('#schwebe1 strong')) === 'Eine Frage');
+  await p.evaluate(() => document.querySelector('#brief').scrollIntoView({ block: 'center' }));
+  await p.waitForTimeout(3500);
+  pruef('Brief hat alle Felder gefüllt', await p.evaluate(() => { const m = [...document.querySelectorAll('#brief mark')]; return m.length > 5 && m.every(x => x.classList.contains('da')); }));
+  pruef('Zahlen hochgezählt', (await p.textContent('#zahlen [data-ziel="74"]')) === '74' && (await p.textContent('#zahlen [data-nach]')) === '20+');
+  await p.evaluate(() => window.scrollTo(0, 0));
   // Ohne E-Mail und Einwilligung geht nichts raus
   await p.click('#btnSenden');
   pruef('Fehlende E-Mail wird gemeldet', await p.isVisible('#fehlerEmail') && anfragen.length === 0);

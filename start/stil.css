@@ -241,3 +241,13 @@ h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); }
 .karte.f7 { --farbe: #3d6b7a; }
 .karte.f8 { --farbe: #6a7a86; }
 .karte.f9 { --farbe: #8a7a3a; }
+
+/* Effekte: Bildwechsel im iPad, Karten, Musterbrief */
+.folien { position: relative; aspect-ratio: 820 / 1000; }
+.folie { position: absolute; inset: 0; opacity: 0; transition: opacity .9s ease; }
+.folie.aktiv { opacity: 1; }
+.schwebe { transition: opacity .25s ease, transform .25s ease; }
+.schwebe.wechsel { opacity: 0; transform: translateY(6px); }
+.brief.fuellt mark { background: transparent; color: inherit; box-shadow: inset 0 -2px 0 var(--linie); transition: background .4s ease, color .4s ease, box-shadow .4s ease; }
+.brief.fuellt mark.da { background: var(--gold); color: var(--gold-text); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .folie, .schwebe, .brief mark { transition: none; } }

@@ -40,18 +40,25 @@
       </ul>
     </div>
     <div class="held2-bild">
-      <div class="tablet"><img src="bilder/uebersicht.png" alt="Die Übersicht von Klarordner auf dem iPad: Foto, Name und der Fortschritt der neun Bereiche" width="820" height="1000"></div>
-      <div class="schwebe s1"><strong>7 von 9</strong>Bereichen ausgefüllt</div>
-      <div class="schwebe s2"><strong>Brief fertig</strong>Rentenservice, Bank, Krankenkasse</div>
+      <div class="tablet" id="schau">
+        <div class="folien">
+          <img class="folie aktiv" src="bilder/uebersicht.png" alt="Die Übersicht von Klarordner auf dem iPad: Foto, Name und der Fortschritt der neun Bereiche" width="820" height="1000" data-s1="7 von 9|Bereichen ausgefüllt" data-s2="Weiter, wo ich war|Klarordner merkt sich alles">
+          <img class="folie" src="bilder/persoenlich.png" alt="Der Bereich Persönliche Daten" width="820" height="1000" data-s1="Eine Frage|nach der anderen" data-s2="Große Schrift|auf Wunsch noch größer">
+          <img class="folie" src="bilder/schreiben.png" alt="Vorbereitete Schreiben" width="820" height="1000" data-s1="Brief fertig|Rentenservice, Bank, Krankenkasse" data-s2="Auch als E-Mail|28 Adressen hinterlegt">
+          <img class="folie" src="bilder/drucken.png" alt="Der Druckdialog" width="820" height="1000" data-s1="Als PDF|mit Deckblatt und Inhalt" data-s2="Für die Angehörigen|Texte umgestellt">
+        </div>
+      </div>
+      <div class="schwebe s1" id="schwebe1"><strong>7 von 9</strong><span>Bereichen ausgefüllt</span></div>
+      <div class="schwebe s2" id="schwebe2"><strong>Weiter, wo ich war</strong><span>Klarordner merkt sich alles</span></div>
     </div>
   </div>
 </section>
 
-<section class="zahlen">
+<section class="zahlen" id="zahlen">
   <div class="huelle zahlen-raster">
-    <div class="zahl"><strong>9</strong><span>Bereiche, Schritt für Schritt</span></div>
-    <div class="zahl"><strong>74</strong><span>Anbieter mit geprüfter Anschrift</span></div>
-    <div class="zahl"><strong>20+</strong><span>Schreiben für den Ernstfall vorbereitet</span></div>
+    <div class="zahl"><strong data-ziel="9">9</strong><span>Bereiche, Schritt für Schritt</span></div>
+    <div class="zahl"><strong data-ziel="74">74</strong><span>Anbieter mit geprüfter Anschrift</span></div>
+    <div class="zahl"><strong data-ziel="20" data-nach="+">20+</strong><span>Schreiben für den Ernstfall vorbereitet</span></div>
     <div class="zahl"><strong>0 €</strong><span>Klarordner ist kostenlos</span></div>
   </div>
 </section>
@@ -142,7 +149,7 @@
         <li>Als Brief zum Ausdrucken oder als fertige E-Mail</li>
       </ul>
     </div>
-    <div class="brief" aria-label="Beispiel eines vorbereiteten Schreibens">
+    <div class="brief" id="brief" aria-label="Beispiel eines vorbereiteten Schreibens">
       <div class="brief-kopf"><span>Thomas Musterfrau<br>Am Markt 1<br>12345 Beispielstadt</span></div>
       <div class="brief-an"><mark>Beispielbank AG</mark><br><mark>Kundenservice</mark><br><mark>Bankplatz 1</mark><br><mark>12345 Beispielstadt</mark></div>
       <div class="brief-betreff">Mitteilung eines Todesfalls, Konto <mark>IBAN DE12 3456 7890 1234 5678 90</mark></div>
@@ -288,6 +295,39 @@
     document.querySelectorAll(".einblenden").forEach(s => io.observe(s));
   } else {
     document.querySelectorAll(".einblenden").forEach(s => s.classList.add("da"));
+  }
+
+  const ruhig = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // 1. Das iPad blättert von selbst durch die App, dreimal, dann bleibt es stehen.
+  const folien = [...document.querySelectorAll("#schau .folie")];
+  if (folien.length > 1 && !ruhig) {
+    let i = 0, runden = 0;
+    const karte = (id, text) => { const [a, b] = text.split("|"); const el = $(id); el.classList.add("wechsel"); setTimeout(() => { el.querySelector("strong").textContent = a; el.querySelector("span").textContent = b; el.classList.remove("wechsel"); }, 250); };
+    const takt = setInterval(() => {
+      folien[i].classList.remove("aktiv");
+      i = (i + 1) % folien.length;
+      if (i === 0) runden++;
+      folien[i].classList.add("aktiv");
+      karte("#schwebe1", folien[i].dataset.s1); karte("#schwebe2", folien[i].dataset.s2);
+      if (runden >= 3 && i === 0) clearInterval(takt);
+    }, 4000);
+  }
+
+  // 2. Die Zahlen zählen hoch, sobald das Band sichtbar wird.
+  const zaehlen = () => document.querySelectorAll("#zahlen [data-ziel]").forEach(el => {
+    const ziel = +el.dataset.ziel, nach = el.dataset.nach || "", start = performance.now(), dauer = 1400;
+    const schritt = jetzt => { const t = Math.min(1, (jetzt - start) / dauer), w = 1 - Math.pow(1 - t, 3); el.textContent = Math.round(ziel * w) + nach; if (t < 1) requestAnimationFrame(schritt); };
+    requestAnimationFrame(schritt);
+  });
+
+  // 3. Der Musterbrief füllt seine Felder nacheinander.
+  const briefFuellen = () => { const b = $("#brief"); b.classList.add("fuellt"); b.querySelectorAll("mark").forEach((m, n) => setTimeout(() => m.classList.add("da"), 350 + n * 260)); };
+
+  if ("IntersectionObserver" in window && !ruhig) {
+    const einmal = (ziel, tun) => { const el = $(ziel); if (!el) return; const o = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { tun(); o.disconnect(); } }), { threshold: .4 }); o.observe(el); };
+    einmal("#zahlen", zaehlen);
+    einmal("#brief", briefFuellen);
   }
 
   formular.addEventListener("submit", async e => {
