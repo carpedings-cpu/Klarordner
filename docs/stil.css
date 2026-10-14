@@ -161,7 +161,7 @@ h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); }
 .kreis.k2 { width: 420px; height: 420px; left: -200px; bottom: -200px; background: radial-gradient(circle at 60% 40%, #e6ecd2, transparent 70%); }
 .held2-raster { position: relative; z-index: 1; display: grid; grid-template-columns: 1.05fr .95fr; gap: 3rem; align-items: center; }
 .held2 h1 { font-size: clamp(2.2rem, 4.6vw, 3.4rem); margin-bottom: 1rem; }
-.held2 .gross { font-size: 1.25rem; color: var(--leise); max-width: 560px; }
+.held2 p.gross { font-size: 1.25rem; color: var(--leise); max-width: 560px; }
 .held2 .knoepfe { display: flex; flex-wrap: wrap; gap: .8rem; margin: 1.6rem 0 1.2rem; }
 .vertrauen { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; color: var(--gruen); font-weight: 700; font-size: .98rem; }
 .vertrauen li::before { content: "✓ "; }
