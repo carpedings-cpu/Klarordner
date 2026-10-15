@@ -251,3 +251,6 @@ h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); }
 .brief.fuellt mark { background: transparent; color: inherit; box-shadow: inset 0 -2px 0 var(--linie); transition: background .4s ease, color .4s ease, box-shadow .4s ease; }
 .brief.fuellt mark.da { background: var(--gold); color: var(--gold-text); box-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .folie, .schwebe, .brief mark { transition: none; } }
+
+/* Landingpage ohne Navigation */
+.seitenkopf.landung .huelle { flex-wrap: nowrap; }

@@ -19,16 +19,17 @@ try {
     anfragen.push({ url: route.request().url(), kopf: route.request().headers(), daten: route.request().postDataJSON() });
     route.fulfill({ status: antwort, body: antwort === 201 ? '' : '{"code":"23505"}', headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' } });
   });
-  await p.goto('http://localhost:8128/?q=test-anzeige');
+  await p.goto('http://localhost:8128/vormerken/?q=test-anzeige');
+  pruef('Landingpage ohne Navigation, mit Link zur Webseite', await p.locator('.navigation').count() === 0 && await p.locator('footer a[href="../"]').count() === 1);
   pruef('Überschrift und Bilder', await p.isVisible('h1') && await p.evaluate(() => [...document.images].every(i => i.loading === 'lazy' || (i.complete && i.naturalWidth > 0))));
   const text = await p.textContent('body');
   pruef('Kostenlos, ohne Preisfragen und ohne Datenschutzversprechen', text.includes('kostenlos') && !/kaufen|Preis|Cloud|bleibt auf Ihrem Gerät/.test(text.replace('Datenschutzhinweise', '')));
   pruef('Schriften geladen', await p.evaluate(() => document.fonts.check('600 20px Fraunces') && document.fonts.check('700 16px "Atkinson Hyperlegible"')));
   await p.screenshot({ path: path.join(erg, 'start-desktop.png'), fullPage: true });
   // Effekte: Bildwechsel im iPad, hochzählende Zahlen, sich füllender Brief
-  pruef('Vier Bilder im iPad, erstes aktiv', await p.locator('#schau .folie').count() === 4 && await p.locator('#schau .folie.aktiv >> nth=0').getAttribute('src') === 'bilder/uebersicht.png');
+  pruef('Vier Bilder im iPad, erstes aktiv', await p.locator('#schau .folie').count() === 4 && (await p.locator('#schau .folie.aktiv >> nth=0').getAttribute('src')).endsWith('bilder/uebersicht.png'));
   await p.waitForTimeout(4600);
-  pruef('Nach vier Sekunden nächstes Bild und neue Karte', await p.locator('#schau .folie.aktiv').getAttribute('src') === 'bilder/persoenlich.png' && (await p.textContent('#schwebe1 strong')) === 'Eine Frage');
+  pruef('Nach vier Sekunden nächstes Bild und neue Karte', (await p.locator('#schau .folie.aktiv').getAttribute('src')).endsWith('bilder/persoenlich.png') && (await p.textContent('#schwebe1 strong')) === 'Eine Frage');
   await p.evaluate(() => document.querySelector('#brief').scrollIntoView({ block: 'center' }));
   await p.waitForTimeout(3500);
   pruef('Brief hat alle Felder gefüllt', await p.evaluate(() => { const m = [...document.querySelectorAll('#brief mark')]; return m.length > 5 && m.every(x => x.classList.contains('da')); }));
@@ -50,9 +51,9 @@ try {
   console.log('  Übermittelt:', JSON.stringify(a.daten));
   pruef('Eintrag an die Warteliste geschickt', a.url.endsWith('/rest/v1/klarordner_warteliste') && a.kopf.apikey.startsWith('sb_publishable_') && a.kopf.prefer === 'return=minimal');
   pruef('Alle Antworten enthalten', a.daten.email === 'test@beispiel.de' && a.daten.fuer === 'eltern' && a.daten.geraet === 'ipad' && !('preis' in a.daten) && a.daten.nachricht === 'Bitte große Schrift.' && a.daten.quelle === 'test-anzeige');
-  pruef('Dank mit Link zur Checkliste', await p.isVisible('#danke a[href="checkliste.html"]') && !(await p.isVisible('#formular')));
+  pruef('Dank mit Link zur Checkliste', await p.isVisible('#danke a[href$="checkliste.html"]') && !(await p.isVisible('#formular')));
   // Doppelte Adresse, Aufruf ohne Kennzeichen
-  await p.goto('http://localhost:8128/');
+  await p.goto('http://localhost:8128/vormerken/');
   antwort = 409;
   await p.fill('#email', 'test@beispiel.de');
   await p.check('#zustimmung');
@@ -77,15 +78,15 @@ try {
   await p.goto('http://localhost:8128/rechtliches.html');
   pruef('Datenschutz nennt Supabase und Widerruf', (await p.textContent('body')).includes('Supabase') && (await p.textContent('body')).includes('widerrufen'));
   // Alle Seiten der Webseite: laden ohne Fehler, Navigation vollständig, aktuelle Seite markiert, Links erreichbar
-  for (const seite of ['', 'so-funktioniert-es.html', 'fuer-angehoerige.html', 'fragen.html', 'ueber.html', 'checkliste.html', 'rechtliches.html']) {
+  for (const seite of ['', 'so-funktioniert-es.html', 'fuer-angehoerige.html', 'fragen.html', 'ueber.html', 'checkliste.html', 'rechtliches.html', 'vormerken/']) {
     await p.goto('http://localhost:8128/' + seite);
     const nav = await p.locator('.navigation a').count();
     const aktuell = await p.locator('.navigation a[aria-current=page]').getAttribute('href').catch(() => null);
     const links = await p.evaluate(() => [...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href')).filter(h => !h.startsWith('http') && !h.startsWith('mailto') && !h.startsWith('#')));
     const kaputt = [];
-    for (const h of new Set(links)) { const r = await p.request.get('http://localhost:8128/' + h.replace(/#.*$/, '')); if (!r.ok()) kaputt.push(h); }
+    for (const h of new Set(links)) { const r = await p.request.get(new URL(h.replace(/#.*$/, '') || './', p.url()).href); if (!r.ok()) kaputt.push(h); }
     const bilder = await p.evaluate(() => [...document.images].filter(i => !i.complete || !i.naturalWidth).map(i => i.src));
-    pruef(`Seite ${seite || 'Start'}: Navigation ${nav} Punkte, aktuell ${aktuell}, Links ok, Bilder ok`, nav === 5 && kaputt.length === 0 && bilder.length === 0 && (seite === 'checkliste.html' || seite === 'rechtliches.html' ? aktuell === null : aktuell === (seite || './')));
+    pruef(`Seite ${seite || 'Start'}: Navigation ${nav} Punkte, aktuell ${aktuell}, Links ok, Bilder ok`, (seite === 'vormerken/' ? nav === 0 : nav === 5) && kaputt.length === 0 && bilder.length === 0 && (seite === 'checkliste.html' || seite === 'rechtliches.html' || seite === 'vormerken/' ? aktuell === null : aktuell === (seite || './')));
     if (kaputt.length) console.log('   kaputt:', kaputt);
   }
   // Auswertungsseite: falsches Passwort, dann nachgestellte Antwort
