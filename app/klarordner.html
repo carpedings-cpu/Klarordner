@@ -499,6 +499,34 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; }
   .kacheln { grid-template-columns: 1fr 1fr; gap: .75rem; }
   .kachel { min-height: 8rem; padding: 1rem; }
 }
+/* Eine nächste Handlung, kompakte Orientierung und bewusst geprüfte Übergabe. */
+.ordnerkopf { margin: .2rem 0 1.5rem; }
+.ordnerkopf h2 { font-size: 1.9rem; margin-bottom: .4rem; }
+#inhalt > .formkarte { margin-bottom: 1.25rem; }
+.naechster-schritt { border-left: 5px solid var(--blau); }
+.naechster-schritt h3 { margin: .25rem 0 .5rem; }
+.naechster-schritt > .btn { margin-top: .9rem; }
+.schritt-label { color: var(--leise); font-weight: 700; }
+.weitere-aufgaben { margin-top: 1rem; }
+.weitere-aufgaben summary, .bereiche-kompakt summary, .offen-aktion summary, .foto-spaeter summary { cursor: pointer; min-height: 44px; padding: .55rem 0; font-weight: 700; }
+.offen-aktion { margin-top: .25rem; }
+.offen-aktion summary { font-size: .95rem; color: var(--blau); font-weight: 400; }
+.offen-aktion select { margin: .4rem 0; }
+.pruefliste { display: grid; gap: .8rem; }
+.pruefzeile { display: flex; gap: .75rem; align-items: flex-start; padding: .5rem; font-weight: 400; }
+.pruefzeile input { flex: 0 0 24px; width: 24px; height: 24px; margin-top: .15rem; accent-color: var(--blau); }
+.lese-eintrag { padding: .6rem 0; border-bottom: 1px solid var(--linie); overflow-wrap: anywhere; }
+.lese-eintrag:last-child { border: 0; }
+.angehoerige-inhalt { display: grid; gap: 1rem; }
+.formkarte p, .dkurz p { overflow-wrap: anywhere; }
+.foto-spaeter { margin-top: 1rem; }
+@media (max-width: 40em) {
+  .ordnerkopf h2 { font-size: 1.55rem; }
+  .knopfreihe { align-items: stretch; }
+  .knopfreihe .btn { white-space: normal; }
+  .pruefzeile { padding: .4rem 0; }
+}
+
 </style>
 </head>
 <body>
@@ -692,6 +720,9 @@ function leereDaten() {
     schemaVersion: SCHEMA_VERSION,
     lastModified: null,
     fuerAngehoerige: false,
+    inhaltStand: null,
+    uebergabe: { person: "", ablage: "", notizen: "", erhalten: false, geoeffnet: false, gefunden: false, rueckfragen: false,
+      kopieStand: "", kopieAm: "", pruefStand: "", geprueftAm: "" },
     persoenlich: {
       vorname: "", nachname: "", geburtsname: "", geburtsdatum: "", geburtsort: "",
       familienstand: "", staatsangehoerigkeit: "",
@@ -849,6 +880,7 @@ function einlesen(text) {
     MIGRATIONEN[v](roh);
     roh.schemaVersion = v + 1;
   }
+  if (!istObjekt(roh.uebergabe)) roh.uebergabe = structuredClone(leereDaten().uebergabe);
   return ergaenzen(roh, leereDaten());
 }
 
@@ -1191,20 +1223,33 @@ function pfadSchreiben(pfad, wert) {
   const letzter = teile.pop();
   const obj = teile.reduce((o, k) => o[k], start);
   obj[letzter] = wert;
+  if (pfad === "uebergabe.person") { obj.pruefStand = ""; obj.geprueftAm = ""; for (const key of ["erhalten", "geoeffnet", "gefunden", "rueckfragen"]) obj[key] = false; }
+  if (pfad === "uebergabe.ablage") { obj.kopieStand = ""; obj.kopieAm = ""; }
   if (obj._offen && voll(wert)) delete obj._offen[letzter];
   aenderung(pfad);
 }
 
 function aenderung(pfad) {
   if (pfad.startsWith("tresor.")) tresorGeaendert();
-  else geaendert();
+  else geaendert(pfad);
 }
 
-function geaendert() {
-  zustand.daten.lastModified = new Date().toISOString();
+function geaendert(pfad = "") {
+  const d = zustand.daten;
+  const jetzt = new Date(Math.max(Date.now(), (Date.parse(d.inhaltStand || d.lastModified) || 0) + 1)).toISOString();
+  if (String(pfad).startsWith("uebergabe.")) {
+    if (!d.inhaltStand) d.inhaltStand = d.lastModified || jetzt;
+  } else {
+    d.inhaltStand = jetzt;
+    if (d.uebergabe && d.uebergabe.pruefStand) {
+      for (const key of ["erhalten", "geoeffnet", "gefunden", "rueckfragen"]) d.uebergabe[key] = false;
+    }
+  }
+  d.lastModified = jetzt;
   zustand.geaendert = true;
   speichernVormerken();
   statusZeigen();
+  if (zustand.ansicht === "schreiben") schreibenStatusZeigen();
 }
 
 /* ---------- Tresor für Zugangsdaten ---------- */
@@ -1468,7 +1513,10 @@ function navZeigen() {
     }, symbol(sym, "klein", farbe), el("span", { text: t(titel) })));
   $("navStart").replaceChildren(punkt("uebersicht", "Übersicht", "raster", "#4a6b55"));
   $("navliste").replaceChildren(...BEREICHE.map(b => punkt(b.id, b.titel, b.symbol, b.farbe)));
-  $("navExtra").replaceChildren(punkt("schreiben", "Kündigungen und Schreiben", "brief", "#5b6b63"));
+  $("navExtra").replaceChildren(
+    punkt("angehoerige", "Für Angehörige lesen", "raster", "#4a6b55"),
+    punkt("uebergabe", "Sicherung und Übergabe", "brief", "#4a6b55"),
+    punkt("schreiben", "Kündigungen und Schreiben", "brief", "#5b6b63"));
 }
 
 function wechseln(id) {
@@ -1500,6 +1548,8 @@ function inhaltZeigen() {
     ziel.replaceChildren(...einstiegAnsicht().filter(Boolean));
     return;
   }
+  if (zustand.ansicht === "angehoerige") { ziel.replaceChildren(...angehoerigeAnsicht().filter(Boolean)); return; }
+  if (zustand.ansicht === "uebergabe") { ziel.replaceChildren(...uebergabeAnsicht().filter(Boolean)); return; }
   const nr = BEREICHE.findIndex(b => b.id === zustand.ansicht);
   const b = BEREICHE[nr];
   const kinder = [
@@ -1612,16 +1662,23 @@ function offenText(pfad) {
   return info ? t(info.grund === 'unbekannt' ? "Noch unbekannt" : "Wird später ergänzt") : '';
 }
 function offenWahl(pfad, label, eingabe) {
-  if (pfad.startsWith('tresor.') || pfad.startsWith('schreiben.')) return null;
+  if (pfad.startsWith('tresor.') || pfad.startsWith('schreiben.') || pfad.startsWith('uebergabe.')) return null;
+  const passend = /ablage|nummer|steuerId|iban|\.(telefon|mobil|bank|gesellschaft|vorhanden|ueberTod|vollmachtUeberTod|verwahrt)$/.test(pfad);
+  if (!passend && !offenInfo(pfad)) return null;
   const id = neueId();
+  const summary = el('summary', { text: t("Später klären") });
   const select = el('select', { id, 'aria-label': t("Offene Angabe: {feld}", { feld: t(label) }) },
     el('option', { value: '', text: t("Offen lassen") }),
     el('option', { value: 'unbekannt', text: t("Weiß ich nicht") }),
     el('option', { value: 'spaeter', text: t("Trage ich später ein") }));
+  const details = el('details', { class: 'offen-aktion' }, summary,
+    el('label', { for: id, text: t("Wie möchten Sie diese Angabe offenlassen?") }), select);
   select.value = (offenInfo(pfad) || {}).grund || '';
   const sync = () => {
-    select.disabled = voll(eingabe.value);
-    if (select.disabled) select.value = '';
+    details.hidden = voll(eingabe.value);
+    select.disabled = details.hidden;
+    if (details.hidden) select.value = '';
+    summary.textContent = offenInfo(pfad) ? offenText(pfad) + ' · ' + t("Ändern") : t("Später klären");
   };
   sync();
   eingabe.addEventListener('input', sync);
@@ -1633,10 +1690,11 @@ function offenWahl(pfad, label, eingabe) {
     if (obj[key] === 'weissNicht') obj[key] = '';
     if (select.value) obj._offen[key] = { grund: select.value, label };
     else delete obj._offen[key];
-    geaendert();
+    geaendert(); sync();
   });
-  return el('div', { class: 'hilfe' }, el('label', { for: id, text: t("Noch keine Angabe?") }), select);
+  return details;
 }
+
 function suchHinweis(pfad) {
   if (pfad.endsWith('.vertragsnummer')) return t("Nehmen Sie einen Brief dieser Versicherung zur Hand und suchen Sie die Versicherungsnummer. Sie müssen die anderen Unterlagen heute nicht sortieren.");
   if (pfad.endsWith('.iban')) return t("Suchen Sie die IBAN auf einem Kontoauszug. Tragen Sie keine PIN und kein Passwort ein.");
@@ -1668,29 +1726,19 @@ function aufgabeOeffnen(pfad) {
   const feld = [...document.querySelectorAll('[data-pfad]')].find(e => e.dataset.pfad === pfad);
   if (feld) { feld.scrollIntoView({ block: 'center' }); const input = feld.querySelector('input, textarea, select'); if (input) input.focus(); }
 }
-function suchKarte() {
-  const aufgaben = suchAufgaben();
-  if (!aufgaben.length) return null;
-  const knopf = a => el('button', { type: 'button', class: 'btn', text: a.titel, onclick: () => aufgabeOeffnen(a.pfad) });
-  return el('section', { class: 'formkarte', id: 'suchliste' },
-    el('h3', { text: t("Ihre nächste kleine Aufgabe") }),
-    el('p', { text: aufgaben[0].text }), knopf(aufgaben[0]),
-    aufgaben.length > 1 ? el('details', {}, el('summary', { text: t("Weitere offene Angaben ({n})", { n: aufgaben.length - 1 }) }),
-      ...aufgaben.slice(1).map(a => el('p', {}, knopf(a)))) : null,
-    el('p', { class: 'hilfe', text: t("Sobald Sie eine Angabe ergänzen, verschwindet sie von dieser Liste. Sie müssen heute nicht alles finden.") }));
-}
 function einstiegAnsicht() {
   const d = zustand.daten;
   function erster(pfad, vorlage, titel, felder) {
     const liste = pfadLesen(pfad);
     if (liste.length) return gruppe(titel, null, ...felder(pfad + '.0'));
-    return gruppe(titel, null, el('button', { type: 'button', class: 'btn', text: t("Angabe beginnen"), onclick: () => {
+    return gruppe(titel, null, el('button', { type: 'button', class: 'btn', text: t(pfad === 'kontakte' ? "Kontaktperson notieren" : pfad === 'finanzen.konten' ? "Bank notieren" : "Versicherung notieren"), onclick: () => {
       liste.push(vorlage); geaendert(); inhaltZeigen();
     } }));
   }
   return [
     el('h2', { tabindex: '-1', text: t("Starten, ohne Unterlagen zu suchen") }),
     el('p', { text: t("Tragen Sie nur ein, was Sie aus dem Kopf wissen. Sie können auch gemeinsam mit einer vertrauten Person beginnen. Alles darf offen bleiben.") }),
+    gruppe("Für wen ist dieser Ordner?", "Name genügt. Sie brauchen keine Ausweise bereitzulegen.", feld('persoenlich.vorname', "Vorname(n)"), feld('persoenlich.nachname', "Nachname")),
     erster('kontakte', { name: '', beziehung: '', rolle: '', telefon: '', mobil: '', email: '', anschrift: '', notiz: '' }, "Wer soll informiert werden?", p => [feld(p + '.name', "Name"), feld(p + '.telefon', "Telefon")]),
     gruppe("Wo könnten die Unterlagen liegen?", "Ein ungefährer Ort genügt für den Anfang.", feld('persoenlich.ablageUrkunden', "Urkunden und Familienstammbuch")),
     erster('finanzen.konten', { bank: '', kontoart: '', iban: '', vollmachtUeberTod: '', bevollmaechtigt: '', notiz: '' }, "Welche Bank fällt Ihnen ein?", p => [feld(p + '.bank', "Bank"), feld(p + '.notiz', "Hinweis")]),
@@ -1700,64 +1748,207 @@ function einstiegAnsicht() {
   ];
 }
 
-function uebersicht() {
+// Übergabe und Sicherung beziehen sich auf einen bestimmten Inhaltsstand.
+// Änderungen an Prüfvermerken selbst setzen eine bestandene Inhaltsprüfung nicht zurück.
+function inhaltStand() {
+  return zustand.daten.inhaltStand || zustand.daten.lastModified || '';
+}
+function uebergabeStatus() {
+  const u = zustand.daten.uebergabe;
+  const stand = inhaltStand();
+  const sicher = !!(stand && u.kopieStand === stand && voll(u.ablage));
+  const pruefung = !!(stand && u.pruefStand === stand && voll(u.person) && [u.erhalten, u.geoeffnet, u.gefunden, u.rueckfragen].every(v => v === true));
+  return { sicher, pruefung, alt: !!u.pruefStand && u.pruefStand !== stand };
+}
+function naechsteSchritte() {
   const d = zustand.daten;
-  const stand = BEREICHE.map(b => ({ b, f: fortschritt(b.id) }));
-  const fertig = stand.filter(x => x.f.stufe === "voll").length;
-  const offen = stand.filter(x => x.f.stufe !== "voll");
-  const name = [d.persoenlich.vorname, d.persoenlich.nachname].filter(Boolean).join(" ");
-  const namen = d.kontakte.map(k => String(k.name || "").trim().split(/\s+/)[0]).filter(Boolean).slice(0, 3);
-  const fuer = namen.length
-    ? t("Mein Vorsorgeordner für {namen}", { namen: namen.length > 1 ? namen.slice(0, -1).join(", ") + " " + t("und") + " " + namen[namen.length - 1] : namen[0] })
-    : t("Mein Vorsorgeordner für meine Angehörigen");
-  const ziel = BEREICHE.find(b => b.id === zustand.zuletzt) || (offen[0] && offen[0].b) || BEREICHE[0];
-  const uebergabe = fuerAngehoerige
-    ? el("section", { class: "formkarte uebergabe" },
-        el("h3", { text: t("Dieser Ordner ist für die Angehörigen von {name}", { name: personName() }) }),
-        el("p", { class: "kartenhilfe", text: t("Die Texte richten sich an Sie als Leserin oder Leser. Angaben lassen sich weiterhin ändern.") }),
-        el("div", { class: "knopfreihe" },
-          el("button", { type: "button", class: "btn primaer", text: t("PDF drucken"), onclick: pdfFuerAngehoerige }),
-          el("button", { type: "button", class: "btn", text: t("Zurück zur Bearbeitung"), onclick: () => ansprecheUmstellen(false) })))
-    : el("section", { class: "formkarte uebergabe" },
-        el("h3", { text: t("Fertig? Dann weitergeben") }),
-        el("p", { class: "kartenhilfe", text: t("Als PDF zum Ausdrucken oder zum Weitergeben. Nach dem Umstellen sprechen alle Texte Ihre Angehörigen an.") }),
-        el("div", { class: "knopfreihe" },
-          el("button", { type: "button", class: "btn primaer", text: t("PDF drucken"), onclick: pdfFuerAngehoerige }),
-          el("button", { type: "button", class: "btn", text: t("Für meine Angehörigen umstellen"), onclick: () => ansprecheUmstellen(true) })));
+  const aufgaben = suchAufgaben();
+  const hinzufuegen = (pfad, titel, text, ziel) => {
+    if (!aufgaben.some(a => a.pfad === pfad)) aufgaben.push({ pfad, titel: t(titel), text: t(text), ziel });
+  };
+  if (!d.kontakte.some(k => voll(k.name) && (voll(k.telefon) || voll(k.mobil))))
+    hinzufuegen('kontakte', "Eine Kontaktperson festhalten", "Wer soll zuerst informiert werden? Ein Name und eine Telefonnummer genügen für den Anfang.", 'einstieg');
+  if (!voll(d.persoenlich.ablageUrkunden))
+    hinzufuegen('persoenlich.ablageUrkunden', "Einen Unterlagenort festhalten", "Wo würden Ihre Angehörigen nach Urkunden suchen? Ein ungefährer Ort ist schon hilfreich.", 'einstieg');
+  if (!d.finanzen.konten.some(k => voll(k.bank)))
+    hinzufuegen('finanzen.konten', "Eine bekannte Bank notieren", "Nur der Name genügt zunächst. Kontonummern können Sie später ergänzen.", 'einstieg');
+  return aufgaben;
+}
+function schrittOeffnen(a) {
+  if (a.ziel) wechseln(a.ziel);
+  else aufgabeOeffnen(a.pfad);
+}
+function sicherungsText() {
+  const s = uebergabeStatus();
+  if (s.sicher) return t("Eine getrennte Kopie dieses Inhaltsstands ist von Ihnen bestätigt.");
+  if (zustand.daten.uebergabe.kopieStand) return t("Seit der bestätigten Kopie wurden Inhalte geändert. Bitte aktualisieren Sie die Kopie.");
+  return t("Bisher ist keine getrennte Kopie bestätigt. Die Speicherung im Browser allein genügt dafür nicht.");
+}
+function uebersicht() {
+  const d = zustand.daten, aufgaben = naechsteSchritte(), s = uebergabeStatus();
+  const name = [d.persoenlich.vorname, d.persoenlich.nachname].filter(Boolean).join(' ');
+  const kontakte = d.kontakte.filter(k => voll(k.name)).length;
+  const banken = d.finanzen.konten.filter(k => voll(k.bank)).length;
+  const policen = d.versicherungen.filter(v => voll(v.gesellschaft)).length;
+  const naechste = aufgaben[0];
+  const weiter = d.uebergabe.pruefStand ? "Übergabe erneut prüfen" : "Übergabe vorbereiten";
   return [
-    el("div", { class: "portraetkopf" }, fuerAngehoerige && !d.persoenlich.foto ? null : portraet(), fotoKnoepfe(),
-      el("h2", { tabindex: "-1", text: name || t("Mein Ordner") }),
-      el("p", { class: "fuer", text: fuer }),
-      el("p", { class: "stand" }, t("Zuletzt geändert:") + " ", el("strong", { text: datumText(d.lastModified) }))),
-    fuerAngehoerige ? null : el("section", { class: "formkarte" },
-      el("h3", { text: t("Sie brauchen noch keine Unterlagen") }),
-      el("p", { text: t("Beginnen Sie mit dem, was Sie schon wissen. Unbekannte Angaben können Sie für später auf Ihre Suchliste setzen.") }),
-      el("button", { type: "button", class: "btn primaer", text: t("Ohne Unterlagen beginnen"), onclick: () => wechseln("einstieg") })),
-    fuerAngehoerige ? null : suchKarte(),
-    fuerAngehoerige ? null : aktualitaetsKarte(),
-    el("section", { class: "formkarte geregelt" },
-      el("div", { class: "geregeltkopf" }, el("h3", { text: t("Schon geregelt") }),
-        el("span", { class: "fortschritt-text", text: t("{n} von {gesamt} Bereichen ausgefüllt", { n: fertig, gesamt: BEREICHE.length }) })),
-      el("div", { class: "balken", role: "progressbar", "aria-label": t("Schon geregelt"), "aria-valuemin": 0, "aria-valuemax": BEREICHE.length, "aria-valuenow": fertig },
-        el("div", { style: `width: ${Math.round(fertig / BEREICHE.length * 100)}%` })),
-      offen.length
-        ? el("div", { class: "offenliste" }, ...offen.map(({ b }) => el("button", { type: "button", class: "offen", "data-id": b.id, onclick: () => wechseln(b.id), text: t(b.titel) })))
-        : el("p", { class: "kartenhilfe", text: t("Alle Bereiche sind ausgefüllt. Schauen Sie einmal im Jahr hinein, ob noch alles stimmt.") }),
-      fuerAngehoerige ? null : el("div", { class: "knopfreihe" },
-        el("button", { type: "button", class: "btn primaer riesig weiter", text: zustand.zuletzt ? t("Weiter, wo ich aufgehört habe") : fertig ? t("Weiter ausfüllen") : t("Mit dem Ausfüllen beginnen"), onclick: () => wechseln(ziel.id) }))),
-    uebergabe,
-    el("h3", { class: "kachelueberschrift", text: t("Alle Bereiche") }),
-    el("ul", { class: "kacheln" },
-      ...stand.map(({ b, f }) => el("li", {},
-        el("button", { type: "button", class: "kachel", onclick: () => wechseln(b.id) },
-          ring(f.anteil, b.farbe, symbol(b.symbol, "mittel", b.farbe)),
-          el("span", {},
-            el("span", { class: "name", text: t(b.titel) }),
-            el("span", { class: "unter", text: t(b.text) }),
-            el("span", { class: "stufe " + f.stufe, text: t(STUFENTEXT[f.stufe]) })))))),
-    el("p", { class: "kleingedruckt", text: t("Klarordner ersetzt keine Rechtsberatung. Vollmachten, Verfügungen und Testamente brauchen ihre eigene, teils gesetzlich vorgeschriebene Form. Die Inhalte beziehen sich auf deutsches Recht.") })
+    el('div', { class: 'ordnerkopf' }, el('h2', { tabindex: '-1', text: name ? t("Ordner von {name}", { name }) : t("Mein Ordner") }),
+      el('p', { class: 'hilfe', text: t("Sammeln, weitergeben und gemeinsam prüfen, ob Ihre Familie damit zurechtkommt.") })),
+    fuerAngehoerige ? hinweis("Die bisherige Ansprache für Angehörige ist eingeschaltet. Sie können jederzeit zur Bearbeitung zurückkehren.") : null,
+    el('section', { class: 'formkarte naechster-schritt' },
+      el('p', { class: 'schritt-label', text: t("Ihr nächster Schritt") }),
+      el('h3', { text: naechste ? naechste.titel : t(weiter) }),
+      el('p', { text: naechste ? naechste.text : t("Ihre ersten Angaben sind da. Erstellen Sie eine lesbare Übersicht und prüfen Sie die Übergabe mit einer vertrauten Person.") }),
+      el('button', { type: 'button', class: 'btn primaer', text: naechste ? t("Diesen Schritt öffnen") : t(weiter), onclick: () => naechste ? schrittOeffnen(naechste) : wechseln('uebergabe') }),
+      aufgaben.length > 1 ? el('details', { class: 'weitere-aufgaben' }, el('summary', { text: t("Weitere Schritte ({n})", { n: aufgaben.length - 1 }) }),
+        ...aufgaben.slice(1).map(a => el('p', {}, el('button', { type: 'button', class: 'btn flach', text: a.titel, onclick: () => schrittOeffnen(a) })))) : null),
+    el('section', { class: 'formkarte' },
+      el('h3', { text: t("Das weiß Ihre Familie schon") }),
+      el('p', { text: t("{k} Kontaktpersonen · {b} Banken · {v} Versicherungen erfasst", { k: kontakte, b: banken, v: policen }) }),
+      el('p', { class: 'hilfe', text: t("Diese Übersicht zeigt erfasste Angaben. Sie bestätigt keine Vollständigkeit oder rechtliche Wirksamkeit.") }),
+      el('div', { class: 'knopfreihe' },
+        el('button', { type: 'button', class: 'btn', text: t("Übersicht für Angehörige ansehen"), onclick: () => wechseln('angehoerige') }),
+        el('button', { type: 'button', class: 'btn', text: t("Kurzübersicht drucken / als PDF"), onclick: kurzuebersichtDrucken }))),
+    el('section', { class: 'formkarte' },
+      el('h3', { text: t("Ist der Ordner auch erreichbar?") }),
+      el('p', { text: sicherungsText() }),
+      el('p', { text: s.pruefung ? t("Die Übergabe dieses Inhaltsstands wurde von Ihnen geprüft.") : s.alt ? t("Nach der letzten Übergabeprüfung wurden Inhalte geändert.") : t("Eine gemeinsam geprüfte Übergabe ist noch offen.") }),
+      el('button', { type: 'button', class: 'btn', text: t("Sicherung und Übergabe öffnen"), onclick: () => wechseln('uebergabe') })),
+    aktualitaetsKarte(),
+    el('details', { class: 'formkarte bereiche-kompakt' }, el('summary', { text: t("Alle Bereiche bearbeiten") }),
+      el('div', { class: 'knopfreihe' }, ...BEREICHE.map(b => el('button', { type: 'button', class: 'btn', text: t(b.titel), onclick: () => wechseln(b.id) })))),
+    fuerAngehoerige ? el('button', { type: 'button', class: 'btn', text: t("Zurück zur Bearbeitung"), onclick: () => ansprecheUmstellen(false) }) : null
   ];
 }
+function angehoerigenInhalt() {
+  const d = zustand.daten;
+  const name = [d.persoenlich.vorname, d.persoenlich.nachname].filter(Boolean).join(' ');
+  const zeile = (label, value) => el('p', {}, el('strong', { text: t(label) + ': ' }), String(value || '').trim() || t("Noch nicht eingetragen"));
+  const orte = [
+    ["Urkunden und Familienstammbuch", d.persoenlich.ablageUrkunden],
+    ["Personalausweis", d.persoenlich.ablagePersonalausweis],
+    ["Testament – Aufbewahrungsort", d.testament.testament.ablage],
+    ["Vorsorgevollmacht – Aufbewahrungsort", d.testament.vorsorgevollmacht.ablage],
+    ["Bankvollmacht – Aufbewahrungsort", d.testament.bankvollmacht.ablage]
+  ];
+  return [
+    el('h2', { tabindex: '-1', text: name ? t("Wichtige Hinweise zu {name}", { name }) : t("Wichtige Hinweise für Angehörige") }),
+    el('p', { text: t("Stand: {datum}", { datum: datumText(inhaltStand()) }) }),
+    el('section', { class: 'formkarte' }, el('h3', { text: t("Wen kann ich erreichen?") }),
+      ...(d.kontakte.filter(k => voll(k.name)).length ? d.kontakte.filter(k => voll(k.name)).map(k => el('div', { class: 'lese-eintrag' },
+        zeile("Name", k.name), zeile("Telefon", k.telefon || k.mobil), voll(k.beziehung) ? zeile("Beziehung", k.beziehung) : null)) : [el('p', { text: t("Noch keine Kontaktperson eingetragen.") })])),
+    el('section', { class: 'formkarte' }, el('h3', { text: t("Wo finde ich die Unterlagen?") }),
+      ...orte.map(([label, value]) => zeile(label, value)),
+      voll(d.wohnen.schluessel) ? zeile("Schlüssel", d.wohnen.schluessel) : null),
+    el('section', { class: 'formkarte' }, el('h3', { text: t("Welche Banken und Versicherungen sind bekannt?") }),
+      ...(d.finanzen.konten.filter(k => voll(k.bank)).length ? d.finanzen.konten.filter(k => voll(k.bank)).map(k => el('div', { class: 'lese-eintrag' }, zeile("Bank", k.bank), zeile("IBAN", k.iban), voll(k.notiz) ? zeile("Hinweis", k.notiz) : null)) : [el('p', { text: t("Noch keine Bank eingetragen.") })]),
+      ...(d.versicherungen.filter(v => voll(v.gesellschaft)).length ? d.versicherungen.filter(v => voll(v.gesellschaft)).map(v => el('div', { class: 'lese-eintrag' }, zeile("Versicherungsgesellschaft", v.gesellschaft), zeile("Versicherungsnummer", v.vertragsnummer), zeile("Wo liegt die Police?", v.ablage))) : [el('p', { text: t("Noch keine Versicherung eingetragen.") })])),
+    el('section', { class: 'formkarte' }, el('h3', { text: t("Was ist noch offen?") }),
+      el('p', { text: t("Leere Angaben bedeuten nicht, dass etwas nicht vorhanden ist. Bitte klären Sie fehlende Informationen mit der Familie oder der zuständigen Stelle.") }),
+      ...suchAufgaben().map(a => el('p', { text: a.titel }))),
+    el('p', { class: 'hilfe', text: t("Diese Kurzübersicht enthält keine Passwörter oder Zugangscodes. Sie ersetzt keine Originaldokumente und keine Vollmacht.") })
+  ];
+}
+function angehoerigeAnsicht() {
+  return [
+    el('p', { class: 'hilfe', text: t("Leseansicht: Hier werden keine Angaben bearbeitet. Diese Ansicht ist keine zusätzliche Zugriffssperre.") }),
+    ...angehoerigenInhalt(),
+    el('div', { class: 'knopfreihe' },
+      el('button', { type: 'button', class: 'btn primaer', text: t("Kurzübersicht drucken / als PDF"), onclick: kurzuebersichtDrucken }),
+      el('button', { type: 'button', class: 'btn', text: t("Schreiben vorbereiten"), onclick: () => wechseln('schreiben') }),
+      el('button', { type: 'button', class: 'btn', text: t("Zur Übersicht"), onclick: () => wechseln('uebersicht') }))
+  ];
+}
+async function kurzuebersichtDrucken() {
+  const ok = await fragen("Kurzübersicht drucken / als PDF", ["Die Kurzübersicht enthält persönliche Angaben zu Kontakten, Fundorten, Banken und Versicherungen. Teilen Sie sie nur mit einer vertrauten Person. Passwörter und Zugangscodes sind nicht enthalten.", pdfTipp()],
+    [{ text: t("Druckfenster öffnen"), wert: true, primaer: true }, { text: t("Abbrechen"), wert: false }]);
+  if (!ok) return;
+  const vorher = sprache;
+  sprache = 'de';
+  try {
+    $('druck').className = '';
+    $('druck').replaceChildren(el('section', { class: 'dbereich dkurz' }, ...angehoerigenInhalt()));
+    $('druckSeiten').textContent = '@media print { @page { margin: 16mm; } .dkurz .formkarte { box-shadow:none; border:0; padding:0; margin:0 0 6mm; } .dkurz h2 { font-size:20pt; } .dkurz h3 { font-size:13pt; } .dkurz p { font-size:10pt; } .dkurz .lese-eintrag { break-inside:avoid; } }';
+    window.print();
+  } finally { sprache = vorher; }
+}
+function pruefvermerkSetzen() {
+  const u = zustand.daten.uebergabe;
+  if (!voll(u.person) || ![u.erhalten, u.geoeffnet, u.gefunden, u.rueckfragen].every(v => v === true)) return false;
+  u.pruefStand = inhaltStand();
+  u.geprueftAm = new Date().toISOString();
+  geaendert('uebergabe.pruefung');
+  return true;
+}
+function kopieBestaetigen() {
+  const u = zustand.daten.uebergabe;
+  if (!voll(u.ablage)) return false;
+  u.kopieStand = inhaltStand();
+  u.kopieAm = new Date().toISOString();
+  geaendert('uebergabe.kopie');
+  return true;
+}
+function uebergabeAnsicht() {
+  const u = zustand.daten.uebergabe, s = uebergabeStatus();
+  const rueckmeldung = el('p', { role: 'status', class: 'hilfe' });
+  const sicherungsanzeige = el('p', { class: 'breit', text: sicherungsText() });
+  const pruefstatus = el('p', { class: 'breit', role: 'status' });
+  const pruefstatusAktualisieren = () => {
+    const status = uebergabeStatus();
+    pruefstatus.textContent = status.pruefung ? t("Dieser Inhaltsstand wurde am {datum} gemeinsam geprüft.", { datum: datumText(u.geprueftAm) }) : status.alt ? t("Die Inhalte wurden seit der letzten Prüfung geändert. Bitte bestätigen Sie den Probelauf für die aktuelle Kopie erneut.") : t("Der Probelauf für den aktuellen Inhaltsstand ist noch offen.");
+  };
+  pruefstatusAktualisieren();
+  const pruefung = (key, text) => {
+    const checkbox = el('input', { type: 'checkbox', checked: u[key] === true });
+    checkbox.addEventListener('change', () => {
+      pfadSchreiben('uebergabe.' + key, checkbox.checked);
+      // Jede neue Bearbeitung der Antworten erfordert einen bewussten Abschluss.
+      u.pruefStand = ''; u.geprueftAm = '';
+      pruefstatusAktualisieren();
+      rueckmeldung.textContent = t("Antwort gespeichert. Schließen Sie den Probelauf nach allen Prüfungen bewusst ab.");
+    });
+    return el('label', { class: 'pruefzeile' }, checkbox, el('span', { text: t(text) }));
+  };
+  return [
+    el('h2', { tabindex: '-1', text: t("Sicherung und Übergabe") }),
+    el('p', { text: t("Ein Ordner hilft erst, wenn Ihre Familie ihn auch finden und lesen kann. Gehen Sie diese Schritte gemeinsam durch.") }),
+    gruppe("1. Eine lesbare Übersicht erstellen", "Die Kurzübersicht funktioniert als Ausdruck oder gewöhnliche PDF auch ohne Klarordner.",
+      el('div', { class: 'knopfreihe breit' },
+        el('button', { type: 'button', class: 'btn', text: t("Leseansicht ansehen"), onclick: () => wechseln('angehoerige') }),
+        el('button', { type: 'button', class: 'btn', text: t("Kurzübersicht drucken / als PDF"), onclick: kurzuebersichtDrucken }),
+        el('button', { type: 'button', class: 'btn', text: t("Vollständigen Ordner drucken"), onclick: pdfFuerAngehoerige }))),
+    gruppe("2. Eine getrennte Kopie prüfen", "Eine Kopie auf demselben Gerät schützt nicht vor dessen Verlust. Prüfen Sie eine Kopie an einem anderen sicheren Ort, zum Beispiel als Ausdruck oder auf einem zweiten Gerät.",
+      sicherungsanzeige,
+      feld('uebergabe.ablage', "Wo liegt die getrennte Kopie?", { breit: true, hilfe: "Notieren Sie nur den Ort, keine Passwörter oder Zugangscodes.", beiAenderung: () => { sicherungsanzeige.textContent = sicherungsText(); } }),
+      el('div', { class: 'knopfreihe breit' },
+        el('button', { type: 'button', class: 'btn', text: t("Bearbeitbare Sicherungsdatei erstellen"), onclick: async () => { await sichern(true); } }),
+        el('button', { type: 'button', class: 'btn', text: t("Getrennte Kopie ist geprüft"), onclick: () => {
+          if (kopieBestaetigen()) inhaltZeigen();
+          else rueckmeldung.textContent = t("Bitte tragen Sie zuerst ein, wo die getrennte Kopie liegt.");
+        } })),
+      el('p', { class: 'hilfe breit', text: t("Die Sicherungsdatei enthält persönliche Angaben und ist insgesamt nicht verschlüsselt. Nur der gesonderte Zugangsdatenbereich ist verschlüsselt. Bewahren Sie die Datei entsprechend geschützt auf. Eine heruntergeladene Datei allein bestätigt noch keine getrennte Kopie. Testen Sie die bearbeitbare Datei über „Datei öffnen“, möglichst auf einem zweiten Gerät.") })),
+    gruppe("3. Mit Ihrer Vertrauensperson ausprobieren", "Die Person soll ohne Ihre Erklärung die Kopie öffnen oder lesen und die Kontaktperson sowie einen Unterlagenort finden. Es werden keine Nachrichten verschickt und keine Personen eingeladen.",
+      feld('uebergabe.person', "Mit wem prüfen Sie die Übergabe?", { breit: true, beiAenderung: () => {
+        document.querySelectorAll('.pruefliste input').forEach(input => { input.checked = false; });
+        pruefstatusAktualisieren();
+      } }),
+      el('div', { class: 'breit pruefliste' },
+        pruefung('erhalten', "Meine Vertrauensperson hat eine Kopie erhalten."),
+        pruefung('geoeffnet', "Sie konnte die Kopie selbst öffnen oder lesen."),
+        pruefung('gefunden', "Sie hat Kontaktperson und Unterlagenort ohne meine Erklärung gefunden."),
+        pruefung('rueckfragen', "Wir haben offene Rückfragen besprochen.")),
+      feld('uebergabe.notizen', "Welche Rückfragen bleiben?", { typ: 'mehrzeilig', breit: true }),
+      pruefstatus,
+      el('button', { type: 'button', class: 'btn primaer', text: t("Probelauf abschließen"), onclick: () => {
+        if (pruefvermerkSetzen()) inhaltZeigen();
+        else rueckmeldung.textContent = t("Bitte nennen Sie Ihre Vertrauensperson und bestätigen Sie alle vier Prüfungen. Offene Punkte dürfen offen bleiben, bis Sie sie gemeinsam geprüft haben.");
+      } })),
+    rueckmeldung,
+    el('button', { type: 'button', class: 'btn', text: t("Zur Übersicht"), onclick: () => wechseln('uebersicht') })
+  ];
+}
+
 
 /* ---------- Formular-Bausteine ---------- */
 
@@ -2035,8 +2226,6 @@ const wohnenGruppen = () => [
 
 const FORMULARE = {
   persoenlich: () => [
-    druck || (fuerAngehoerige && !zustand.daten.persoenlich.foto) ? null : gruppe("Ihr Foto", "Ein Foto macht den Ordner persönlich. Ihre Angehörigen können es auch für die Traueranzeige und die Trauerfeier verwenden. Am besten wählen Sie ein vorhandenes Foto aus, auf dem Sie sich gefallen.",
-      el("div", { class: "fotozeile breit" }, portraet(true), fotoKnoepfe(false))),
     scanKnopf("persoenlich"),
     gruppe("Zur Person", null,
       feld("persoenlich.vorname", "Vorname(n)"),
@@ -2059,7 +2248,9 @@ const FORMULARE = {
     gruppe("Wo liegen Ihre Dokumente?", "Beschreiben Sie den Ort so, dass ihn jemand Fremdes findet.",
       feld("persoenlich.ablagePersonalausweis", "Personalausweis", { hilfe: "Zum Beispiel: Handtasche, Innenfach" }),
       feld("persoenlich.ablageUrkunden", "Urkunden und Familienstammbuch", { breit: true, hilfe: "Geburtsurkunde, Heiratsurkunde oder das Stammbuch. Das Standesamt braucht sie für die Sterbeurkunde." }),
-      feld("persoenlich.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 }))
+      feld("persoenlich.notizen", "Weitere Hinweise", { typ: "mehrzeilig", zeilen: 3 })),
+    druck ? null : el("details", { class: "formkarte foto-spaeter" }, el("summary", { text: t("Foto hinzufügen – freiwillig") }), druck || (fuerAngehoerige && !zustand.daten.persoenlich.foto) ? null : gruppe("Ihr Foto", "Ein Foto macht den Ordner persönlich. Ihre Angehörigen können es auch für die Traueranzeige und die Trauerfeier verwenden. Am besten wählen Sie ein vorhandenes Foto aus, auf dem Sie sich gefallen.",
+      el("div", { class: "fotozeile breit" }, portraet(true), fotoKnoepfe(false))))
   ],
 
   kontakte: () => [
@@ -2376,7 +2567,7 @@ function startseiteFuellen() {
 
 /* ---------- Aktualität ---------- */
 
-const veraltet = () => !!(zustand.daten && zustand.daten.lastModified && Date.now() - new Date(zustand.daten.lastModified) > 365 * 864e5);
+const veraltet = () => !!(zustand.daten && zustand.daten.lastModified && Date.now() - new Date(inhaltStand()) > 365 * 864e5);
 
 function alsAktuellMarkieren() {
   geaendert();
@@ -2896,6 +3087,29 @@ async function briefOeffnen(s) {
   if (antwort) briefeDrucken([s]);
 }
 
+function schreibenPruefpunkte(s) {
+  const d = zustand.daten, w = d.schreiben, fehlt = [];
+  if (!voll(d.persoenlich.vorname) || !voll(d.persoenlich.nachname)) fehlt.push(t("Name der betroffenen Person"));
+  if (!voll(w.absender)) fehlt.push(t("Absendername"));
+  if (!voll(w.anschrift)) fehlt.push(t("Absenderanschrift"));
+  if (!voll(w.sterbedatum)) fehlt.push(t("Sterbedatum"));
+  if (s.art !== 'anleitung' && !voll(w.empfaenger[s.id] || s.adresse)) fehlt.push(t("Empfängeranschrift"));
+  if (s.vertrag && !voll(s.vertrag.vertragsnummer || s.vertrag.kundennummer || s.vertrag.nummer)) fehlt.push(t("Vertrags- oder Kundennummer"));
+  if (s.konten && s.konten.some(k => !voll(k.iban))) fehlt.push(t("IBAN"));
+  return fehlt;
+}
+function schreibenStatusText(s) {
+  const fehlt = schreibenPruefpunkte(s);
+  return fehlt.length ? t("Noch zu ergänzen oder zu prüfen: {angaben}", { angaben: fehlt.join(', ') }) : t("Grundangaben sind erfasst. Prüfen Sie vor dem Versand Empfänger, Anlagen und Ihre Berechtigung.");
+}
+function schreibenStatusZeigen() {
+  const liste = schreibenListe();
+  document.querySelectorAll('[data-schreibstatus]').forEach(e => {
+    const s = liste.find(s => s.id === e.dataset.schreibstatus);
+    if (s) e.textContent = schreibenStatusText(s);
+  });
+}
+
 function schreibenAnsicht() {
   const liste = schreibenListe();
   const gruppen = ["Mitteilungen", "Kündigungen", "Online-Konten"];
@@ -2920,6 +3134,7 @@ function schreibenAnsicht() {
     return el("div", { class: "schreibzeile" },
       el("div", { class: "schreibkopf" }, box,
         el("label", { for: id }, el("strong", { text: s.titel }), el("span", { class: "schreibart", text: art(s) + (mailAdresse(s) ? " · " + t("auch per E-Mail") : (s.anbieter && s.anbieter.stand ? " · " + t("Adresse hinterlegt") : "")) }))),
+      el("p", { class: "hilfe", "data-schreibstatus": s.id, text: schreibenStatusText(s) }),
       s.hinweis ? el("p", { class: "hilfe", text: t(s.hinweis) }) : null,
       s.notiz ? el("p", { class: "hilfe", text: s.notiz }) : null,
       aktionen(s),
@@ -2944,7 +3159,7 @@ function schreibenAnsicht() {
       symbol("brief", "gross", "#5b6b63"),
       el("div", {},
         el("h2", { tabindex: "-1", text: t("Kündigungen und Schreiben") }),
-        el("p", { text: t("Vorausgefüllte Kündigungen und Mitteilungen für Ihre Angehörigen.") }))),
+        el("p", { text: t("Vorlagen mit Ihren Angaben. Prüfen Sie vor dem Versenden die fehlenden Daten, Empfänger und Anlagen.") }))),
     el("div", { class: "bereichinhalt" },
       hinweis(["Diese Schreiben verschicken Ihre Angehörigen nach Ihrem Tod. Ihre Angaben aus dem Ordner sind schon eingesetzt.",
         "Angehörige tragen unten ihren Namen, ihre Anschrift und das Sterbedatum ein, wählen die Schreiben aus und drucken sie oder speichern sie als PDF. Unterschreiben, Kopie der Sterbeurkunde beilegen, abschicken."]),
@@ -3606,7 +3821,7 @@ const SCAN_ZIELE = {
 
 function scanKnopf(bereich) {
   if (druck || fuerAngehoerige || !scanMoeglich()) return null;
-  return gruppe("Aus einem Dokument übernehmen", "Fotografieren Sie zum Beispiel den Versicherungsschein, eine Rechnung oder einen Kontoauszug. Klarordner liest die Angaben auf diesem Gerät aus und zeigt sie Ihnen zum Prüfen. Das Foto wird nicht gespeichert.",
+  return gruppe("Aus einem Dokument übernehmen", "Fotografieren Sie zum Beispiel den Versicherungsschein, eine Rechnung oder einen Kontoauszug. Klarordner liest die Angaben auf diesem Gerät aus und zeigt sie Ihnen zum Prüfen. Das Foto wird nur zum Auslesen verwendet und nicht als Dokumentkopie aufbewahrt. Bewahren Sie das Original weiterhin auf.",
     el("div", { class: "knopfreihe breit" },
       el("button", { type: "button", class: "btn", text: t("Dokument fotografieren"), onclick: () => { const w = $("scanwahl"); w.value = ""; w.dataset.bereich = bereich; w.click(); } })));
 }
