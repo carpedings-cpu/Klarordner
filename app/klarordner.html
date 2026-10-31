@@ -1791,21 +1791,23 @@ function uebersicht() {
   const banken = d.finanzen.konten.filter(k => voll(k.bank)).length;
   const policen = d.versicherungen.filter(v => voll(v.gesellschaft)).length;
   const naechste = aufgaben[0];
-  const weiter = d.uebergabe.pruefStand ? "Übergabe erneut prüfen" : "Übergabe vorbereiten";
+  const abgeschlossen = s.sicher && s.pruefung;
+  const weiter = abgeschlossen ? "Angaben weiter ergänzen" : !s.sicher ? "Getrennte Kopie prüfen" : s.alt ? "Übergabe erneut prüfen" : "Übergabe vorbereiten";
+  const weiterText = abgeschlossen ? t("Sie haben getrennte Kopie und Probelauf für diesen Inhaltsstand bestätigt. Ergänzen Sie den Ordner in Ihrem Tempo.") : !s.sicher ? t("Ihre ersten Angaben sind da. Prüfen Sie jetzt eine Kopie an einem anderen sicheren Ort.") : t("Ihre Kopie ist bestätigt. Prüfen Sie jetzt mit einer vertrauten Person, ob sie die Informationen ohne Ihre Erklärung findet.");
   return [
     el('div', { class: 'ordnerkopf' }, el('h2', { tabindex: '-1', text: name ? t("Ordner von {name}", { name }) : t("Mein Ordner") }),
       el('p', { class: 'hilfe', text: t("Sammeln, weitergeben und gemeinsam prüfen, ob Ihre Familie damit zurechtkommt.") })),
     fuerAngehoerige ? hinweis("Die bisherige Ansprache für Angehörige ist eingeschaltet. Sie können jederzeit zur Bearbeitung zurückkehren.") : null,
     el('section', { class: 'formkarte naechster-schritt' },
       el('p', { class: 'schritt-label', text: t("Ihr nächster Schritt") }),
-      el('h3', { text: naechste ? naechste.titel : t(weiter) }),
-      el('p', { text: naechste ? naechste.text : t("Ihre ersten Angaben sind da. Erstellen Sie eine lesbare Übersicht und prüfen Sie die Übergabe mit einer vertrauten Person.") }),
-      el('button', { type: 'button', class: 'btn primaer', text: naechste ? t("Diesen Schritt öffnen") : t(weiter), onclick: () => naechste ? schrittOeffnen(naechste) : wechseln('uebergabe') }),
+      el('h3', { text: naechste ? naechste.titel : abgeschlossen ? t("Übergabe für diesen Stand geprüft") : t(weiter) }),
+      el('p', { text: naechste ? naechste.text : weiterText }),
+      el('button', { type: 'button', class: 'btn primaer', text: naechste ? t("Diesen Schritt öffnen") : t(weiter), onclick: () => naechste ? schrittOeffnen(naechste) : wechseln(abgeschlossen ? 'persoenlich' : 'uebergabe') }),
       aufgaben.length > 1 ? el('details', { class: 'weitere-aufgaben' }, el('summary', { text: t("Weitere Schritte ({n})", { n: aufgaben.length - 1 }) }),
         ...aufgaben.slice(1).map(a => el('p', {}, el('button', { type: 'button', class: 'btn flach', text: a.titel, onclick: () => schrittOeffnen(a) })))) : null),
     el('section', { class: 'formkarte' },
       el('h3', { text: t("Das weiß Ihre Familie schon") }),
-      el('p', { text: t("{k} Kontaktpersonen · {b} Banken · {v} Versicherungen erfasst", { k: kontakte, b: banken, v: policen }) }),
+      el('p', { text: t("Erfasst: Kontaktpersonen {k} · Banken {b} · Versicherungen {v}", { k: kontakte, b: banken, v: policen }) }),
       el('p', { class: 'hilfe', text: t("Diese Übersicht zeigt erfasste Angaben. Sie bestätigt keine Vollständigkeit oder rechtliche Wirksamkeit.") }),
       el('div', { class: 'knopfreihe' },
         el('button', { type: 'button', class: 'btn', text: t("Übersicht für Angehörige ansehen"), onclick: () => wechseln('angehoerige') }),

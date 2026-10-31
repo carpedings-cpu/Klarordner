@@ -84,4 +84,15 @@ assert.match(c.schreibenStatusText({id:'x',art:'leer',adresse:''}),/Noch zu erg�
 const handover = new Node('div',{},c.uebergabeAnsicht());
 assert.equal(walk(handover,n=>n.tag==='input'&&n.attrs.type==='checkbox').length,4);
 assert.equal(walk(handover,n=>n.tag==='select').length,0,'handover fields have no unnecessary unknown dropdowns');
+// A completed handover offers optional further editing, not another mandatory trial.
+c.zustand.daten=c.leereDaten();
+c.zustand.daten.lastModified='2026-01-01T10:00:00.000Z';
+c.zustand.daten.kontakte=[{name:'Testkontakt',telefon:'000'}];
+c.zustand.daten.persoenlich.ablageUrkunden='Testablage';
+c.zustand.daten.finanzen.konten=[{bank:'Testbank'}];
+Object.assign(c.zustand.daten.uebergabe,{person:'Testperson',ablage:'Papierkopie',erhalten:true,geoeffnet:true,gefunden:true,rueckfragen:true});
+assert.equal(c.kopieBestaetigen(),true);assert.equal(c.pruefvermerkSetzen(),true);
+const completedOverview=new Node('div',{},c.uebersicht());
+assert.ok(walk(completedOverview,n=>n.tag==='button'&&n.attrs.text==='Angaben weiter ergänzen').length===1);
+assert.ok(JSON.stringify(completedOverview).includes('Übergabe für diesen Stand geprüft'));
 console.log('OK: alte/neue Dateien, Versionsbindung, echte Bestätigungen, erneuter Probelauf, Datenerhalt, Leseansicht ohne Geheimnisse, kompakter Einstieg, offene Aufgaben und Schreibstatus.');
