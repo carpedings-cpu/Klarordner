@@ -1196,6 +1196,7 @@ function pfadSchreiben(pfad, wert) {
   const letzter = teile.pop();
   const obj = teile.reduce((o, k) => o[k], start);
   obj[letzter] = wert;
+  if (obj._offen && voll(wert)) delete obj._offen[letzter];
   aenderung(pfad);
 }
 
@@ -1500,6 +1501,10 @@ function inhaltZeigen() {
     ziel.replaceChildren(...schreibenAnsicht());
     return;
   }
+  if (zustand.ansicht === "einstieg") {
+    ziel.replaceChildren(...einstiegAnsicht().filter(Boolean));
+    return;
+  }
   const nr = BEREICHE.findIndex(b => b.id === zustand.ansicht);
   const b = BEREICHE[nr];
   const kinder = [
@@ -1529,13 +1534,13 @@ function blaettern(nr) {
 }
 
 // Je Bereich die wichtigsten Angaben. Ausgefüllt heißt: alle davon vorhanden, nicht jedes Feld.
-const voll = v => typeof v === "string" ? v.trim() !== "" : !!v;
+const voll = v => typeof v === "string" ? v.trim() !== "" && v !== "weissNicht" : !!v;
 const PRUEFUNG = {
   persoenlich: d => ["vorname", "nachname", "geburtsdatum", "strasse", "ort", "familienstand", "ablagePersonalausweis"].map(f => voll(d.persoenlich[f])),
-  kontakte: d => [d.kontakte.length > 0, d.kontakte.some(k => voll(k.telefon) || voll(k.mobil))],
+  kontakte: d => [d.kontakte.some(k => voll(k.name)), d.kontakte.some(k => voll(k.telefon) || voll(k.mobil))],
   testament: d => [voll(d.testament.testament.vorhanden), voll(d.testament.erbvertrag.vorhanden), voll(d.testament.vorsorgevollmacht.vorhanden), voll(d.testament.bankvollmacht.vorhanden)],
-  finanzen: d => [d.finanzen.konten.length > 0],
-  versicherungen: d => [d.versicherungen.length > 0],
+  finanzen: d => [d.finanzen.konten.some(k => voll(k.bank))],
+  versicherungen: d => [d.versicherungen.some(v => voll(v.gesellschaft))],
   vertraege: d => [d.vertraege.length > 0, voll(d.wohnen.wohnform)],
   digital: d => [d.digital.konten.length > 0 || voll(d.digital.passwortManager), !!d.zugang],
   sterbefall: d => [voll(d.sterbefall.bestattungsart), voll(d.sterbefall.organspende),
@@ -1595,6 +1600,111 @@ async function ansprecheUmstellen(an) {
 }
 
 
+
+// Offene Angaben bleiben Metadaten am jeweiligen Datensatz. Keine Platzhalter
+// in Vertragsnummern oder Namen; Listeneinträge behalten ihre Aufgaben beim Sortieren.
+function offenOrt(pfad) {
+  const teile = pfad.split('.');
+  const key = teile.pop();
+  return [teile.reduce((o, k) => o && o[k], zustand.daten), key];
+}
+function offenInfo(pfad) {
+  const [obj, key] = offenOrt(pfad);
+  return obj && ((obj._offen && obj._offen[key]) || (obj[key] === 'weissNicht' ? { grund: 'unbekannt', label: key } : undefined));
+}
+function offenText(pfad) {
+  const info = offenInfo(pfad);
+  return info ? t(info.grund === 'unbekannt' ? "Noch unbekannt" : "Wird später ergänzt") : '';
+}
+function offenWahl(pfad, label, eingabe) {
+  if (pfad.startsWith('tresor.') || pfad.startsWith('schreiben.')) return null;
+  const id = neueId();
+  const select = el('select', { id, 'aria-label': t("Offene Angabe: {feld}", { feld: t(label) }) },
+    el('option', { value: '', text: t("Offen lassen") }),
+    el('option', { value: 'unbekannt', text: t("Weiß ich nicht") }),
+    el('option', { value: 'spaeter', text: t("Trage ich später ein") }));
+  select.value = (offenInfo(pfad) || {}).grund || '';
+  const sync = () => {
+    select.disabled = voll(eingabe.value);
+    if (select.disabled) select.value = '';
+  };
+  sync();
+  eingabe.addEventListener('input', sync);
+  eingabe.addEventListener('change', sync);
+  select.addEventListener('change', () => {
+    const [obj, key] = offenOrt(pfad);
+    if (!obj || voll(pfadLesen(pfad))) return;
+    if (!istObjekt(obj._offen)) obj._offen = {};
+    if (obj[key] === 'weissNicht') obj[key] = '';
+    if (select.value) obj._offen[key] = { grund: select.value, label };
+    else delete obj._offen[key];
+    geaendert();
+  });
+  return el('div', { class: 'hilfe' }, el('label', { for: id, text: t("Noch keine Angabe?") }), select);
+}
+function suchHinweis(pfad) {
+  if (pfad.endsWith('.vertragsnummer')) return t("Nehmen Sie einen Brief dieser Versicherung zur Hand und suchen Sie die Versicherungsnummer. Sie müssen die anderen Unterlagen heute nicht sortieren.");
+  if (pfad.endsWith('.iban')) return t("Suchen Sie die IBAN auf einem Kontoauszug. Tragen Sie keine PIN und kein Passwort ein.");
+  if (pfad.endsWith('.steuerId')) return t("Suchen Sie einen Steuerbescheid. Darauf steht Ihre Steuer-Identifikationsnummer.");
+  if (/ablage/i.test(pfad)) return t("Fragen Sie eine vertraute Person oder schauen Sie an einem wahrscheinlichen Ablageort nach. Notieren Sie, wo die Unterlage liegt.");
+  if (/\.(telefon|mobil)$/.test(pfad)) return t("Schauen Sie in Ihren Handykontakten nach oder fragen Sie die Person nach ihrer Telefonnummer.");
+  return t("Suchen Sie nur diese eine Angabe. Sie können auch eine vertraute Person danach fragen.");
+}
+function suchAufgaben() {
+  const result = [];
+  function sammeln(obj, pfad = '') {
+    if (!obj || typeof obj !== 'object') return;
+    const offen = { ...obj._offen };
+    for (const [key, value] of Object.entries(obj)) if (value === 'weissNicht' && !offen[key]) offen[key] = { grund: 'unbekannt', label: key === 'vorhanden' ? 'Vorhandensein prüfen' : key === 'ueberTod' || key === 'vollmachtUeberTod' ? 'Geltung der Vollmacht prüfen' : key };
+    for (const [key, info] of Object.entries(offen)) {
+      if (!info || !['unbekannt', 'spaeter'].includes(info.grund) || voll(obj[key])) continue;
+      const ziel = pfad ? pfad + '.' + key : key;
+      const kontext = obj.gesellschaft || obj.bank || obj.name || '';
+      result.push({ pfad: ziel, titel: t(info.label || key) + (kontext ? ' · ' + kontext : ''), text: suchHinweis(ziel) });
+    }
+    for (const [key, value] of Object.entries(obj)) if (key !== '_offen' && key !== 'zugang') sammeln(value, pfad ? pfad + '.' + key : key);
+  }
+  sammeln(zustand.daten);
+  return result;
+}
+function aufgabeOeffnen(pfad) {
+  const bereich = pfad.split('.')[0] === 'wohnen' ? 'vertraege' : pfad.split('.')[0];
+  wechseln(bereich);
+  const feld = [...document.querySelectorAll('[data-pfad]')].find(e => e.dataset.pfad === pfad);
+  if (feld) { feld.scrollIntoView({ block: 'center' }); const input = feld.querySelector('input, textarea, select'); if (input) input.focus(); }
+}
+function suchKarte() {
+  const aufgaben = suchAufgaben();
+  if (!aufgaben.length) return null;
+  const knopf = a => el('button', { type: 'button', class: 'btn', text: a.titel, onclick: () => aufgabeOeffnen(a.pfad) });
+  return el('section', { class: 'formkarte', id: 'suchliste' },
+    el('h3', { text: t("Ihre nächste kleine Aufgabe") }),
+    el('p', { text: aufgaben[0].text }), knopf(aufgaben[0]),
+    aufgaben.length > 1 ? el('details', {}, el('summary', { text: t("Weitere offene Angaben ({n})", { n: aufgaben.length - 1 }) }),
+      ...aufgaben.slice(1).map(a => el('p', {}, knopf(a)))) : null,
+    el('p', { class: 'hilfe', text: t("Sobald Sie eine Angabe ergänzen, verschwindet sie von dieser Liste. Sie müssen heute nicht alles finden.") }));
+}
+function einstiegAnsicht() {
+  const d = zustand.daten;
+  function erster(pfad, vorlage, titel, felder) {
+    const liste = pfadLesen(pfad);
+    if (liste.length) return gruppe(titel, null, ...felder(pfad + '.0'));
+    return gruppe(titel, null, el('button', { type: 'button', class: 'btn', text: t("Angabe beginnen"), onclick: () => {
+      liste.push(vorlage); geaendert(); inhaltZeigen();
+    } }));
+  }
+  return [
+    el('h2', { tabindex: '-1', text: t("Starten, ohne Unterlagen zu suchen") }),
+    el('p', { text: t("Tragen Sie nur ein, was Sie aus dem Kopf wissen. Sie können auch gemeinsam mit einer vertrauten Person beginnen. Alles darf offen bleiben.") }),
+    erster('kontakte', { name: '', beziehung: '', rolle: '', telefon: '', mobil: '', email: '', anschrift: '', notiz: '' }, "Wer soll informiert werden?", p => [feld(p + '.name', "Name"), feld(p + '.telefon', "Telefon")]),
+    gruppe("Wo könnten die Unterlagen liegen?", "Ein ungefährer Ort genügt für den Anfang.", feld('persoenlich.ablageUrkunden', "Urkunden und Familienstammbuch")),
+    erster('finanzen.konten', { bank: '', kontoart: '', iban: '', vollmachtUeberTod: '', bevollmaechtigt: '', notiz: '' }, "Welche Bank fällt Ihnen ein?", p => [feld(p + '.bank', "Bank"), feld(p + '.notiz', "Hinweis")]),
+    erster('versicherungen', { art: '', gesellschaft: '', vertragsnummer: '', beguenstigt: '', ablage: '', notiz: '' }, "Welche Versicherung fällt Ihnen ein?", p => [feld(p + '.gesellschaft', "Versicherungsgesellschaft"), feld(p + '.ablage', "Wo liegt die Police?")]),
+    el('p', { class: 'hilfe', text: t("Weitere Personen, Konten und Versicherungen können Sie später in den jeweiligen Bereichen ergänzen.") }),
+    el('button', { type: 'button', class: 'btn primaer', text: t("Für heute genügt das – zur Übersicht"), onclick: () => wechseln('uebersicht') })
+  ];
+}
+
 function uebersicht() {
   const d = zustand.daten;
   const stand = BEREICHE.map(b => ({ b, f: fortschritt(b.id) }));
@@ -1624,6 +1734,11 @@ function uebersicht() {
       el("h2", { tabindex: "-1", text: name || t("Mein Ordner") }),
       el("p", { class: "fuer", text: fuer }),
       el("p", { class: "stand" }, t("Zuletzt geändert:") + " ", el("strong", { text: datumText(d.lastModified) }))),
+    fuerAngehoerige ? null : el("section", { class: "formkarte" },
+      el("h3", { text: t("Sie brauchen noch keine Unterlagen") }),
+      el("p", { text: t("Beginnen Sie mit dem, was Sie schon wissen. Unbekannte Angaben können Sie für später auf Ihre Suchliste setzen.") }),
+      el("button", { type: "button", class: "btn primaer", text: t("Ohne Unterlagen beginnen"), onclick: () => wechseln("einstieg") })),
+    fuerAngehoerige ? null : suchKarte(),
     fuerAngehoerige ? null : aktualitaetsKarte(),
     el("section", { class: "formkarte geregelt" },
       el("div", { class: "geregeltkopf" }, el("h3", { text: t("Schon geregelt") }),
@@ -1667,6 +1782,7 @@ function druckFeld(pfad, beschriftung, opt) {
   const roh = pfadLesen(pfad) ?? "";
   const breit = opt.breit || typ === "mehrzeilig" ? " breit" : "";
   let inhalt;
+  if (!voll(roh) && offenText(pfad)) return el("div", { class: "dfeld" + breit }, el("span", { class: "dl", text: t(beschriftung) }), ...druckWert(offenText(pfad)));
   if (typ === "auswahl") {
     const werte = OPTIONEN[opt.optionen];
     const k = normWert(roh, opt.optionen);
@@ -1742,8 +1858,9 @@ function feld(pfad, beschriftung, opt = {}) {
     hilfe = el("p", { class: "hilfe", id: id + "h", text: t(opt.hilfe) });
     eingabe.setAttribute("aria-describedby", id + "h");
   }
-  return el("div", { class: "feld" + (opt.breit || typ === "mehrzeilig" ? " breit" : "") },
-    el("label", { for: id, text: t(beschriftung) }), hilfe, typ === "password" ? geheimZeile(eingabe) : eingabe, fehler);
+  return el("div", { "data-pfad": pfad, class: "feld" + (opt.breit || typ === "mehrzeilig" ? " breit" : "") },
+    el("label", { for: id, text: t(beschriftung) }), hilfe, typ === "password" ? geheimZeile(eingabe) : eingabe, fehler,
+    typ === "password" || fuerAngehoerige ? null : offenWahl(pfad, beschriftung, eingabe));
 }
 
 // Gespeichert wird als JJJJ-MM-TT, angezeigt und getippt als TT.MM.JJJJ.
@@ -1785,20 +1902,26 @@ function wahl(pfad, frage, optionen, opt = {}) {
   const aktuell = normWert(pfadLesen(pfad) ?? "", optionen);
   const werte = OPTIONEN[optionen];
   if (druck) {
+    if (!voll(aktuell) && offenText(pfad)) return el("div", { class: "dfeld breit" }, el("span", { class: "dl", text: t(frage) }), ...druckWert(offenText(pfad)));
     return el("div", { class: "dfeld dwahl breit" }, el("span", { class: "dl", text: t(frage) }),
-      el("span", { class: "dopt" }, ...Object.keys(werte).map(k => el("span", {}, kasten(k === aktuell), t(werte[k])))));
+      el("span", { class: "dopt" }, ...Object.keys(werte).filter(k => k !== "weissNicht").map(k => el("span", {}, kasten(k === aktuell), t(werte[k])))));
   }
-  return el("fieldset", { class: "wahl breit" },
+  const statusEingabe = el("input", { type: "hidden" });
+  statusEingabe.value = aktuell;
+  const offen = fuerAngehoerige ? null : offenWahl(pfad, frage, statusEingabe);
+  return el("fieldset", { "data-pfad": pfad, class: "wahl breit" },
     el("legend", { text: t(frage) }),
     opt.hilfe ? el("p", { class: "hilfe", text: t(opt.hilfe) }) : null,
-    el("div", { class: "optionen" }, ...Object.keys(werte).map(k => {
+    el("div", { class: "optionen" }, ...Object.keys(werte).filter(k => k !== "weissNicht").map(k => {
       const knopf = el("input", { type: "radio", name, value: k, checked: k === aktuell });
       knopf.addEventListener("change", () => {
         pfadSchreiben(pfad, k);
+        statusEingabe.value = k;
+        statusEingabe.dispatchEvent(new Event("change"));
         if (opt.beiAenderung) opt.beiAenderung(k);
       });
       return el("label", {}, knopf, el("span", { text: t(werte[k]) }));
-    })));
+    })), offen);
 }
 
 function gruppe(titel, hilfe, ...kinder) {
@@ -3871,3 +3994,4 @@ starten();
 </script>
 </body>
 </html>
+

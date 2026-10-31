@@ -2,7 +2,8 @@
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(
   caches.keys()
-    .then(namen => Promise.all(namen.filter(n => n !== "klarordner-4fb8c7b555" && n !== "klarordner-ocr-6f40ccab56").map(n => caches.delete(n))))
+    .then(namen => Promise.all(namen.filter(n => n !== "klarordner-76c4a91284" && n !== "klarordner-ocr-6f40ccab56").map(n => caches.delete(n))))
     .then(() => self.registration.unregister())
     .then(() => self.clients.matchAll({ type: "window" }))
     .then(fenster => fenster.forEach(f => f.navigate(f.url)))));
+
