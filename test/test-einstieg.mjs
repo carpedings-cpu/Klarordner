@@ -58,7 +58,7 @@ ctx.zustand.daten.versicherungen.splice(0,1);
 assert.equal(ctx.suchAufgaben().length,0);
 // Bestehende Angaben können nicht durch einen Offen-Status überschrieben werden.
 ctx.pfadSchreiben('persoenlich.nachname','Muster');
-mark('persoenlich.nachname','Nachname');
+assert.equal(ctx.offenWahl('persoenlich.nachname','Nachname',new Node('input',{},[])),null);
 assert.equal(ctx.offenInfo('persoenlich.nachname'),undefined);
 assert.equal(ctx.zustand.daten.persoenlich.nachname,'Muster');
 assert.equal(ctx.offenWahl('tresor.0.passwort','Passwort', new Node('input',{},[])),null);
